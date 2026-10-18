@@ -1924,15 +1924,6 @@ body.os-ready .os {
   stroke-width: 1.5;
 }
 
-.dock-caption {
-  margin: 0;
-  color: rgba(83, 73, 58, 0.52);
-  font-family: var(--font-serif);
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  pointer-events: none;
-}
-
 .dock__brand-mark {
   display: grid;
   width: 26px;
@@ -2371,10 +2362,6 @@ body.os-ready .os {
   .dock__btn svg {
     width: 40px;
     height: 40px;
-  }
-
-  .dock-caption {
-    display: none;
   }
 
   .dock__brand-mark,
@@ -6292,11 +6279,6 @@ body.is-window-resizing * {
   color: var(--ink-faint);
 }
 
-.dock-caption {
-  color: rgba(73, 64, 50, 0.66);
-  font-size: 12.5px;
-}
-
 .palette-item__hint {
   color: var(--ink-faint);
   font-size: 14px;
@@ -6713,7 +6695,6 @@ body.is-window-resizing * {
       <div class="windows-layer" id="windows-layer" role="region" aria-label="打开的窗口"></div>
       <div class="dock-wrap" id="dock-wrap">
         <nav class="dock" id="dock" aria-label="应用坞"></nav>
-        <p class="dock-caption" id="dock-caption">点击图标打开应用</p>
       </div>
     </main>
   </div>
@@ -10101,7 +10082,7 @@ body.is-window-resizing * {
     var visible = getVisibleWindows();
     if (visible.length) {
       visible.forEach(function (win) { minimize(win.id); });
-      P.ui.toast('桌面收好了。点应用坞里的纸片，就能再翻开。', { kind: 'info' });
+      P.ui.toast('桌面收好了。点应用坞图标或房子按钮，就能再翻开。', { kind: 'info' });
       return true;
     }
     var candidates = wins.filter(function (w) { return w.minimized && !w.closing; });
@@ -10571,6 +10552,20 @@ body.is-window-resizing * {
 
   function openSettings(section) {
     P.wm.open('settings', { section: section || 'appearance' });
+  }
+
+  function bindDesktopDismiss() {
+    if (!refs.stage) return;
+    refs.stage.addEventListener('pointerdown', function (event) {
+      if (event.button !== 0 && event.pointerType === 'mouse') return;
+      if (event.target.closest('.window, .dock-wrap, .day-card, .first-run, .paper-dialog, .palette-layer')) return;
+      if (document.querySelector('.paper-dialog[open]') || document.querySelector('.palette-layer')) return;
+      var visible = P.wm.getWindows().filter(function (win) { return !win.minimized; });
+      if (!visible.length) return;
+      event.preventDefault();
+      P.wm.minimizeAll();
+      syncChrome();
+    });
   }
 
   function bindTopbar() {
@@ -11202,6 +11197,7 @@ body.is-window-resizing * {
       applyPrefs();
       bindTopbar();
       buildDock();
+      bindDesktopDismiss();
       startClock();
       bindShortcuts();
       P.wm.setup();
@@ -13736,7 +13732,7 @@ body.is-window-resizing * {
     },
     {
       title: '一键收好桌面',
-      body: '不想一个个关窗口？点最右边的<b>房子按钮</b>，所有窗口会收进应用坞。再点应用坞里的图标就能恢复。',
+      body: '不想一个个关窗口？点最右边的<b>房子按钮</b>，或直接点窗口外的空白桌面，所有窗口会收进应用坞。再点应用坞里的图标就能恢复。',
       target: function () { return document.querySelector('[data-testid="dock-home"]'); },
       placement: 'top'
     },

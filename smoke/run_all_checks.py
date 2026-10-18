@@ -63,6 +63,7 @@ def main() -> int:
         "old double-click copy": "双击纸页开始",
         "old left-entry copy": "打开左边一张纸",
         "window control buttons": "data-win-action",
+        "dock caption": "点击图标打开应用",
     }
     for label, needle in removed.items():
         if needle in page:
@@ -82,6 +83,7 @@ def main() -> int:
         "dialog radius": ".paper-dialog,",
         "window paper layers removed": ".window::before,",
         "delete palette action": "关闭当前窗口",
+        "desktop click dismiss": "bindDesktopDismiss",
     }
     for label, needle in expected.items():
         if needle in page:
