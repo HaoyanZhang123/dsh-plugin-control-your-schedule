@@ -62,6 +62,7 @@ def main() -> int:
         "file cabinet app id": "id: 'files'",
         "old double-click copy": "双击纸页开始",
         "old left-entry copy": "打开左边一张纸",
+        "window control buttons": "data-win-action",
     }
     for label, needle in removed.items():
         if needle in page:
@@ -76,6 +77,11 @@ def main() -> int:
         "host bootstrap": "__SCHEDULE_HOST_SNAPSHOT__",
         "host save bridge": "__SCHEDULE_RESTART__",
         "dynamic day summary": "daySummaryText",
+        "fixed right calendar rail": "right: 18px;",
+        "uniform surface radius": "--radius-win: 18px;",
+        "dialog radius": ".paper-dialog,",
+        "window paper layers removed": ".window::before,",
+        "delete palette action": "关闭当前窗口",
     }
     for label, needle in expected.items():
         if needle in page:

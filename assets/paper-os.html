@@ -59,7 +59,7 @@
   --dock-height: 96px;
   --dock-gap: 22px;
   --topbar-height: 56px;
-  --radius-win: 7px;
+  --radius-win: 18px;
   --radius-paper: 3px;
 }
 
@@ -1477,22 +1477,22 @@ body.os-ready .os {
 
 .day-card {
   position: absolute;
-  z-index: 4;
-  top: 13%;
-  right: 4.2vw;
+  z-index: 470;
+  top: 18px;
+  right: 18px;
   display: flex;
-  width: 294px;
-  min-height: 334px;
+  width: 268px;
+  min-height: 0;
   flex-direction: column;
-  padding: 25px 24px 21px;
+  padding: 22px 20px 18px;
   border: 1px solid rgba(92, 78, 57, 0.16);
-  border-radius: 2px;
+  border-radius: 18px;
   color: var(--ink);
   background-color: #fbf4e6;
   background-image: var(--paper-noise);
   box-shadow: 0 26px 55px -32px rgba(82, 62, 37, 0.52), 0 3px 10px rgba(82, 62, 37, 0.05);
-  transform: rotate(0.65deg);
-  transition: transform 0.28s var(--ease-soft), box-shadow 0.28s;
+  transform: none;
+  transition: box-shadow 0.28s;
 }
 
 .day-card::before {
@@ -1505,7 +1505,7 @@ body.os-ready .os {
 
 .day-card:hover {
   box-shadow: 0 32px 62px -32px rgba(82, 62, 37, 0.56), 0 3px 10px rgba(82, 62, 37, 0.05);
-  transform: rotate(0.2deg) translateY(-2px);
+  transform: translateY(-2px);
 }
 
 .day-card__tape {
@@ -2227,9 +2227,8 @@ body.os-ready .os {
 
 @media (max-width: 1180px) {
   .day-card {
-    right: 3vw;
-    width: 270px;
-    min-height: 315px;
+    right: 12px;
+    width: 252px;
   }
 
   .desk-intro {
@@ -2243,7 +2242,9 @@ body.os-ready .os {
 
 @media (max-width: 1040px) {
   .day-card {
-    display: none;
+    top: 12px;
+    right: 12px;
+    width: 238px;
   }
 
   .desk-intro {
@@ -6595,6 +6596,34 @@ body.is-window-resizing * {
   .tour__body { font-size: 15px; }
 }
 
+
+/* ===== unified rounded surfaces ===== */
+.window::before,
+.window::after {
+  display: none;
+}
+
+.window {
+  border-radius: 18px;
+}
+
+.window__titlebar {
+  border-radius: 18px 18px 0 0;
+}
+
+.window__body {
+  border-radius: 0 0 18px 18px;
+}
+
+.paper-dialog,
+.palette {
+  border-radius: 18px;
+}
+
+.toast {
+  border-radius: 12px;
+}
+
 </style>
 </head>
 <body class="is-booting">
@@ -9169,10 +9198,17 @@ body.is-window-resizing * {
     if (!stage) return { x: 0, y: 0, w: 800, h: 600 };
     var dock = document.getElementById('dock-wrap');
     var reserve = dock ? Math.max(84, dock.offsetHeight + 22) : 96;
+    var rightReserve = 20;
+    var dayCard = document.getElementById('day-card');
+    if (dayCard && window.getComputedStyle(dayCard).display !== 'none') {
+      var stageRect = stage.getBoundingClientRect();
+      var cardRect = dayCard.getBoundingClientRect();
+      rightReserve = Math.max(rightReserve, Math.round(stageRect.right - cardRect.left) + 12);
+    }
     return {
       x: 10,
       y: 10,
-      w: Math.max(260, stage.clientWidth - 20),
+      w: Math.max(300, stage.clientWidth - 20 - rightReserve),
       h: Math.max(150, stage.clientHeight - reserve - 8)
     };
   }
@@ -9505,11 +9541,7 @@ body.is-window-resizing * {
       '<span class="window__app-icon" aria-hidden="true">' + P.appIcon(app.id) + '</span>' +
       '<span class="window__heading"><span class="window__app-name">' + U.escapeHTML(app.english || app.name) + '</span>' +
       '<span class="window__title" id="win-title-' + id + '">' + U.escapeHTML(app.name) + '</span></span>' +
-      '<span class="window__controls" role="group" aria-label="窗口控制">' +
-      '<button class="win-control win-control--minimize" type="button" data-win-action="minimize" aria-label="最小化窗口" title="最小化">' + P.icon('minus') + '</button>' +
-      '<button class="win-control win-control--maximize" type="button" data-win-action="maximize" aria-label="最大化窗口" title="最大化">' + P.icon('maximize') + '</button>' +
-      '<button class="win-control win-control--close" type="button" data-win-action="close" aria-label="关闭窗口" title="关闭">' + P.icon('close') + '</button>' +
-      '</span></header>' +
+      '</header>' +
       '<div class="window__body"></div>' +
       '<div class="win-resize win-resize--n" data-resize="n" aria-hidden="true"></div>' +
       '<div class="win-resize win-resize--s" data-resize="s" aria-hidden="true"></div>' +
@@ -9529,30 +9561,12 @@ body.is-window-resizing * {
       if (!win.closing && focusedId !== win.id) focusWindow(win.id);
     });
 
-    var controls = win.el.querySelector('.window__controls');
-    controls.addEventListener('click', function (event) {
-      var button = event.target.closest('button[data-win-action]');
-      if (!button) return;
-      event.preventDefault();
-      event.stopPropagation();
-      var action = button.getAttribute('data-win-action');
-      if (action === 'minimize') minimize(win.id);
-      else if (action === 'maximize') toggleMaximize(win.id);
-      else if (action === 'close') closeWindow(win.id);
-    });
-
     var titlebar = win.el.querySelector('.window__titlebar');
     titlebar.addEventListener('pointerdown', function (event) {
       if (event.button !== 0 && event.pointerType === 'mouse') return;
       if (event.target.closest('button')) return;
       beginDrag(event, win);
     });
-    titlebar.addEventListener('dblclick', function (event) {
-      if (isMobile()) return;
-      if (event.target.closest('button')) return;
-      toggleMaximize(win.id);
-    });
-
     win.el.querySelectorAll('.win-resize').forEach(function (handle) {
       handle.addEventListener('pointerdown', function (event) {
         beginResize(event, win, handle.getAttribute('data-resize'));
@@ -9774,7 +9788,6 @@ body.is-window-resizing * {
     el.innerHTML = windowMarkup(app, id);
     win.el = el;
     win.titleEl = el.querySelector('.window__title');
-    win.maxButton = el.querySelector('[data-win-action="maximize"]');
     win.bodyEl = el.querySelector('.window__body');
     el.style.zIndex = String(++zTop);
     win.z = zTop;
@@ -10144,7 +10157,7 @@ body.is-window-resizing * {
             return { x: source.x, y: source.y, w: source.w, h: source.h };
           })(),
           minimized: !!win.minimized,
-          maximized: !!win.maximized,
+          maximized: false,
           focused: win.id === focusedId,
           params: U.clone(win.params)
         };
@@ -10167,7 +10180,7 @@ body.is-window-resizing * {
       var win = createWindow(app, item.params, {
         bounds: item.bounds,
         minimized: !!item.minimized,
-        maximized: !!item.maximized,
+        maximized: false,
         noAnimation: true
       });
       win.z = z;
@@ -10568,7 +10581,11 @@ body.is-window-resizing * {
       refs.paletteBtn.addEventListener('click', function () { openPalette(); });
     }
     if (refs.settingsBtn) {
-      refs.settingsBtn.addEventListener('click', function () { openSettings('appearance'); });
+      refs.settingsBtn.addEventListener('click', function () {
+        var open = P.wm.getWindows().filter(function (win) { return win.appId === 'settings' && !win.minimized; })[0];
+        if (open) P.wm.close(open.id);
+        else openSettings('appearance');
+      });
     }
     if (refs.savePill) {
       refs.savePill.addEventListener('click', manualSave);
@@ -10669,6 +10686,18 @@ body.is-window-resizing * {
       icon: 'home',
       text: '收好 桌面 最小化 home',
       run: function () { P.wm.minimizeAll(); syncChrome(); }
+    });
+    commands.push({
+      group: '操作',
+      label: '关闭当前窗口',
+      hint: '内容会自动保存；也可以按 Ctrl/Cmd + Alt + W',
+      icon: 'close',
+      text: '关闭 窗口 close',
+      run: function () {
+        var focused = P.wm.getFocused ? P.wm.getFocused() : null;
+        if (focused) P.wm.close(focused.id);
+        syncChrome();
+      }
     });
     commands.push({
       group: '操作',
@@ -11058,6 +11087,14 @@ body.is-window-resizing * {
         event.preventDefault();
         togglePalette();
         return;
+      }
+      if (key === 'escape' && !dialogOpen && !palette && !isTypographyTarget(event.target)) {
+        var focusedWin = P.wm.getFocused ? P.wm.getFocused() : null;
+        if (focusedWin) {
+          event.preventDefault();
+          P.wm.close(focusedWin.id);
+          syncChrome();
+        }
       }
       if (dialogOpen) return;
       if (palette) return;
@@ -13685,8 +13722,8 @@ body.is-window-resizing * {
     },
     {
       title: '窗口怎么操作',
-      body: '拖<b>标题栏</b>移动窗口，拖右下角缩放。右上角的三个按钮分别是最小化、最大化、关闭。',
-      target: function () { var win = findWindow(); return win ? win.querySelector('.window__controls') : null; },
+      body: '拖<b>标题栏</b>移动窗口，拖右下角缩放。没有缩小/放大/关闭按钮：点底部应用坞图标可最小化或恢复，房子按钮一次收好全部窗口，按 Esc 关闭当前窗口。',
+      target: function () { var win = findWindow(); return win ? win.querySelector('.window__titlebar') : null; },
       placement: 'bottom',
       before: function () { openStickies(); }
     },
