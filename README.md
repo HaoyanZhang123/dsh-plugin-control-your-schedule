@@ -3,7 +3,7 @@
 > **纸屿**：把便签、纸页笔记、日历待办和画纸，装进 DSH 左侧栏。
 > 一个纸面风格的轻量个人工作台。数据保存在本机，不联网。
 
-版本 0.1.0 · DSH 0.2.1-rc.2 实测 · Windows 实测，macOS / Linux 通过构建与静态门禁
+版本 0.1.1 · DSH 0.2.1-rc.2 实测 · Windows 实测，macOS / Linux 通过构建与静态门禁
 
 ![首页](assets/screenshot-home.webp)
 

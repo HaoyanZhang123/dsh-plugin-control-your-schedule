@@ -138,6 +138,34 @@ def main() -> int:
     else:
         bad("host route persistence", "node not found")
 
+    # Structural regression guard: the window layer must live inside #stage.
+    # A stray closing tag once moved it to page top, hiding every titlebar.
+    from html.parser import HTMLParser
+    class _Nest(HTMLParser):
+        def __init__(self):
+            super().__init__(convert_charrefs=True)
+            self.stack = []
+            self.parents = {}
+        def handle_starttag(self, tag, attrs):
+            attrs = dict(attrs)
+            ident = attrs.get('id')
+            if ident in ('stage', 'windows-layer', 'day-card', 'dock-wrap', 'first-run'):
+                self.parents[ident] = list(self.stack)
+            self.stack.append((tag, ident))
+        def handle_endtag(self, tag):
+            for index in range(len(self.stack) - 1, -1, -1):
+                if self.stack[index][0] == tag:
+                    del self.stack[index:]
+                    break
+    nest = _Nest(); nest.feed(page)
+    stage_parents = {name: parents for name, parents in nest.parents.items()}
+    required_inside_stage = ['windows-layer', 'day-card', 'dock-wrap', 'first-run']
+    missing = [name for name in required_inside_stage if 'stage' not in [ident for _, ident in stage_parents.get(name, [])]]
+    if missing:
+        bad('DOM nesting: window layer inside #stage', 'outside stage: ' + ', '.join(missing))
+    else:
+        ok('DOM nesting: window layer inside #stage', 'all four key blocks inside stage')
+
     failed = [item for item in checks if not item[0]]
     print("checks: PASS %d / FAIL %d" % (len(checks) - len(failed), len(failed)))
     return 0 if not failed else 1
