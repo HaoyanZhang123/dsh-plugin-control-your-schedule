@@ -9,15 +9,20 @@
 
 当前版本 **0.1.6** · 开发依据 DSH **0.2.1-rc.2** · Windows 实测，macOS / Linux 由 CI 构建与静态门禁覆盖
 
-![首页：右侧固定今日纸签](assets/screenshot-home.webp)
-![便签窗口：无最小化/最大化/关闭按钮](assets/screenshot-window.webp)
-
 ## 功能
 
 - **便签**：短句速记，自动保存；拖动便签顶部左侧的把手移动，正文区域不会误触。
+<img width="2952" height="1834" alt="image" src="https://github.com/user-attachments/assets/2da54433-3f47-40d3-894d-b1bc0bf55522" />
+
 - **纸页笔记**：长文写作，左侧列表搜索/切换，自动保存。
+<img width="2974" height="1830" alt="image" src="https://github.com/user-attachments/assets/7624f43e-cb16-4bc5-8712-fee5eef2e717" />
+
 - **日历与待办**：按日期添加待办，完成后勾选；右侧「今日纸签」同步摘要。
+<img width="2964" height="1838" alt="image" src="https://github.com/user-attachments/assets/6c5d11cf-d935-4cf5-beee-a64b174488d0" />
+
 - **画纸**：手写/绘画，支持撤销、橡皮、导出 PNG。
+<img width="2954" height="1814" alt="image" src="https://github.com/user-attachments/assets/72bcfb32-ca20-464f-8987-74cad6cca0d0" />
+
 - **固定右侧栏**：今日纸签始终在右侧，窗口只在左侧工作区活动，不会被遮住。
 - **底部应用坞**：所有应用的唯一入口；点图标打开/收起窗口；最右边的房子按钮一键收好全部窗口，再点一次恢复。
 - **点桌面收好**：点击窗口外的空白桌面，也会把全部窗口收进应用坞（不销毁窗口，点图标可恢复）。
