@@ -2,6 +2,7 @@
 
 > 把便签、纸页笔记、日历待办和画纸，装进 DeepSeek Harness 的左侧栏。
 > 纸面风格的个人工作台：数据保存在本机，不联网。
+<img width="2172" height="724" alt="e2f9869ed45c0711738e4f67d7e7f642" src="https://github.com/user-attachments/assets/86d2c814-3e1f-43cf-bd09-f00423f010e4" />
 
 [![ci](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/actions/workflows/ci.yml/badge.svg)](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/HaoyanZhang123/dsh-plugin-control-your-schedule)](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/releases)
