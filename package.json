@@ -1,0 +1,73 @@
+{
+  "name": "dsh-plugin-control-your-schedule",
+  "version": "0.1.0",
+  "description": "Paper-style sticky notes, paper notes, calendar and drawing inside DSH",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "icon": "./icon.svg",
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale",
+    "icon.svg",
+    "src",
+    "assets",
+    "tools/build_page.py",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "!**/__pycache__",
+    "!**/*.pyc"
+  ],
+  "peerDependencies": {
+    "@deepseek-ai/dsh-client-ui-layout": ">=0.2.0-0",
+    "@deepseek-ai/dsh-client-ui-sidebar": ">=0.2.0-0"
+  },
+  "license": "MIT",
+  "author": "HaoyanZhang123",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule.git"
+  },
+  "homepage": "https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule",
+  "bugs": {
+    "url": "https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "sticky-notes",
+    "notes",
+    "calendar",
+    "paper"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-sidebar"
+      ]
+    }
+  }
+}

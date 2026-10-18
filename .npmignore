@@ -1,0 +1,15 @@
+# 不要删这段说明 —— 它存在的唯一目的就是告诉后来者"别依赖本文件"。
+#
+# **本文件对 npm/pnpm pack 无效。**
+# 实测（npm 11.17.0 / pnpm 11.21.0）：只要 package.json 声明了 files 白名单，
+# 打包器就完全忽略 .npmignore。实测把 scripts/__pycache__/x.pyc 与 junk.log
+# 放进被 files 点名的目录，两者照样被打进 tarball。
+#
+# 真正的防线（两条，缺一不可）：
+#   1. package.json 的 files 里的**否定项**（本模板已带）：
+#        "!**/__pycache__"   "!**/*.pyc"
+#      实测这两条能把上述文件从 tarball 里去掉（npm pack 与 pnpm pack 都验过）。
+#   2. 发布前 preflight 的**反向断言**：包内出现 __pycache__ 或 .pyc 即 FAIL。
+#      只断言"缺不缺"不断言"多没多"是挡不住下一类垃圾文件的。
+#
+# 另外：跑 python 脚本前设 PYTHONDONTWRITEBYTECODE=1，从源头不产生字节码。

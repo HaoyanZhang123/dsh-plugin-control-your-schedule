@@ -1,0 +1,8 @@
+# 开发期忽略。注意：**.gitignore 对 npm/pnpm pack 无效** ——
+# 打包看的是 package.json 的 files 白名单，见 .npmignore 的说明。
+node_modules/
+__pycache__/
+*.pyc
+*.tgz
+.tmp/
+*.log

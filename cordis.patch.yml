@@ -1,0 +1,5 @@
+# Only insert this plugin's own row; no official DSH component is replaced.
+# id / name / client module id / package name must stay equal.
+- insert:
+    - id: dsh-plugin-control-your-schedule
+      name: 'dsh-plugin-control-your-schedule'
