@@ -146,6 +146,33 @@ def main() -> int:
     else:
         bad("host route persistence", "node not found")
 
+    # Toast policy guard: the desk must never stack toasts again. One node,
+    # short dwell, newer message replaces the older one.
+    toast_rules = {
+        "single-slot variable": "var currentToast = null;",
+        "replace instead of append": "region.removeChild(currentToast);",
+        "duplicate detection": "if (signature === currentToastText) {",
+        "dwell table": "var TOAST_DWELL = {",
+        "dwell cap": "Math.min(dwell, TOAST_DWELL_MAX)",
+    }
+    missing_toast = [label for label, needle in toast_rules.items() if needle not in page]
+    if missing_toast:
+        bad("toast policy: single, short-lived", "missing: " + ", ".join(missing_toast))
+    elif "existing.length > 3" in page:
+        bad("toast policy: single, short-lived", "old stacking path still present: existing.length > 3")
+    else:
+        ok("toast policy: single, short-lived", "one slot, replace-in-place, capped dwell")
+
+    # macOS fullscreen guard: the frame must subtract the top clearance from its
+    # height. Pushing it down while keeping height:100% overflowed the panel by
+    # 48px and the clip ate the bottom of the desk's dock.
+    client_src = PLUGIN / "src" / "client.src.js"
+    src_text = client_src.read_text(encoding="utf-8") if client_src.is_file() else ""
+    if "calc(100% - var(--dsh-frame-top-clearance,48px))" in src_text:
+        ok("macOS frame height accounts for top clearance")
+    else:
+        bad("macOS frame height accounts for top clearance", "frame height does not subtract --dsh-frame-top-clearance")
+
     # Structural regression guard: the window layer must live inside #stage.
     # A stray closing tag once moved it to page top, hiding every titlebar.
     from html.parser import HTMLParser

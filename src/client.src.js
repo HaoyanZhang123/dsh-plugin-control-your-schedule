@@ -38,8 +38,12 @@ window.__ModuleLoader__.load({
 
     var CSS = [
       '.cys-panel{position:relative;flex:1 1 auto;min-width:0;min-height:0;height:100%;overflow:hidden;background:#f1e7d4;}',
+      // One sizing path: absolute + explicit width/height. The macOS top
+      // clearance must be *subtracted* from the height. Previously the frame
+      // was pushed down 48px while still asking for height:100%, so it ran
+      // past the panel by 48px and the overflow clip cut the page's dock.
       '.cys-frame{position:absolute;inset:0;display:block;width:100%;height:100%;border:0;background:#f2ead9;}',
-      'html[data-platform="darwin"] .cys-frame{inset:var(--dsh-frame-top-clearance,48px) 0 0 0;}',
+      'html[data-platform="darwin"] .cys-frame{top:var(--dsh-frame-top-clearance,48px);height:calc(100% - var(--dsh-frame-top-clearance,48px));}',
       '.cys-loading{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#5f6157;background:#f4ecdd;font-family:"PingFang SC","Microsoft YaHei",sans-serif;font-size:14px;}',
       '.cys-loading__mark{display:grid;width:42px;height:42px;place-items:center;border:1px solid rgba(155,83,58,.45);border-radius:50%;color:#9b533a;font-family:serif;font-size:17px;}',
       '.cys-loading__sub{color:#8b816d;font-size:12px;}',

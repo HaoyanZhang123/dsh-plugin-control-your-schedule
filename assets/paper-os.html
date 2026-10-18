@@ -7075,15 +7075,35 @@ body.is-window-resizing * {
 
   /* ---------------- toast ---------------- */
 
-  var toastTimers = [];
+  // Toast policy: exactly one on screen at a time, short dwell.
+  // A newer message replaces the current one in place instead of stacking.
+  var TOAST_DWELL = { info: 1600, warn: 2200, error: 3200 };
+  var TOAST_DWELL_MAX = 3200;
+  var toastTimer = 0;
+  var currentToast = null;
+  var currentToastText = '';
 
   function toast(message, options) {
     var opts = options || {};
     var region = document.getElementById('toasts');
     if (!region) return function () {};
-    var node = el('div', 'toast toast--' + (opts.kind || 'info'));
-    node.setAttribute('role', opts.kind === 'error' ? 'alert' : 'status');
-    var text = el('span', 'toast__text', message);
+    var kind = opts.kind || 'info';
+    var body = String(message);
+    var signature = kind + '\u0000' + body + '\u0000' + (opts.actionLabel || '');
+    var dwell = Math.min(opts.duration || TOAST_DWELL[kind] || TOAST_DWELL.info, TOAST_DWELL_MAX);
+    if (currentToast && currentToast.parentNode) {
+      if (signature === currentToastText) {
+        // Same message repeated: keep the single node, just restart its clock.
+        armToastTimer(currentToast, dwell);
+        return currentToast;
+      }
+      region.removeChild(currentToast);
+      currentToast = null;
+    }
+    while (region.firstChild) region.removeChild(region.firstChild);
+    var node = el('div', 'toast toast--' + kind);
+    node.setAttribute('role', kind === 'error' ? 'alert' : 'status');
+    var text = el('span', 'toast__text', body);
     node.appendChild(text);
     if (opts.actionLabel && typeof opts.onAction === 'function') {
       var action = el('button', 'toast__action', opts.actionLabel);
@@ -7095,19 +7115,33 @@ body.is-window-resizing * {
       node.appendChild(action);
     }
     region.appendChild(node);
-    var existing = region.querySelectorAll('.toast');
-    if (existing.length > 3) existing[0].remove();
-    var timer = setTimeout(function () { dismissToast(node); }, opts.duration || (opts.kind === 'error' ? 5600 : 3300));
-    toastTimers.push(timer);
-    function dismissToast(target) {
-      if (!target || !target.parentNode) return;
-      target.classList.add('is-leaving');
-      setTimeout(function () {
-        if (target.parentNode) target.parentNode.removeChild(target);
-      }, 200);
-    }
+    currentToast = node;
+    currentToastText = signature;
     node.dismiss = function () { dismissToast(node); };
+    armToastTimer(node, dwell);
     return node;
+  }
+
+  function armToastTimer(node, dwell) {
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () {
+      toastTimer = 0;
+      dismissToast(node);
+    }, Math.min(dwell, TOAST_DWELL_MAX));
+  }
+
+  function dismissToast(target) {
+    if (!target || !target.parentNode) return;
+    // Only the live toast owns the dwell timer; a stale node must not cancel it.
+    if (currentToast === target) {
+      if (toastTimer) { clearTimeout(toastTimer); toastTimer = 0; }
+      currentToast = null;
+      currentToastText = '';
+    }
+    target.classList.add('is-leaving');
+    setTimeout(function () {
+      if (target.parentNode) target.parentNode.removeChild(target);
+    }, 160);
   }
 
   /* ---------------- dialog ---------------- */
@@ -11228,21 +11262,21 @@ body.is-window-resizing * {
       }, 1100);
       if (recoveredJournal) {
         setTimeout(function () {
-          P.ui.toast('上次还没来得及收好的纸页，已经替你恢复了。', { kind: 'info', duration: 4200 });
+          P.ui.toast('上次还没来得及收好的纸页，已经替你恢复了。', { kind: 'info' });
         }, 650);
       }
       if (loadWarning) {
-        setTimeout(function () { P.ui.toast(loadWarning, { kind: 'warn', duration: 6500 }); }, 500);
+        setTimeout(function () { P.ui.toast(loadWarning, { kind: 'warn' }); }, 500);
       }
       if (P.storage.getMode() === 'memory') {
         setTimeout(function () {
-          P.ui.toast('浏览器没有提供本地存储；这次的纸页只在这张桌面上停留。', { kind: 'error', duration: 7000 });
+          P.ui.toast('浏览器没有提供本地存储；这次的纸页只在这张桌面上停留。', { kind: 'error' });
         }, 1200);
       }
     } catch (err) {
       if (window.console) console.error('PaperOS boot failed', err);
       finishBoot(true);
-      P.ui.toast('桌面铺开时遇到一点问题：' + (err && err.message ? err.message : '未知原因'), { kind: 'error', duration: 8000 });
+      P.ui.toast('桌面铺开时遇到一点问题：' + (err && err.message ? err.message : '未知原因'), { kind: 'error' });
     }
   }
 

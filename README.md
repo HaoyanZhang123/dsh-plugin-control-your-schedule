@@ -7,7 +7,7 @@
 [![ci](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/actions/workflows/ci.yml/badge.svg)](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/HaoyanZhang123/dsh-plugin-control-your-schedule)](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/releases)
 
-当前版本 **0.1.3** · 开发依据 DSH **0.2.1-rc.2** · Windows 实测，macOS / Linux 由 CI 构建与静态门禁覆盖
+当前版本 **0.1.6** · 开发依据 DSH **0.2.1-rc.2** · Windows 实测，macOS / Linux 由 CI 构建与静态门禁覆盖
 
 ![首页：右侧固定今日纸签](assets/screenshot-home.webp)
 ![便签窗口：无最小化/最大化/关闭按钮](assets/screenshot-window.webp)
@@ -27,9 +27,17 @@
 
 ## 安装
 
-### GitHub（当前可用）
+### npm（推荐，一行包名）
 
 DSH → Plugins → Add plugin，填：
+
+```
+dsh-plugin-control-your-schedule
+```
+
+也可以带版本：`dsh-plugin-control-your-schedule@0.1.6`。官方源与国内镜像（npmmirror）都已同步。
+
+### GitHub（备选，不需要 npm 时）
 
 ```
 https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule
@@ -43,12 +51,12 @@ DSH → Plugins → Add plugin，填本目录的**绝对路径**：
 <仓库路径>/dsh-plugin-control-your-schedule
 ```
 
-> Add plugin 只接受绝对路径；相对路径会被拒绝。
+> Add plugin 对本地路径只接受绝对路径；相对路径会被拒绝。
 > 已安装的插件不支持自动更新：升级 = 卸载后重装新版。
 
 安装后左侧栏「插件 / 自动化任务」下面会出现「便签」。如果没有出现，刷新页面；替换已安装的包需要重启 DSH。
 
-> npm 包已按发布要求准备好，但 **暂未发布**（本机访问 npm registry 超时）。请优先使用上面的 GitHub 地址。
+> npm：<https://www.npmjs.com/package/dsh-plugin-control-your-schedule>
 
 ## 使用
 
