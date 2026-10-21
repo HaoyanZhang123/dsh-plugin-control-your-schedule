@@ -41,6 +41,12 @@ def render() -> str:
     page = PAGE.read_text(encoding="utf-8")
     package = json.loads(PKG.read_text(encoding="utf-8"))
     version = str(package.get("version", "0.0.0"))
+    if "__PAGE_VERSION__" not in page:
+        fail("paper-os.html lost its __PAGE_VERSION__ placeholder; the page version must come from package.json")
+    # The page has one version source: package.json. Inject it before embedding.
+    page = page.replace("__PAGE_VERSION__", version)
+    if "__PAGE_VERSION__" in page:
+        fail("unresolved __PAGE_VERSION__ remains in paper-os.html")
     encoded = base64.b64encode(page.encode("utf-8")).decode("ascii")
     icon = extract_icon(page)
     if "__PAGE_B64__" not in source:
@@ -55,6 +61,8 @@ def render() -> str:
     for marker in ("__PAGE_B64__", "__STICKY_ICON_JSON__", "__VERSION__"):
         if marker in output:
             fail("unresolved placeholder remains in client.js: " + marker)
+    if "__PAGE_VERSION__" in output:
+        fail("unresolved placeholder remains in client.js: __PAGE_VERSION__")
     return output
 
 

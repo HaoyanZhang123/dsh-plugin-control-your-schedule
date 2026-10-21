@@ -23,6 +23,7 @@ PKG = PLUGIN / "package.json"
 NODE = shutil.which("node") or shutil.which("node.exe") or ""
 
 checks = []
+skipped = []
 
 
 def ok(name: str, detail: str = "") -> None:
@@ -64,6 +65,16 @@ def main() -> int:
         "old left-entry copy": "打开左边一张纸",
         "window control buttons": "data-win-action",
         "dock caption": "点击图标打开应用",
+        "desk focus placeholder": "选择底部应用开始",
+        "desk intro caption": "从底部应用坞打开应用",
+        "day card kicker": "TODAY'S PAPER",
+        "notes foot auto-save copy": "自动保存 · 无需手动提交",
+        "notes foot delete button": "删除这张纸页",
+        "notes rail saved label": "已保存到纸屿",
+        "day card overflow copy": "件 · 翻开日历",
+        "sticky delete undo toast": "便签已经揭下来了",
+        "settings header section list": "外观 · 数据 · 快捷键 · 关于",
+        "hardcoded page version": "P.version = '1.",
     }
     for label, needle in removed.items():
         if needle in page:
@@ -84,6 +95,24 @@ def main() -> int:
         "window paper layers removed": ".window::before,",
         "delete palette action": "关闭当前窗口",
         "desktop click dismiss": "bindDesktopDismiss",
+        "page version placeholder": "__PAGE_VERSION__",
+        "schema is v2": "P.schemaVersion = 2;",
+        "migration markers": "/* @migrate-begin */",
+        "single ingest gate": "function ingestWorkspace(raw)",
+        "priority table": "P.TASK_PRIORITIES = [",
+        "task completion is day-based": "function setTaskDone(id, day, done)",
+        "recurring resolution": "function resolveTask(id)",
+        "sticky trash retention": "var TRASH_DAYS = 7;",
+        "sticky raise on touch": "P.data.raiseSticky(",
+        "whole-card sticky drag": "if (event.target.closest('.sticky__text, .sticky__swatches, .sticky__del')) return;",
+        "theme resolution": "function resolveTheme(mode)",
+        "host dark signal": "data-ds-dark-theme",
+        "builtin hand font face": "font-family: \"LXGW WenKai\";",
+        "corner toast placement": "placement: 'corner'",
+        "almanac table": "var ALMANAC = [",
+        "first open fills work area": "function defaultBounds(app)",
+        "drawing paging": "function stepGallery(direction)",
+        "drawing delete": "function confirmDeleteDrawing()",
     }
     for label, needle in expected.items():
         if needle in page:
@@ -201,8 +230,89 @@ def main() -> int:
     else:
         ok('DOM nesting: window layer inside #stage', 'all four key blocks inside stage')
 
+    # --- migration / data-safety contracts ---
+    # The page must offer exactly one ingest gate and no bare schema comparisons
+    # outside it: a second load path is how "upgrade loses everyone's data" happens.
+    # Four sources call it directly: recovery journal, import, replaceWith, start().
+    # The Host snapshot deliberately funnels through start() instead of carrying a
+    # second version comparison of its own.
+    ingest_calls = page.count("P.ingestWorkspace(")
+    if ingest_calls == 4:
+        ok("all load paths go through ingestWorkspace", "%d call sites" % ingest_calls)
+    else:
+        bad("all load paths go through ingestWorkspace", "%d call sites (expected 4)" % ingest_calls)
+    if "hostSnapshot.version === P.schemaVersion" in page:
+        bad("host snapshot has no private version gate", "old equality check is back")
+    else:
+        ok("host snapshot has no private version gate")
+
+    if page.count("raw.version !== P.schemaVersion") == 1:
+        ok("schema equality checked once, inside validateWorkspace")
+    else:
+        bad("schema equality checked once, inside validateWorkspace",
+            "%d occurrences" % page.count("raw.version !== P.schemaVersion"))
+
+    client_src_path = PLUGIN / "src" / "client.src.js"
+    if not any("done: !!" in line for line in page.splitlines() if "rawTask" in line):
+        ok("task validator has no legacy done flag")
+    else:
+        bad("task validator has no legacy done flag", "rawTask.done still whitelisted")
+
+    if "rawTask.doneOn" in page and "sanitizeDayKeys" in page:
+        ok("validator keeps doneOn through strict whitelist")
+    else:
+        bad("validator keeps doneOn through strict whitelist", "doneOn would be dropped on load")
+
+    # --- bundled font ---
+    font = PLUGIN / "assets" / "fonts" / "lxgw-wenkai-hand.woff2"
+    license_file = PLUGIN / "assets" / "fonts" / "LICENSE-lxgw-wenkai.txt"
+    if font.is_file() and font.stat().st_size > 200000:
+        ok("bundled handwriting font", "%d bytes" % font.stat().st_size)
+    else:
+        bad("bundled handwriting font", "missing or too small")
+    if license_file.is_file() and "SIL OPEN FONT LICENSE" in license_file.read_text(encoding="utf-8").upper():
+        ok("font license shipped")
+    else:
+        bad("font license shipped", "OFL text missing")
+    if "FONT_ROUTE" in (PLUGIN / "index.js").read_text(encoding="utf-8"):
+        ok("host serves the bundled font")
+    else:
+        bad("host serves the bundled font", "no font route in index.js")
+
+    # --- build injects the page version ---
+    if "__PAGE_VERSION__" in (PLUGIN / "tools" / "build_page.py").read_text(encoding="utf-8"):
+        ok("build injects page version from package.json")
+    else:
+        bad("build injects page version from package.json", "build_page.py does not know the placeholder")
+    built = CLIENT.read_text(encoding="utf-8") if CLIENT.is_file() else ""
+    if str(pkg.get("version", "")) and str(pkg.get("version", "")) not in page:
+        ok("page keeps the version placeholder only", "single source = package.json")
+    else:
+        bad("page keeps the version placeholder only", "page hardcodes a version")
+    if str(pkg.get("version", "")) in built:
+        ok("built client carries the package version", str(pkg.get("version")))
+    else:
+        bad("built client carries the package version", "version %s not found in client.js" % pkg.get("version"))
+
+    # --- migration gate ---
+    if NODE:
+        run("migration v1 -> v2 keeps every byte", [NODE, str(ROOT / "smoke" / "migrate_test.mjs")])
+    else:
+        bad("migration v1 -> v2 keeps every byte", "node not found")
+
+    # --- real browser (opt-in: needs a local browser binary) ---
+    if "--cdp" not in sys.argv:
+        skipped.append("real browser checks (page_e2e.mjs)")
+        print("SKIP | real browser checks | 原因：未加 --cdp（需要本机浏览器；不加不算通过）")
+    elif NODE:
+        run("real browser checks", [NODE, str(ROOT / "smoke" / "page_e2e.mjs")])
+    else:
+        bad("real browser checks", "node not found")
+
     failed = [item for item in checks if not item[0]]
-    print("checks: PASS %d / FAIL %d" % (len(checks) - len(failed), len(failed)))
+    if skipped:
+        print("skip: %d (%s)" % (len(skipped), "; ".join(skipped)))
+    print("checks: PASS %d / FAIL %d / SKIP %d" % (len(checks) - len(failed), len(failed), len(skipped)))
     return 0 if not failed else 1
 
 

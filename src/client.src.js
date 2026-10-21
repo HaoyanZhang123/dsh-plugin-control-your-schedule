@@ -202,9 +202,49 @@ window.__ModuleLoader__.load({
             queueSave(data.snapshot);
             return;
           }
+          if (kind === 'snapshot') {
+            /* 页面在卸载前主动推来的一份最新快照（同步路径）。 */
+            if (bridge.finalSnapshotResolver) {
+              bridge.finalSnapshotResolver(true);
+              bridge.finalSnapshotResolver = null;
+            }
+            queueSave(data.snapshot);
+            return;
+          }
           if (kind === 'restart') {
             applyRestart(data);
           }
+        }
+
+        /* 卸载时向页面要一份"现在就保存"的快照，并等它回。
+           以前这里只 flush 已经排队的快照：页面的 420ms 防抖还没到，
+           iframe 就被销毁，那一段操作等于从没发生过。 */
+        function requestFinalSnapshot(timeoutMs) {
+          return new Promise(function (resolve) {
+            var frame = bridge.iframe;
+            if (!bridge.hostMode || !frame || !frame.contentWindow) {
+              resolve(false);
+              return;
+            }
+            var settled = false;
+            var timer = setTimeout(function () {
+              if (settled) return;
+              settled = true;
+              resolve(false);
+            }, timeoutMs);
+            function settle(value) {
+              if (settled) return;
+              settled = true;
+              clearTimeout(timer);
+              resolve(value);
+            }
+            bridge.finalSnapshotResolver = settle;
+            try {
+              frame.contentWindow.postMessage({ type: PREFIX + 'flush-now' }, '*');
+            } catch (error) {
+              settle(false);
+            }
+          });
         }
 
         bridge.onMessage = onMessage;
@@ -232,11 +272,21 @@ window.__ModuleLoader__.load({
           bridge.disposed = true;
           if (bridge.timer) clearTimeout(bridge.timer);
           window.removeEventListener('message', onMessage);
-          if (bridge.hostMode && bridge.pending) flush(true);
-          if (bridge.iframe) {
-            bridge.iframe.remove();
-            bridge.iframe = null;
-          }
+          /* 先请页面立刻存一次（最多等 200ms），再 flush，最后才拆 iframe。
+             顺序不能反：iframe 一拆，页面里的防抖保存就再也没机会送出。 */
+          requestFinalSnapshot(200).then(function () {
+            if (bridge.hostMode && bridge.pending) flush(true);
+            if (bridge.iframe) {
+              bridge.iframe.remove();
+              bridge.iframe = null;
+            }
+          }).catch(function () {
+            if (bridge.hostMode && bridge.pending) flush(true);
+            if (bridge.iframe) {
+              bridge.iframe.remove();
+              bridge.iframe = null;
+            }
+          });
         };
       }, []);
 

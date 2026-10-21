@@ -2,33 +2,38 @@
 
 > 把便签、纸页笔记、日历待办和画纸，装进 DeepSeek Harness 的左侧栏。
 > 纸面风格的个人工作台：数据保存在本机，不联网。
-<img width="2172" height="724" alt="e2f9869ed45c0711738e4f67d7e7f642" src="https://github.com/user-attachments/assets/86d2c814-3e1f-43cf-bd09-f00423f010e4" />
 
 [![ci](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/actions/workflows/ci.yml/badge.svg)](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/HaoyanZhang123/dsh-plugin-control-your-schedule)](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/releases)
 
-当前版本 **0.1.6** · 开发依据 DSH **0.2.1-rc.2** · Windows 实测，macOS / Linux 由 CI 构建与静态门禁覆盖
+当前版本 **0.2.3** · 开发依据 DSH **0.2.1-rc.2** · Windows 实测，macOS / Linux 由 CI 构建与静态门禁覆盖
 
 ## 功能
 
-- **便签**：短句速记，自动保存；拖动便签顶部左侧的把手移动，正文区域不会误触。
-<img width="2952" height="1834" alt="image" src="https://github.com/user-attachments/assets/2da54433-3f47-40d3-894d-b1bc0bf55522" />
+- **便签**：短句速记，自动保存；**整张纸都能拖着走**（正文、滚动条、色块、删除键除外），最后碰过的那张永远在最上面。正文默认使用内置**霞鹜文楷**手写体，可在设置里换成系统行楷或纸张宋体。
+<img width="2952" height="1834" alt="便签" src="https://github.com/user-attachments/assets/2da54433-3f47-40d3-894d-b1bc0bf55522" />
 
-- **纸页笔记**：长文写作，左侧列表搜索/切换，自动保存。
-<img width="2974" height="1830" alt="image" src="https://github.com/user-attachments/assets/7624f43e-cb16-4bc5-8712-fee5eef2e717" />
+- **废纸篓**：删掉的便签不弹「撤销」提示，而是进便签窗口顶部的废纸篓，**留 7 天**，随时放回去；空便签直接丢弃。
+- **纸页笔记**：长文写作，左侧列表搜索/切换，自动保存。新纸页的标题像正文一样是 placeholder，不写字不会留下一行「未命名纸页」。
+<img width="2974" height="1830" alt="纸页笔记" src="https://github.com/user-attachments/assets/7624f43e-cb16-4bc5-8712-fee5eef2e717" />
 
-- **日历与待办**：按日期添加待办，完成后勾选；右侧「今日纸签」同步摘要。
-<img width="2964" height="1838" alt="image" src="https://github.com/user-attachments/assets/6c5d11cf-d935-4cf5-beee-a64b174488d0" />
+- **日历与待办**：每件事有**四档紧急程度**（重要且紧急 / 重要但不紧急 / 紧急但不重要 / 不紧急也不重要），**在待办行右侧就地切换**：点色点弹出四档选择（选中即生效），点旁边的胶囊在「仅今日 / 每天」之间切换，都不用进详情。
+- **日历圆点**：未完成的点在上、按档位着色；**完成的点沉到格子底部并变灰**，位置固定不换位。
+- **持久待办**：选「每天」后，从锚定日起**每天出现一条当前实例**，今天打卡后第二天自动长出一条未完成的新实例；日历上只留真正打过卡的日子（灰点），未来不铺。勾完当天会出现「这件事算结束了」，收起后不再长新实例、随时可恢复，并显示「打卡 N 天」。
+<img width="2964" height="1838" alt="日历与待办" src="https://github.com/user-attachments/assets/6c5d11cf-d935-4cf5-beee-a64b174488d0" />
 
-- **画纸**：手写/绘画，支持撤销、橡皮、导出 PNG。
-<img width="2954" height="1814" alt="image" src="https://github.com/user-attachments/assets/72bcfb32-ca20-464f-8987-74cad6cca0d0" />
-
+- **安静的界面**：不弹浮层提示；没有信息的状态行不占位。
+- **画纸**：手写/绘画，支持撤销、橡皮、导出 PNG；画纸簿可左右翻页，也能整张删掉。
+<img width="2954" height="1814" alt="画纸" src="https://github.com/user-attachments/assets/72bcfb32-ca20-464f-8987-74cad6cca0d0" />
 - **固定右侧栏**：今日纸签始终在右侧，窗口只在左侧工作区活动，不会被遮住。
 - **底部应用坞**：所有应用的唯一入口；点图标打开/收起窗口；最右边的房子按钮一键收好全部窗口，再点一次恢复。
 - **点桌面收好**：点击窗口外的空白桌面，也会把全部窗口收进应用坞（不销毁窗口，点图标可恢复）。
 - **纯净窗口**：没有最小化/最大化/关闭三件套；拖标题栏移动，拖右下角缩放。关闭当前窗口用 `Esc`、`Ctrl/Cmd + Alt + W` 或命令面板的「关闭当前窗口」。
 - **新手导览**：首次打开自动播放 6 步导览；可在「设置 → 快捷键 → 新手导览」重播。
 - **数据备份**：设置 → 数据与备份，导出/导入完整工作区 JSON。
+- **三档配色**：跟随 DSH（默认，随宿主的浅色/深色一起变）/ 浅色 / 深色。插件只读宿主的主题信号，不写宿主 DOM，和别的皮肤插件不冲突。
+- **升级不丢数据**：工作区带版本号与迁移阶梯，v1 → v2 自动升级；Host 在写盘前会把旧版本另存为 `workspace.v1.backup.json`，并在每次写入前留一份 `workspace.prev.json`。存储里的工作区若过不了校验，会**只读打开**并另存原稿，绝不拿示例桌面覆盖。
+- **切换不丢状态**：切到 DSH 其它界面再回来，窗口、以及每个应用正在看的东西（选中的纸页、日历停在哪天、便签滚到哪、画纸开哪张、设置哪个分区）都会复原。
 
 ## 安装
 
@@ -40,7 +45,7 @@ DSH → Plugins → Add plugin，填：
 dsh-plugin-control-your-schedule
 ```
 
-也可以带版本：`dsh-plugin-control-your-schedule@0.1.6`。官方源与国内镜像（npmmirror）都已同步。
+也可以带版本：`dsh-plugin-control-your-schedule@0.2.3`。
 
 ### GitHub（备选，不需要 npm 时）
 
@@ -99,8 +104,15 @@ python tools/build_page.py
 # 校验产物是否与源码一致（CI 用）
 python tools/build_page.py --check
 
-# 项目门禁（页面契约 + DOM 嵌套 + 构建 + 宿主路由持久化）
+# 项目门禁（页面契约 + DOM 嵌套 + 构建 + 迁移 + 宿主路由持久化）
 python smoke/run_all_checks.py
+
+# 连真机浏览器一起跑（需要本机有 Edge/Chrome；不加 --cdp 时该套件只算 SKIP，不算通过）
+python smoke/run_all_checks.py --cdp
+
+# 单独跑迁移与真机页面检查
+node smoke/migrate_test.mjs
+node smoke/page_e2e.mjs
 ```
 
 | 路径 | 作用 |
@@ -111,13 +123,19 @@ python smoke/run_all_checks.py
 | `client.js` | 构建产物，禁止手改 |
 | `tools/build_page.py` | 构建脚本 |
 | `smoke/run_all_checks.py` | 项目门禁 |
-| `smoke/host_route_test.mjs` | Host 持久化路由测试 |
+| `smoke/host_route_test.mjs` | Host 持久化路由 + 升级备份 + 字体路由测试 |
+| `smoke/migrate_test.mjs` | 迁移门禁：v1 快照升 v2 后逐字段比对，含反向用例 |
+| `smoke/page_e2e.mjs` | 真机页面检查（无头浏览器，25 项断言） |
+| `assets/fonts/` | 内置手写体子集（霞鹜文楷，OFL）与来源/许可 |
 
 ### 设计取舍
 
 - UI 不重写成 React：原页面用同源 iframe 隔离挂载，窗口拖拽、自动保存与键盘交互保持原样。
 - 数据双写：页面先写浏览器存储保证即时可用，再通过 `postMessage` → Host 路由落盘到 DSH 数据目录；重开时选择较新的快照。
-- 无第三方运行时依赖；Host 只用 Node 内置模块，构建只用 Python 标准库。
+- 单一加载闸门：Host 快照 / IndexedDB / localStorage / 恢复日志 / 导入文件全部先过 `ingestWorkspace`（迁移阶梯 + 当前版本严格校验），不存在第二条版本比较。
+- 持久待办用「模板 + 读时投影」，不物化每日实例：跨天只重绘、零写盘，计数天然「只算一个」。
+- 主题只读不写：读宿主 `body[data-ds-dark-theme]`，读不到再退回 `prefers-color-scheme`。
+- 无第三方运行时依赖；Host 只用 Node 内置模块，构建只用 Python 标准库。字体子集化脚本额外需要 `fonttools`（仅开发期，产物已入库）。
 
 ## 更新日志与许可
 

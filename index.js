@@ -1,12 +1,18 @@
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export const name = 'dsh-plugin-control-your-schedule';
 export const inject = ['connection'];
 
 const ROUTE = '/api/control-your-schedule/workspace';
+const FONT_ROUTE = '/api/control-your-schedule/font';
 const MAX_BYTES = 32 * 1024 * 1024;
+
+/* The desk lives in a same-origin srcdoc iframe, so the bundled handwriting
+   font is served from here instead of being inlined into the page bundle. */
+const FONT_FILE = join(dirname(fileURLToPath(import.meta.url)), 'assets', 'fonts', 'lxgw-wenkai-hand.woff2');
 
 function dshHome() {
   const override = process.env.DSH_HOME;
@@ -53,9 +59,59 @@ async function renameWithRetry(from, to) {
   throw last;
 }
 
+/**
+ * Before the first write that changes the stored schema version, keep the old
+ * file as workspace.v<old>.backup.json. This is schema-agnostic on purpose: the
+ * host must not learn the workspace schema, it only has to make rollback and
+ * recovery possible when a user upgrades the plugin.
+ */
+async function backupOnVersionChange(nextVersion) {
+  const file = workspaceFile();
+  let previous;
+  try {
+    previous = JSON.parse(await readFile(file, 'utf8'));
+  } catch (error) {
+    if (error && error.code === 'ENOENT') return null;
+    return null;
+  }
+  const oldVersion = previous && previous.snapshot ? previous.snapshot.version : undefined;
+  if (oldVersion === undefined || oldVersion === nextVersion) return null;
+  const backup = join(dirname(file), 'workspace.v' + String(oldVersion) + '.backup.json');
+  try {
+    await writeFile(backup, JSON.stringify(previous), { encoding: 'utf8', flag: 'wx' });
+    return backup;
+  } catch (error) {
+    // EEXIST: an earlier backup of that version is already the authoritative one.
+    if (error && error.code === 'EEXIST') return backup;
+    return null;
+  }
+}
+
+/**
+ * Keep the immediately previous file as workspace.prev.json before every write.
+ * The versioned backup only fires when the schema moves; this one also covers
+ * same-version overwrites (external edits, a reinstall, a bad import), which is
+ * exactly the case where a rejected snapshot used to vanish without a copy.
+ */
+async function keepPreviousFile() {
+  const file = workspaceFile();
+  try {
+    const previous = await readFile(file, 'utf8');
+    if (!previous.trim()) return null;
+    const target = join(dirname(file), 'workspace.prev.json');
+    await writeFile(target, previous, 'utf8');
+    return target;
+  } catch (error) {
+    if (error && error.code === 'ENOENT') return null;
+    return null;
+  }
+}
+
 async function writeWorkspace(snapshot) {
   const file = workspaceFile();
   await mkdir(dirname(file), { recursive: true });
+  await backupOnVersionChange(snapshot && snapshot.version);
+  await keepPreviousFile();
   const temp = file + '.' + process.pid + '.' + Date.now() + '.tmp';
   try {
     await writeFile(temp, JSON.stringify({ savedAt: Date.now(), snapshot }), 'utf8');
@@ -79,6 +135,28 @@ export function apply(ctx) {
     console.warn('control-your-schedule: connection.fetch is unavailable; host persistence disabled');
     return;
   }
+
+  ctx.effect(() => register({
+    path: FONT_ROUTE,
+    methods: ['GET'],
+    fetch: async () => {
+      try {
+        const bytes = await readFile(FONT_FILE);
+        return new Response(bytes, {
+          status: 200,
+          headers: {
+            'content-type': 'font/woff2',
+            'content-length': String(bytes.byteLength),
+            // Immutable per version: the filename is stable, so revalidate cheaply.
+            'cache-control': 'public, max-age=604800',
+          },
+        });
+      } catch (error) {
+        // Missing font is a cosmetic fallback (system Kai), never a hard failure.
+        return new Response('font unavailable', { status: 404, headers: { 'cache-control': 'no-store' } });
+      }
+    },
+  }), 'control-your-schedule: bundled handwriting font');
 
   ctx.effect(() => register({
     path: ROUTE,

@@ -1,14 +1,23 @@
 <!doctype html>
-<html lang="zh-CN" data-paper="cream" data-motion="system">
+<html lang="zh-CN" data-paper="cream" data-motion="system" data-theme="light" data-hand="kai">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="color-scheme" content="light">
+  <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#eee4d1">
   <meta name="description" content="PAPER OS · 纸屿 — 便签、纸页笔记、日历待办与画纸。">
   <title>PAPER OS · 纸屿</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='5' y='5' width='54' height='54' rx='7' fill='%23f7f0e2' stroke='%235c5a4e'/%3E%3Ctext x='32' y='43' font-size='31' text-anchor='middle' fill='%23a95f43' font-family='serif'%3E屿%3C/text%3E%3C/svg%3E">
   <style>
+/* 内置手写字（霞鹜文楷子集，OFL）：由 Host 在 /api/control-your-schedule/font 提供。
+   取不到时 font-family 会退回系统楷体，不会卡住渲染。 */
+@font-face {
+  font-family: "LXGW WenKai";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/api/control-your-schedule/font") format("woff2");
+}
 
 /* ===== src/styles/base.css ===== */
 /* ============================================================
@@ -20,6 +29,10 @@
   --font-ui: "Avenir Next", "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
   --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Songti SC", STSong, "Noto Serif CJK SC", "Source Han Serif SC", Georgia, serif;
   --font-hand: "Bradley Hand", "Kaiti SC", "KaiTi", "STKaiti", cursive;
+  --font-hand-builtin: "LXGW WenKai", "Kaiti SC", "KaiTi", "STKaiti", cursive;
+  --font-hand-system: "Xingkai SC", "STXingkai", "Kaiti SC", "KaiTi", "STKaiti", cursive;
+  --font-hand-paper: var(--font-serif);
+  --font-sticky: var(--font-hand-builtin);
 
   --ink: #34362f;
   --ink-soft: #5f6157;
@@ -76,6 +89,90 @@ html[data-paper="fog"] {
   --desk-wash: #edf0e6;
   --desk-ink: #7c8374;
 }
+
+/* 深色：同一套变量的第二组取值，组件 CSS 一行都不用改。
+   纸张、墨色、线条、便签纸都在这里重新定义。 */
+html[data-theme="dark"] {
+  color-scheme: dark;
+
+  --ink: #e4ddcd;
+  --ink-soft: #b6ae9d;
+  --ink-faint: #9b9282;
+  --ink-ghost: #7d7566;
+  --paper: #24231f;
+  --paper-raised: #2b2a25;
+  --paper-deep: #1e1d1a;
+  --paper-sink: #191814;
+  --paper-edge: #3a3831;
+  --line: rgba(226, 217, 197, 0.14);
+  --line-strong: rgba(226, 217, 197, 0.26);
+
+  --sage: #93a88a;
+  --sage-deep: #b0c3a6;
+  --sage-soft: #37402f;
+  --clay: #c98363;
+  --clay-deep: #dda184;
+  --clay-soft: #4a3428;
+  --indigo: #8fa9b9;
+  --indigo-deep: #a8c1cf;
+  --indigo-soft: #2c3a41;
+  --mustard: #c8a869;
+
+  --desk-a: #232220;
+  --desk-b: #1b1a18;
+  --desk-wash: #2a2926;
+  --desk-ink: #8d8474;
+
+  --note-bg: #322f28;
+  --note-accent: #6b6150;
+  --tape: rgba(210, 196, 168, 0.24);
+  --shadow-paper: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 30px 70px -34px rgba(0, 0, 0, 0.72), 0 4px 14px rgba(0, 0, 0, 0.3);
+  --shadow-soft: 0 12px 34px -20px rgba(0, 0, 0, 0.7), 0 2px 8px rgba(0, 0, 0, 0.25);
+  --paper-noise: none;
+  --grain: none;
+}
+
+html[data-theme="dark"][data-paper="oat"] {
+  --desk-a: #262320;
+  --desk-b: #1d1a17;
+  --desk-wash: #2c2823;
+}
+
+html[data-theme="dark"][data-paper="fog"] {
+  --desk-a: #22251f;
+  --desk-b: #1a1d18;
+  --desk-wash: #272b24;
+}
+
+/* 便签纸的暗色版本：颜色仍是同一个 id，只是换一套纸。 */
+html[data-theme="dark"] .sticky[data-color="butter"] { --note-bg: #3a3524; }
+html[data-theme="dark"] .sticky[data-color="peach"] { --note-bg: #3b2f27; }
+html[data-theme="dark"] .sticky[data-color="sage"] { --note-bg: #2c352a; }
+html[data-theme="dark"] .sticky[data-color="sky"] { --note-bg: #283135; }
+html[data-theme="dark"] .sticky[data-color="rose"] { --note-bg: #392b2b; }
+
+/* 便签字形：三档共用同一个变量，切换时只改 --font-sticky。 */
+html[data-hand="kai"] { --font-sticky: var(--font-hand-builtin); }
+html[data-hand="xing"] { --font-sticky: var(--font-hand-system); }
+html[data-hand="serif"] { --font-sticky: var(--font-hand-paper); }
+
+html[data-theme="dark"] .sticky__text {
+  color: #ece4d4;
+}
+
+html[data-theme="dark"] .sticky__text::placeholder {
+  color: rgba(236, 228, 212, 0.36);
+}
+
+html[data-theme="dark"] .cal-day__dot[data-priority="urgent-important"] { background: #b9756f; }
+html[data-theme="dark"] .cal-day__dot[data-priority="important"] { background: #b7a25c; }
+html[data-theme="dark"] .cal-day__dot[data-priority="urgent"] { background: #7f9ba8; }
+html[data-theme="dark"] .cal-day__dot[data-priority="none"] { background: #8b9c7f; }
+
+html[data-theme="dark"] .task-pip[data-priority="urgent-important"] { background: #b9756f; }
+html[data-theme="dark"] .task-pip[data-priority="important"] { background: #b7a25c; }
+html[data-theme="dark"] .task-pip[data-priority="urgent"] { background: #7f9ba8; }
+html[data-theme="dark"] .task-pip[data-priority="none"] { background: #8b9c7f; }
 
 *,
 *::before,
@@ -698,6 +795,29 @@ body.os-ready .boot {
   gap: 8px;
   pointer-events: none;
   transform: translateX(-50%);
+}
+
+.toast-region.is-corner {
+  right: 18px;
+  left: auto;
+  bottom: 22px;
+  width: auto;
+  max-width: min(320px, calc(100vw - 36px));
+  align-items: flex-end;
+  transform: none;
+}
+
+.toast-region.is-corner .toast {
+  padding: 6px 11px 6px 9px;
+  border-color: var(--line);
+  opacity: 0.78;
+  font-size: 13px;
+  box-shadow: 0 8px 18px -14px rgba(63, 48, 28, 0.4);
+}
+
+.toast-region.is-corner .toast::before {
+  width: 4px;
+  height: 4px;
 }
 
 .toast {
@@ -1436,7 +1556,7 @@ body.os-ready .os {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 0 0 17px;
+  margin: 22px 0 0;
   color: var(--desk-ink);
   font-size: 12px;
   font-weight: 700;
@@ -2856,6 +2976,8 @@ body.os-ready .os {
   min-height: 0;
   flex: 1 1 auto;
   overflow: hidden;
+  /* 窗口铺满工作区后会互相叠放：这一层必须不透明，否则下层内容会透上来。 */
+  background: var(--paper);
   border-radius: 0 0 var(--radius-win) var(--radius-win);
 }
 
@@ -3259,6 +3381,7 @@ body.is-window-resizing * {
   padding: 0 3px;
 }
 
+/* 抓手里只是提示；整张纸都能拖。 */
 .sticky__drag {
   display: flex;
   width: 22px;
@@ -3275,8 +3398,70 @@ body.is-window-resizing * {
   color: inherit;
   background: transparent;
   opacity: 0.45;
+  pointer-events: none;
+}
+
+.sticky {
   cursor: grab;
   touch-action: none;
+}
+
+.sticky__text {
+  cursor: text;
+  touch-action: auto;
+}
+
+.sticky.is-dragging {
+  cursor: grabbing;
+}
+
+.trash-list {
+  display: grid;
+  gap: 9px;
+  max-height: 46vh;
+  overflow: auto;
+}
+
+.trash-item {
+  display: grid;
+  gap: 4px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgba(255, 253, 247, 0.6);
+}
+
+.trash-item__text {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 14px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.trash-item__meta {
+  color: var(--ink-ghost);
+  font-size: 12px;
+}
+
+.trash-item__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.trash-empty {
+  margin: 6px 0;
+  color: var(--ink-ghost);
+  font-family: var(--font-serif);
+  font-size: 14px;
+}
+
+.trash-count {
+  margin-left: 5px;
+  color: var(--clay-deep);
+  font-variant-numeric: tabular-nums;
 }
 
 .sticky__drag:hover,
@@ -3355,8 +3540,8 @@ body.is-window-resizing * {
   border: 0;
   color: #3a392f;
   background: transparent;
-  font-family: var(--font-serif);
-  font-size: 15px;
+  font-family: var(--font-sticky);
+  font-size: 15.5px;
   letter-spacing: 0.015em;
   line-height: 1.75;
   outline: none;
@@ -4488,21 +4673,61 @@ body.is-window-resizing * {
 
 .cal-day__dots {
   display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-  min-height: 5px;
+  width: 100%;
+  min-height: 6px;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 3px;
   padding-left: 5px;
 }
 
-.cal-day__dot {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--sage);
+/* 未做完的在上面，做完的单独沉到格子底部：两类点的位置一眼能分开。 */
+.cal-day__dot-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
 }
 
-.cal-day__dot--done {
-  background: var(--ink-ghost);
+.cal-day__dot-row--done {
+  margin-top: auto;
+}
+
+.calendar-month__title-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.count-chip--month {
+  margin-left: 2px;
+  color: var(--ink-ghost);
+  font-size: 12px;
+}
+
+.cal-day__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--sage);
+  box-shadow: inset 0 0 0 1px rgba(60, 54, 42, 0.14);
+}
+
+.cal-day__dot[data-priority="urgent-important"] { background: #d8a4a0; }
+.cal-day__dot[data-priority="important"] { background: #d9c47c; }
+.cal-day__dot[data-priority="urgent"] { background: #a9c2cc; }
+.cal-day__dot[data-priority="none"] { background: #b5c3a8; }
+
+/* 完成 = 同一格、同一位置、只换灰色。
+   必须写成 .cal-day__dot.cal-day__dot--done：单类选择器(0-1-0)打不过上面
+   .cal-day__dot[data-priority="…"](0-2-0)，否则完成的点仍是优先级颜色。 */
+.cal-day__dot.cal-day__dot--done {
+  background: #9d9a90;
+  box-shadow: inset 0 0 0 1px rgba(60, 54, 42, 0.12);
+}
+
+html[data-theme="dark"] .cal-day__dot.cal-day__dot--done {
+  background: #6d6960;
 }
 
 .cal-day__more {
@@ -4567,6 +4792,94 @@ body.is-window-resizing * {
   border-bottom: 1px dotted rgba(89, 74, 53, 0.13);
 }
 
+/* 紧急程度只用一个色点表达，不写文字。 */
+.task-pip {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(60, 54, 42, 0.16);
+}
+
+.task-pip[data-priority="urgent-important"] { background: #d8a4a0; }
+.task-pip[data-priority="important"] { background: #d9c47c; }
+.task-pip[data-priority="urgent"] { background: #a9c2cc; }
+.task-pip[data-priority="none"] { background: #b5c3a8; }
+
+.task-item__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-ghost);
+  font-size: 12px;
+}
+
+.task-item__resolve {
+  padding: 0;
+  border: 0;
+  color: var(--ink-ghost);
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.task-item__resolve:hover {
+  color: var(--clay-deep);
+}
+
+.task-item.is-resolved .task-title {
+  color: var(--ink-ghost);
+}
+
+.priority-list {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 14px;
+}
+
+.priority-option {
+  display: grid;
+  align-items: center;
+  grid-template-columns: 10px auto;
+  gap: 3px 9px;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink-soft);
+  background: rgba(255, 253, 247, 0.5);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: border-color 0.14s, background 0.14s;
+}
+
+.priority-option:hover {
+  border-color: var(--line-strong);
+  background: rgba(255, 253, 247, 0.9);
+}
+
+.priority-option.is-active {
+  border-color: var(--ink-soft);
+  background: rgba(244, 239, 227, 0.95);
+}
+
+.priority-option__label {
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 14.5px;
+}
+
+.priority-option__hint {
+  grid-column: 2;
+  color: var(--ink-ghost);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .task-check {
   position: relative;
   display: grid;
@@ -4623,8 +4936,9 @@ body.is-window-resizing * {
 
 .task-item__meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 5px;
+  gap: 3px 5px;
   margin-top: 3px;
 }
 
@@ -4928,6 +5242,36 @@ body.is-window-resizing * {
   gap: 5px;
   overflow-x: auto;
   padding: 2px 1px;
+}
+
+.draw-nav {
+  display: grid;
+  width: 22px;
+  height: 26px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--ink-soft);
+  background: rgba(255, 253, 247, 0.6);
+  cursor: pointer;
+}
+
+.draw-nav:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+  background: rgba(255, 253, 247, 0.95);
+}
+
+.draw-nav:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+
+.draw-nav svg {
+  width: 11px;
+  height: 11px;
 }
 
 .draw-gallery::-webkit-scrollbar {
@@ -6606,6 +6950,551 @@ body.is-window-resizing * {
   border-radius: 12px;
 }
 
+
+/* ============================================================
+   深色层：整体重绘主要承载面。
+   只在 html[data-theme="dark"] 下生效，浅色一行都不受影响。
+   ============================================================ */
+html[data-theme="dark"] body {
+  color: var(--ink);
+  background: var(--desk-b);
+}
+
+html[data-theme="dark"] .os,
+html[data-theme="dark"] .stage,
+html[data-theme="dark"] #os {
+  background: linear-gradient(168deg, var(--desk-a), var(--desk-b));
+}
+
+html[data-theme="dark"] .desk-decor__wash {
+  opacity: 0.5;
+  background: radial-gradient(120% 90% at 50% 0%, rgba(120, 108, 88, 0.16), transparent 68%);
+}
+
+html[data-theme="dark"] .desk-decor__edge,
+html[data-theme="dark"] .desk-decor__fiber {
+  opacity: 0.22;
+}
+
+html[data-theme="dark"] .desk-decor__vertical,
+html[data-theme="dark"] .desk-decor__stamp {
+  color: rgba(228, 221, 205, 0.16);
+  border-color: rgba(228, 221, 205, 0.18);
+}
+
+html[data-theme="dark"] .topbar {
+  border-bottom-color: rgba(226, 217, 197, 0.12);
+  background: linear-gradient(180deg, rgba(46, 44, 39, 0.94), rgba(38, 36, 32, 0.9));
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+}
+
+html[data-theme="dark"] .brand__seal,
+html[data-theme="dark"] .topbar__btn,
+html[data-theme="dark"] .topbar__focus,
+html[data-theme="dark"] .clock,
+html[data-theme="dark"] .save-pill {
+  color: var(--ink-soft);
+}
+
+html[data-theme="dark"] .save-pill {
+  border-color: rgba(226, 217, 197, 0.16);
+  background: rgba(60, 57, 50, 0.6);
+}
+
+html[data-theme="dark"] .desk-intro__title {
+  color: rgba(232, 224, 206, 0.82);
+  text-shadow: none;
+}
+
+html[data-theme="dark"] .day-card {
+  border-color: rgba(226, 217, 197, 0.14);
+  background: linear-gradient(170deg, rgba(48, 45, 39, 0.96), rgba(40, 38, 33, 0.96));
+  box-shadow: 0 18px 40px -26px rgba(0, 0, 0, 0.85);
+}
+
+html[data-theme="dark"] .day-card__quote,
+html[data-theme="dark"] .day-card__task span,
+html[data-theme="dark"] .day-card__link {
+  color: var(--ink-soft);
+}
+
+html[data-theme="dark"] .day-card__link {
+  border-bottom-color: rgba(226, 217, 197, 0.24);
+}
+
+html[data-theme="dark"] .day-card__seal {
+  color: rgba(201, 131, 99, 0.8);
+  border-color: rgba(201, 131, 99, 0.5);
+}
+
+html[data-theme="dark"] .window {
+  border-color: rgba(226, 217, 197, 0.14);
+  background: var(--paper);
+  box-shadow: 0 26px 60px -30px rgba(0, 0, 0, 0.9), 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .window__titlebar {
+  border-bottom-color: rgba(226, 217, 197, 0.12);
+  background: linear-gradient(180deg, rgba(50, 47, 41, 0.98), rgba(42, 40, 35, 0.98));
+}
+
+html[data-theme="dark"] .window__app-name,
+html[data-theme="dark"] .window__title {
+  color: var(--ink-soft);
+}
+
+html[data-theme="dark"] .window__body,
+html[data-theme="dark"] .app {
+  background: var(--paper);
+}
+
+html[data-theme="dark"] .app-toolbar {
+  border-bottom-color: rgba(226, 217, 197, 0.12);
+  background: linear-gradient(180deg, rgba(48, 45, 39, 0.9), rgba(42, 40, 35, 0.86));
+}
+
+html[data-theme="dark"] .count-chip,
+html[data-theme="dark"] .save-state,
+html[data-theme="dark"] .app-toolbar .eyebrow {
+  color: var(--ink-ghost);
+}
+
+html[data-theme="dark"] .paper-btn {
+  border-color: rgba(226, 217, 197, 0.2);
+  color: var(--ink-soft);
+  background: rgba(58, 54, 47, 0.72);
+}
+
+html[data-theme="dark"] .paper-btn:hover {
+  border-color: rgba(226, 217, 197, 0.34);
+  background: rgba(70, 65, 56, 0.9);
+}
+
+html[data-theme="dark"] .paper-btn--ink {
+  color: #24231f;
+  background: #d8cfba;
+  border-color: #d8cfba;
+}
+
+html[data-theme="dark"] .text-input,
+html[data-theme="dark"] .notes-search,
+html[data-theme="dark"] .note-title-input,
+html[data-theme="dark"] .note-body,
+html[data-theme="dark"] .task-add input,
+html[data-theme="dark"] select {
+  border-color: rgba(226, 217, 197, 0.18);
+  color: var(--ink);
+  background: rgba(46, 44, 39, 0.9);
+}
+
+html[data-theme="dark"] .sticky-board {
+  background-color: var(--paper-deep);
+}
+
+html[data-theme="dark"] .notes-rail {
+  border-right-color: rgba(226, 217, 197, 0.12);
+  background: rgba(42, 40, 35, 0.9);
+}
+
+html[data-theme="dark"] .note-item,
+html[data-theme="dark"] .notes-list .is-active {
+  border-color: rgba(226, 217, 197, 0.1);
+}
+
+html[data-theme="dark"] .note-writing {
+  background: transparent;
+}
+
+html[data-theme="dark"] .calendar-month {
+  background: rgba(42, 40, 35, 0.6);
+}
+
+html[data-theme="dark"] .cal-day {
+  border-bottom-color: rgba(226, 217, 197, 0.08);
+  color: var(--ink-soft);
+  background: rgba(52, 49, 43, 0.5);
+}
+
+html[data-theme="dark"] .cal-day:hover {
+  background: rgba(66, 62, 54, 0.7);
+}
+
+html[data-theme="dark"] .cal-day.is-outside {
+  color: var(--ink-ghost);
+  background: rgba(36, 34, 30, 0.6);
+}
+
+html[data-theme="dark"] .cal-day.is-selected {
+  background: rgba(96, 108, 88, 0.36);
+}
+
+html[data-theme="dark"] .cal-day.is-selected .cal-day__num {
+  color: #24231f;
+  background: #d8cfba;
+}
+
+html[data-theme="dark"] .calendar-tasks {
+  border-left-color: rgba(226, 217, 197, 0.12);
+  background: linear-gradient(165deg, rgba(44, 41, 36, 0.9), rgba(38, 36, 32, 0.9));
+}
+
+html[data-theme="dark"] .task-item {
+  border-bottom-color: rgba(226, 217, 197, 0.1);
+}
+
+html[data-theme="dark"] .task-check {
+  border-color: rgba(226, 217, 197, 0.32);
+  background: rgba(46, 44, 39, 0.6);
+}
+
+html[data-theme="dark"] .draw-shelf,
+html[data-theme="dark"] .draw-controls {
+  border-color: rgba(226, 217, 197, 0.12);
+  background: rgba(42, 40, 35, 0.82);
+}
+
+html[data-theme="dark"] .draw-stage {
+  background: rgba(32, 30, 27, 0.9);
+}
+
+html[data-theme="dark"] .draw-card {
+  border-color: rgba(226, 217, 197, 0.14);
+  background: rgba(50, 47, 41, 0.8);
+}
+
+html[data-theme="dark"] .draw-card.is-active {
+  border-color: rgba(226, 217, 197, 0.4);
+  background: rgba(66, 62, 53, 0.9);
+}
+
+html[data-theme="dark"] .settings-nav {
+  border-right-color: rgba(226, 217, 197, 0.12);
+  background: rgba(40, 38, 33, 0.7);
+}
+
+html[data-theme="dark"] .settings-nav button.is-active {
+  border-color: rgba(226, 217, 197, 0.18);
+  background: rgba(68, 64, 55, 0.8);
+}
+
+html[data-theme="dark"] .setting-row,
+html[data-theme="dark"] .settings-head {
+  border-color: rgba(226, 217, 197, 0.12);
+}
+
+html[data-theme="dark"] .settings-note,
+html[data-theme="dark"] .setting-action {
+  border-color: rgba(226, 217, 197, 0.14);
+  background: rgba(50, 47, 41, 0.7);
+}
+
+html[data-theme="dark"] .paper-dialog {
+  border-color: rgba(226, 217, 197, 0.16);
+  color: var(--ink);
+  background: var(--paper-raised);
+}
+
+html[data-theme="dark"] .paper-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.62);
+}
+
+html[data-theme="dark"] .dialog-sheet {
+  background: var(--paper-raised);
+}
+
+html[data-theme="dark"] .palette-layer .palette,
+html[data-theme="dark"] .palette {
+  border-color: rgba(226, 217, 197, 0.16);
+  background: var(--paper-raised);
+}
+
+html[data-theme="dark"] .toast {
+  border-color: rgba(226, 217, 197, 0.2);
+  color: var(--ink);
+  background: rgba(56, 53, 46, 0.98);
+}
+
+html[data-theme="dark"] .toast--error {
+  background: #3a2b26;
+}
+
+html[data-theme="dark"] .dock {
+  border-color: rgba(226, 217, 197, 0.16);
+  background: linear-gradient(180deg, rgba(52, 49, 43, 0.96), rgba(42, 40, 35, 0.96));
+  box-shadow: 0 18px 40px -26px rgba(0, 0, 0, 0.9);
+}
+
+html[data-theme="dark"] .dock__btn {
+  background: rgba(64, 60, 52, 0.7);
+}
+
+html[data-theme="dark"] .dock__btn:hover {
+  background: rgba(80, 75, 65, 0.9);
+}
+
+html[data-theme="dark"] .first-run {
+  border-color: rgba(226, 217, 197, 0.16);
+  color: var(--ink-soft);
+  background: rgba(48, 45, 39, 0.95);
+}
+
+html[data-theme="dark"] .boot {
+  background: var(--desk-b);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(226, 217, 197, 0.22);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html[data-theme="dark"] .sticky__swatches,
+html[data-theme="dark"] .sticky__del {
+  color: rgba(236, 228, 212, 0.7);
+}
+
+html[data-theme="dark"] .sticky__tape {
+  background: rgba(210, 196, 168, 0.22);
+}
+
+/* 深色缺口：笔记编辑区、导览卡、废纸篓条目、紧急程度选项。
+   这几块之前漏了，实测是整片近白纸面（导览卡标题对比度约 1.2:1）。 */
+html[data-theme="dark"] .notes-editor,
+html[data-theme="dark"] .notes-editor__empty,
+html[data-theme="dark"] .settings-content,
+html[data-theme="dark"] .settings-app {
+  background: var(--paper);
+}
+
+html[data-theme="dark"] .editor-sheet,
+html[data-theme="dark"] .note-writing {
+  background: var(--paper-raised);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .note-body,
+html[data-theme="dark"] .note-title-input {
+  color: var(--ink);
+  background: transparent;
+}
+
+html[data-theme="dark"] .note-body::placeholder,
+html[data-theme="dark"] .note-title-input::placeholder {
+  color: var(--ink-ghost);
+}
+
+html[data-theme="dark"] .note-item {
+  border-color: rgba(226, 217, 197, 0.12);
+  color: var(--ink-soft);
+  background: rgba(52, 49, 43, 0.6);
+}
+
+html[data-theme="dark"] .note-item.is-active {
+  border-color: rgba(226, 217, 197, 0.22);
+  background: rgba(72, 68, 58, 0.9);
+}
+
+html[data-theme="dark"] .note-item__excerpt,
+html[data-theme="dark"] .note-item__meta {
+  color: var(--ink-ghost);
+}
+
+html[data-theme="dark"] .tour__card {
+  border-color: rgba(226, 217, 197, 0.18);
+  color: var(--ink);
+  background: var(--paper-raised);
+  box-shadow: 0 30px 70px -40px rgba(0, 0, 0, 0.9);
+}
+
+html[data-theme="dark"] .tour__title {
+  color: var(--ink);
+}
+
+html[data-theme="dark"] .tour__body,
+html[data-theme="dark"] .tour__step {
+  color: var(--ink-soft);
+}
+
+html[data-theme="dark"] .tour__btn {
+  border-color: rgba(226, 217, 197, 0.22);
+  color: var(--ink-soft);
+  background: rgba(62, 58, 50, 0.9);
+}
+
+html[data-theme="dark"] .tour__btn--primary {
+  border-color: #d8cfba;
+  color: #24231f;
+  background: #d8cfba;
+}
+
+html[data-theme="dark"] .trash-item {
+  border-color: rgba(226, 217, 197, 0.14);
+  background: rgba(52, 49, 43, 0.75);
+}
+
+html[data-theme="dark"] .priority-option {
+  border-color: rgba(226, 217, 197, 0.16);
+  color: var(--ink-soft);
+  background: rgba(52, 49, 43, 0.7);
+}
+
+html[data-theme="dark"] .priority-option:hover {
+  border-color: rgba(226, 217, 197, 0.3);
+  background: rgba(66, 62, 53, 0.95);
+}
+
+html[data-theme="dark"] .priority-option.is-active {
+  border-color: rgba(226, 217, 197, 0.42);
+  background: rgba(76, 71, 60, 0.95);
+}
+
+html[data-theme="dark"] .dialog-note,
+html[data-theme="dark"] .field-label,
+html[data-theme="dark"] .settings-section__intro {
+  color: var(--ink-ghost);
+}
+
+/* 待办行右侧两枚控件：色点 + 状态胶囊。 */
+.task-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 1px;
+}
+
+.task-pip-btn {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+
+.task-pip-btn:hover,
+.task-pip-btn:focus-visible {
+  border-color: var(--line-strong);
+  background: rgba(255, 253, 247, 0.7);
+}
+
+.task-pip-btn::after {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--sage);
+  box-shadow: inset 0 0 0 1px rgba(60, 54, 42, 0.16);
+  content: "";
+}
+
+.task-pip-btn[data-priority="urgent-important"]::after { background: #d8a4a0; }
+.task-pip-btn[data-priority="important"]::after { background: #d9c47c; }
+.task-pip-btn[data-priority="urgent"]::after { background: #a9c2cc; }
+.task-pip-btn[data-priority="none"]::after { background: #b5c3a8; }
+
+html[data-theme="dark"] .task-pip-btn[data-priority="urgent-important"]::after { background: #b9756f; }
+html[data-theme="dark"] .task-pip-btn[data-priority="important"]::after { background: #b7a25c; }
+html[data-theme="dark"] .task-pip-btn[data-priority="urgent"]::after { background: #7f9ba8; }
+html[data-theme="dark"] .task-pip-btn[data-priority="none"]::after { background: #8b9c7f; }
+
+.task-repeat {
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink-ghost);
+  background: rgba(255, 253, 247, 0.6);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.task-repeat:hover,
+.task-repeat:focus-visible {
+  border-color: var(--line-strong);
+  color: var(--ink-soft);
+}
+
+.task-repeat.is-daily {
+  border-color: rgba(155, 83, 58, 0.4);
+  color: var(--clay-deep);
+  background: rgba(234, 210, 193, 0.4);
+}
+
+html[data-theme="dark"] .task-repeat {
+  background: rgba(52, 49, 43, 0.7);
+}
+
+html[data-theme="dark"] .task-repeat.is-daily {
+  border-color: rgba(201, 131, 99, 0.5);
+  color: #dda184;
+  background: rgba(74, 52, 40, 0.7);
+}
+
+/* 四色浮层 */
+.priority-popover {
+  position: fixed;
+  z-index: 9000;
+  display: grid;
+  width: 232px;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid rgba(85, 71, 51, 0.22);
+  border-radius: 10px;
+  background: rgba(253, 249, 240, 0.99);
+  box-shadow: 0 20px 40px -22px rgba(63, 48, 28, 0.55), 0 2px 8px rgba(63, 48, 28, 0.1);
+}
+
+html[data-theme="dark"] .priority-popover {
+  border-color: rgba(226, 217, 197, 0.2);
+  background: var(--paper-raised);
+}
+
+.priority-popover__item {
+  display: grid;
+  align-items: center;
+  grid-template-columns: 12px 1fr;
+  gap: 2px 8px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--ink-soft);
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+.priority-popover__item:hover,
+.priority-popover__item:focus-visible {
+  background: rgba(89, 74, 53, 0.08);
+}
+
+.priority-popover__item.is-active {
+  background: rgba(89, 74, 53, 0.12);
+}
+
+html[data-theme="dark"] .priority-popover__item:hover,
+html[data-theme="dark"] .priority-popover__item:focus-visible {
+  background: rgba(226, 217, 197, 0.1);
+}
+
+html[data-theme="dark"] .priority-popover__item.is-active {
+  background: rgba(226, 217, 197, 0.16);
+}
+
+.priority-popover__label {
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 14px;
+}
+
 </style>
 </head>
 <body class="is-booting">
@@ -6627,7 +7516,7 @@ body.is-window-resizing * {
           </span>
         </button>
         <span class="topbar__stitch" aria-hidden="true"></span>
-        <p class="topbar__focus" id="focus-status">选择底部应用开始</p>
+        <p class="topbar__focus" id="focus-status" aria-live="polite"></p>
       </div>
       <div class="topbar__right">
         <button class="save-pill" id="save-pill" type="button" title="点击立即保存">
@@ -6657,14 +7546,12 @@ body.is-window-resizing * {
       </div>
 
       <section class="desk-intro" aria-label="桌面">
-        <p class="desk-intro__eyebrow">YOUR PAPER DESK</p>
         <h1 class="desk-intro__title">把今天，<br>写成一张纸。</h1>
-        <p class="desk-intro__caption">从底部应用坞打开应用 · 窗口可以拖动，也可以缩放</p>
+        <p class="desk-intro__eyebrow">YOUR PAPER DESK</p>
       </section>
 
       <aside class="day-card" id="day-card" aria-label="今日纸签">
         <div class="day-card__tape" aria-hidden="true"></div>
-        <span class="day-card__kicker">TODAY'S PAPER · 今日待办</span>
         <div class="day-card__date">
           <span class="day-card__num" id="day-num">17</span>
           <span class="day-card__meta">
@@ -6676,14 +7563,12 @@ body.is-window-resizing * {
         <p class="day-card__quote" id="day-quote">今天还没有待办。</p>
         <div class="day-card__tasks" id="day-tasks" aria-label="今天的待办"></div>
         <button class="day-card__link" id="day-open" type="button">翻开日历 <span aria-hidden="true">↗</span></button>
-        <span class="day-card__seal" aria-hidden="true">宜<br>书写</span>
+        <span class="day-card__seal" id="day-seal" aria-hidden="true">宜<br>书写</span>
       </aside>
 
       <aside class="handheld-card" id="handheld-card" aria-label="今日纸签">
-        <span class="handheld-card__kicker">TODAY'S PAPER · 今日</span>
-        <p class="handheld-card__quote" id="handheld-quote">点底部应用坞开始</p>
+        <p class="handheld-card__quote" id="handheld-quote"></p>
         <span class="handheld-card__date" id="handheld-date">10月17日 · 星期六</span>
-        <span class="handheld-card__seal" aria-hidden="true">宜<br>书写</span>
       </aside>
 
       <div class="first-run" id="first-run" hidden>
@@ -6716,9 +7601,96 @@ body.is-window-resizing * {
   'use strict';
 
   var P = window.PaperOS = window.PaperOS || {};
-  P.version = '1.0.0';
   P.codename = '纸屿';
-  P.schemaVersion = 1;
+  /* 版本号由 tools/build_page.py 从 package.json 注入，页面里不再有第二份事实源。 */
+  P.version = '__PAGE_VERSION__';
+  P.schemaVersion = 2;
+
+  /* 待办的紧急程度：顺序即强弱（数字越小越急），颜色沿用便签色板。
+     存语义 id 而不是 q1..q4，重排表项不会改写既有数据的含义。 */
+  P.TASK_PRIORITIES = [
+    { id: 'urgent-important', label: '重要且紧急', color: 'rose', rank: 0, hint: '今天就得动手，拖下去会出事。' },
+    { id: 'important', label: '重要但不紧急', color: 'butter', rank: 1, hint: '值得慢慢做，决定以后的样子。' },
+    { id: 'urgent', label: '紧急但不重要', color: 'sky', rank: 2, hint: '有人等着，但做完就过去了。' },
+    { id: 'none', label: '不紧急也不重要', color: 'sage', rank: 3, hint: '有空再说，没空也不必内疚。' }
+  ];
+  P.priorityById = function (id) {
+    for (var i = 0; i < P.TASK_PRIORITIES.length; i += 1) {
+      if (P.TASK_PRIORITIES[i].id === id) return P.TASK_PRIORITIES[i];
+    }
+    return P.TASK_PRIORITIES[P.TASK_PRIORITIES.length - 1];
+  };
+  P.TASK_REPEATS = [
+    { id: 'once', label: '仅限今日', hint: '只在这一天出现。' },
+    { id: 'daily', label: '每天 · 直到解决', hint: '从今天起每天出现一次，做完当天就灰掉。' }
+  ];
+
+  /* ============================================================
+     工作区版本迁移阶梯
+     - 只在这里认识旧版本；validateWorkspace 只认当前版本。
+     - 迁移块不碰 DOM / P.util，可在 node 里用 new Function 单独跑。
+     - 新增 v3：往 MIGRATIONS 加一项，别改这里的循环。
+     ============================================================ */
+  /* @migrate-begin */
+  var MIGRATIONS = {
+    1: function v1ToV2(raw) {
+      var out = JSON.parse(JSON.stringify(raw));
+      out.version = 2;
+      var tasks = Array.isArray(out.tasks) ? out.tasks : [];
+      for (var i = 0; i < tasks.length; i += 1) {
+        var task = tasks[i] || {};
+        var doneKey = typeof task.date === 'string' ? task.date : '';
+        task.doneOn = task.done && doneKey ? [doneKey] : [];
+        task.priority = 'none';
+        task.repeat = 'once';
+        task.resolvedAt = 0;
+        delete task.done;
+        tasks[i] = task;
+      }
+      out.tasks = tasks;
+      var stickies = Array.isArray(out.stickies) ? out.stickies : [];
+      for (var s = 0; s < stickies.length; s += 1) {
+        if (stickies[s] && typeof stickies[s] === 'object' && typeof stickies[s].z !== 'number') {
+          stickies[s].z = s + 1;
+        }
+      }
+      out.stickies = stickies;
+      if (!out.meta || typeof out.meta !== 'object') out.meta = {};
+      out.meta.migratedFrom = 1;
+      out.meta.migratedAt = Date.now();
+      out.meta.updatedAt = Date.now();
+      return out;
+    }
+  };
+
+  P.migrateWorkspace = function (raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      return { ok: false, reason: 'format', detail: 'not an object' };
+    }
+    if (raw.format !== 'paper-os/workspace') {
+      return { ok: false, reason: 'format', detail: 'missing format marker' };
+    }
+    var version = Number(raw.version);
+    if (!Number.isFinite(version) || version < 1) {
+      return { ok: false, reason: 'format', detail: 'bad version field' };
+    }
+    if (version > P.schemaVersion) {
+      return { ok: false, reason: 'newer', detail: 'file v' + version + ' > app v' + P.schemaVersion };
+    }
+    var snapshot = raw;
+    var guard = 0;
+    while (Number(snapshot.version) < P.schemaVersion) {
+      var step = MIGRATIONS[Number(snapshot.version)];
+      if (typeof step !== 'function') {
+        return { ok: false, reason: 'shape', detail: 'no migration from v' + snapshot.version };
+      }
+      snapshot = step(snapshot);
+      guard += 1;
+      if (guard > 20) return { ok: false, reason: 'shape', detail: 'migration loop' };
+    }
+    return { ok: true, snapshot: snapshot, from: version };
+  };
+  /* @migrate-end */
   P.paperColors = ['#fcf7eb', '#f4e6a9', '#efd2b9', '#d5dfc5', '#cfdde2', '#ebd0cb'];
   P.DRAW_PAPER = '#fcf7eb';
 
@@ -7077,6 +8049,7 @@ body.is-window-resizing * {
 
   // Toast policy: exactly one on screen at a time, short dwell.
   // A newer message replaces the current one in place instead of stacking.
+  var TOAST_ENABLED = false;
   var TOAST_DWELL = { info: 1600, warn: 2200, error: 3200 };
   var TOAST_DWELL_MAX = 3200;
   var toastTimer = 0;
@@ -7084,6 +8057,9 @@ body.is-window-resizing * {
   var currentToastText = '';
 
   function toast(message, options) {
+    /* 用户明确要求去掉所有浮层提示：保留调用点与签名，只让它不显示。
+       删调用会留下空 if 块，把页面结构改坏。 */
+    if (TOAST_ENABLED === false) return { dismiss: function () {} };
     var opts = options || {};
     var region = document.getElementById('toasts');
     if (!region) return function () {};
@@ -7114,6 +8090,8 @@ body.is-window-resizing * {
       });
       node.appendChild(action);
     }
+    /* 「收好桌面」这类确认性提示不抢视线：右下角、小一号、淡一点。 */
+    region.classList.toggle('is-corner', opts.placement === 'corner');
     region.appendChild(node);
     currentToast = node;
     currentToastText = signature;
@@ -7410,6 +8388,8 @@ body.is-window-resizing * {
         paperTone: 'cream',
         showGrid: true,
         motion: 'system',
+        theme: 'system',
+        handFont: 'kai',
         welcomeDismissed: false
       },
       meta: {
@@ -7753,8 +8733,45 @@ body.is-window-resizing * {
 
   /* ---------------- stickies ---------------- */
 
+  function topStickyZ() {
+    var top = 0;
+    for (var i = 0; i < state.stickies.length; i += 1) {
+      var z = Number(state.stickies[i].z);
+      if (Number.isFinite(z) && z > top) top = z;
+    }
+    return top;
+  }
+
+  /* 桌面上的便签 = 不在废纸篓里的那些。
+     顺序 = 叠放顺序：最后碰过的那张在最上面。
+     废纸篓里的内容只能通过 listTrashedStickies() 读到，不参与排版、配色与空态判断。 */
   function listStickies() {
-    return state.stickies.slice().sort(function (a, b) { return a.createdAt - b.createdAt; });
+    return state.stickies
+      .filter(function (s) { return !(Number(s.trashedAt) > 0); })
+      .sort(function (a, b) {
+        var az = Number.isFinite(Number(a.z)) ? Number(a.z) : 0;
+        var bz = Number.isFinite(Number(b.z)) ? Number(b.z) : 0;
+        if (az !== bz) return az - bz;
+        return a.createdAt - b.createdAt;
+      });
+  }
+
+  /* 把一张便签提到最上面。已经是最上面时不动，避免无谓写盘。 */
+  function raiseSticky(id) {
+    var sticky = state.stickies.find(function (s) { return s.id === id; });
+    if (!sticky) return null;
+    var top = topStickyZ();
+    if (Number(sticky.z) === top && top > 0) return U.clone(sticky);
+    if (top >= 100000) {
+      /* z 只用于叠放顺序，不该无限增长：到顶后按当前顺序归一化成 1..n。 */
+      var ordered = listStickies();
+      ordered.forEach(function (item, index) { item.z = index + 1; });
+      top = ordered.length;
+    }
+    sticky.z = top + 1;
+    sticky.updatedAt = Date.now();
+    commit('stickies', { action: 'update', id: id });
+    return U.clone(sticky);
   }
 
   function createSticky(data) {
@@ -7767,6 +8784,7 @@ body.is-window-resizing * {
       x: Number.isFinite(Number(info.x)) ? Math.max(0, Number(info.x)) : 26,
       y: Number.isFinite(Number(info.y)) ? Math.max(0, Number(info.y)) : 26,
       sample: !!info.sample,
+      z: Number.isFinite(Number(info.z)) ? Number(info.z) : topStickyZ() + 1,
       createdAt: now,
       updatedAt: now
     };
@@ -7788,7 +8806,41 @@ body.is-window-resizing * {
     return U.clone(sticky);
   }
 
+  /* 删除 = 进废纸篓，保留 7 天。空便签直接彻底删掉（没有内容可找回）。 */
+  var TRASH_DAYS = 7;
+
   function deleteSticky(id) {
+    var sticky = state.stickies.find(function (s) { return s.id === id; });
+    if (!sticky) return null;
+    if (!String(sticky.text || '').trim()) {
+      state.stickies = state.stickies.filter(function (s) { return s.id !== id; });
+      commit('stickies', { action: 'delete', id: id });
+      return U.clone(sticky);
+    }
+    sticky.trashedAt = Date.now();
+    sticky.updatedAt = Date.now();
+    commit('stickies', { action: 'trash', id: id });
+    return U.clone(sticky);
+  }
+
+  function listTrashedStickies() {
+    pruneTrash();
+    return state.stickies
+      .filter(function (s) { return Number(s.trashedAt) > 0; })
+      .sort(function (a, b) { return Number(b.trashedAt) - Number(a.trashedAt); });
+  }
+
+  function restoreSticky(id) {
+    var sticky = state.stickies.find(function (s) { return s.id === id; });
+    if (!sticky || !(Number(sticky.trashedAt) > 0)) return null;
+    sticky.trashedAt = 0;
+    sticky.z = topStickyZ() + 1;
+    sticky.updatedAt = Date.now();
+    commit('stickies', { action: 'restore', id: id });
+    return U.clone(sticky);
+  }
+
+  function purgeSticky(id) {
     var sticky = state.stickies.find(function (s) { return s.id === id; });
     if (!sticky) return null;
     state.stickies = state.stickies.filter(function (s) { return s.id !== id; });
@@ -7796,35 +8848,107 @@ body.is-window-resizing * {
     return U.clone(sticky);
   }
 
-  /* ---------------- tasks ---------------- */
-
-  function listTasks(date) {
-    if (!date) return state.tasks.slice();
-    return state.tasks
-      .filter(function (task) { return task.date === date; })
-      .sort(function (a, b) {
-        if (a.done !== b.done) return a.done ? 1 : -1;
-        return a.createdAt - b.createdAt;
-      });
-  }
-
-  function taskSummary(date) {
-    var list = state.tasks.filter(function (task) { return task.date === date; });
-    return { total: list.length, done: list.filter(function (task) { return task.done; }).length };
-  }
-
-  function monthTaskCounts(prefix) {
-    var counts = {};
-    state.tasks.forEach(function (task) {
-      if (!task.date || task.date.indexOf(prefix) !== 0) return;
-      if (!counts[task.date]) counts[task.date] = { total: 0, done: 0 };
-      counts[task.date].total += 1;
-      if (task.done) counts[task.date].done += 1;
+  /* 超过 7 天的废纸篓条目自动彻底删除。只在有人读废纸篓 / 启动时跑。 */
+  function pruneTrash(now) {
+    var stamp = Number(now) || Date.now();
+    var cutoff = stamp - TRASH_DAYS * 24 * 60 * 60 * 1000;
+    var expired = state.stickies.filter(function (s) {
+      var at = Number(s.trashedAt);
+      return at > 0 && at < cutoff;
     });
-    return counts;
+    if (!expired.length) return 0;
+    expired.forEach(function (s) { s.trashedAt = s.trashedAt; });
+    var ids = expired.map(function (s) { return s.id; });
+    state.stickies = state.stickies.filter(function (s) { return ids.indexOf(s.id) === -1; });
+    commit('stickies', { action: 'prune', count: ids.length });
+    return ids.length;
   }
 
-  function addTask(date, title) {
+  /* ---------------- tasks ----------------
+     两类待办同形，只有 repeat 不同：
+       once  : date = 唯一出现的日子
+       daily : date = 首次出现的日子；从那天起每天都有一个"当前实例"，
+               但日历永远只铺"勾过的日子"，不铺未来。
+     完成态只存在 doneOn 里（勾过的日子列表），没有 done 布尔。
+     resolvedAt > 0 = 永久收起，未来不再长新实例。
+     ------------------------------------------ */
+
+  function todayKeySafe() {
+    return U.todayKey();
+  }
+
+  function taskDaysDone(task) {
+    return Array.isArray(task.doneOn) ? task.doneOn : [];
+  }
+
+  function taskDoneOn(task, day) {
+    return taskDaysDone(task).indexOf(day) !== -1;
+  }
+
+  /* 这一天要不要在这天出现。today 用于判断「今天的当前实例」。 */
+  function taskVisibleOn(task, day, today) {
+    if (task.repeat === 'daily') {
+      if (day < task.date) return false;
+      /* 锚定日必须可见：在这一天把待办改成「每天」时，它不能当场消失。 */
+      if (day === task.date) return true;
+      if (taskDoneOn(task, day)) return true;
+      if (task.resolvedAt > 0) {
+        var resolvedKey = U.dateKey(new Date(task.resolvedAt));
+        return day === resolvedKey;
+      }
+      return day === today;
+    }
+    return task.date === day;
+  }
+
+  /* 一天里可见的待办，已按「紧急程度 → 创建时间」排好序（与 done 无关，
+     这样勾掉一条不会让圆点换位）。 */
+  function projectTasks(day, today) {
+    var todayKey = today || todayKeySafe();
+    var out = [];
+    for (var i = 0; i < state.tasks.length; i += 1) {
+      var task = state.tasks[i];
+      if (!taskVisibleOn(task, day, todayKey)) continue;
+      out.push(projectTask(task, day, todayKey));
+    }
+    out.sort(compareTasks);
+    return out;
+  }
+
+  function projectTask(task, day, todayKey) {
+    var priority = P.priorityById(task.priority);
+    return {
+      id: task.id,
+      date: task.date,
+      title: task.title,
+      priority: priority.id,
+      priorityLabel: priority.label,
+      color: priority.color,
+      rank: priority.rank,
+      repeat: task.repeat === 'daily' ? 'daily' : 'once',
+      done: taskDoneOn(task, day),
+      resolved: task.resolvedAt > 0,
+      resolvedAt: task.resolvedAt,
+      checkins: taskDaysDone(task).length,
+      day: day,
+      current: task.repeat === 'daily' && day === todayKey && !taskDoneOn(task, day) && !(task.resolvedAt > 0),
+      sample: !!task.sample,
+      createdAt: task.createdAt,
+      updatedAt: task.updatedAt
+    };
+  }
+
+  function compareTasks(a, b) {
+    if (a.rank !== b.rank) return a.rank - b.rank;
+    return a.createdAt - b.createdAt;
+  }
+
+  function priorityOf(id) {
+    return P.priorityById(id).id;
+  }
+
+  function addTask(date, title, options) {
+    var opts = options || {};
     var key = String(date || '');
     if (!U.parseDateKey(key)) throw new Error('日期格式无效。');
     var clean = String(title || '').replace(/\s+/g, ' ').trim().slice(0, 300);
@@ -7834,7 +8958,10 @@ body.is-window-resizing * {
       id: U.uid('task'),
       date: key,
       title: clean,
-      done: false,
+      priority: priorityOf(opts.priority),
+      repeat: opts.repeat === 'daily' ? 'daily' : 'once',
+      doneOn: [],
+      resolvedAt: 0,
       sample: false,
       createdAt: now,
       updatedAt: now
@@ -7848,14 +8975,103 @@ body.is-window-resizing * {
     var task = state.tasks.find(function (t) { return t.id === id; });
     if (!task) return null;
     var changes = patch || {};
+    var changed = false;
     if (Object.prototype.hasOwnProperty.call(changes, 'title')) {
       var clean = String(changes.title || '').replace(/\s+/g, ' ').trim().slice(0, 300);
-      if (clean) task.title = clean;
+      if (clean && clean !== task.title) { task.title = clean; changed = true; }
     }
-    if (Object.prototype.hasOwnProperty.call(changes, 'done')) task.done = !!changes.done;
-    if (Object.prototype.hasOwnProperty.call(changes, 'date') && U.parseDateKey(changes.date)) task.date = changes.date;
+    if (Object.prototype.hasOwnProperty.call(changes, 'priority')) {
+      var nextPriority = priorityOf(changes.priority);
+      if (nextPriority !== task.priority) { task.priority = nextPriority; changed = true; }
+    }
+    if (Object.prototype.hasOwnProperty.call(changes, 'repeat')) {
+      var nextRepeat = changes.repeat === 'daily' ? 'daily' : 'once';
+      if (nextRepeat !== task.repeat) { task.repeat = nextRepeat; changed = true; }
+    }
+    if (Object.prototype.hasOwnProperty.call(changes, 'date') && U.parseDateKey(changes.date) && changes.date !== task.date) {
+      task.date = changes.date;
+      changed = true;
+    }
+    if (Object.prototype.hasOwnProperty.call(changes, 'resolvedAt')) {
+      var nextResolved = Number(changes.resolvedAt) || 0;
+      if (nextResolved !== task.resolvedAt) { task.resolvedAt = nextResolved; changed = true; }
+    }
+    if (Array.isArray(changes.doneOn)) {
+      task.doneOn = cleanDayKeys(changes.doneOn);
+      changed = true;
+    }
+    if (!changed) return U.clone(task);
     task.updatedAt = Date.now();
     commit('tasks', { action: 'update', id: id, date: task.date });
+    return U.clone(task);
+  }
+
+  function cleanDayKeys(list) {
+    var out = [];
+    for (var i = 0; i < list.length; i += 1) {
+      var key = String(list[i] || '');
+      if (!U.parseDateKey(key)) continue;
+      if (out.indexOf(key) === -1) out.push(key);
+    }
+    out.sort();
+    return out;
+  }
+
+  /* 勾选 / 取消勾选：只改「这一天的打卡记录」，不动别的日子。 */
+  function setTaskDone(id, day, done) {
+    var task = state.tasks.find(function (t) { return t.id === id; });
+    if (!task) return null;
+    var key = String(day || U.todayKey());
+    if (!U.parseDateKey(key)) return null;
+    var list = taskDaysDone(task).slice();
+    var at = list.indexOf(key);
+    if (done && at === -1) list.push(key);
+    if (!done && at !== -1) list.splice(at, 1);
+    task.doneOn = cleanDayKeys(list);
+    task.updatedAt = Date.now();
+    commit('tasks', { action: 'update', id: id, date: task.date });
+    return U.clone(task);
+  }
+
+  /* 永久收起：未来不再长新实例。已经勾过的日子保留在日历上（灰点）。 */
+  function resolveTask(id) {
+    var task = state.tasks.find(function (t) { return t.id === id; });
+    if (!task) return null;
+    if (task.resolvedAt > 0) return U.clone(task);
+    task.resolvedAt = Date.now();
+    task.updatedAt = Date.now();
+    commit('tasks', { action: 'update', id: id, date: task.date });
+    return U.clone(task);
+  }
+
+  function unresolveTask(id) {
+    var task = state.tasks.find(function (t) { return t.id === id; });
+    if (!task) return null;
+    if (!task.resolvedAt) return U.clone(task);
+    task.resolvedAt = 0;
+    task.updatedAt = Date.now();
+    commit('tasks', { action: 'update', id: id, date: task.date });
+    return U.clone(task);
+  }
+
+  /* 撤销删除用的原样回填：保留 doneOn / priority / repeat / resolvedAt。 */
+  function restoreTask(snapshot) {
+    if (!snapshot || typeof snapshot !== 'object') return null;
+    var now = Date.now();
+    var task = {
+      id: U.uid('task'),
+      date: U.parseDateKey(snapshot.date) ? snapshot.date : U.todayKey(),
+      title: String(snapshot.title || '').replace(/\s+/g, ' ').trim().slice(0, 300) || '未命名待办',
+      priority: priorityOf(snapshot.priority),
+      repeat: snapshot.repeat === 'daily' ? 'daily' : 'once',
+      doneOn: cleanDayKeys(Array.isArray(snapshot.doneOn) ? snapshot.doneOn : []),
+      resolvedAt: Number(snapshot.resolvedAt) || 0,
+      sample: !!snapshot.sample,
+      createdAt: Number(snapshot.createdAt) || now,
+      updatedAt: now
+    };
+    state.tasks.push(task);
+    commit('tasks', { action: 'create', date: task.date, id: task.id });
     return U.clone(task);
   }
 
@@ -7865,6 +9081,27 @@ body.is-window-resizing * {
     state.tasks = state.tasks.filter(function (t) { return t.id !== id; });
     commit('tasks', { action: 'delete', id: id, date: task.date });
     return U.clone(task);
+  }
+
+  /* 「本月 N 件」：条目数，不随打卡天数增长。daily 只要存续区间与本月相交就算 1 件。 */
+  function monthTaskCount(prefix, today) {
+    var todayKey = today || todayKeySafe();
+    var total = 0;
+    var recurring = 0;
+    state.tasks.forEach(function (task) {
+      var start = task.date || '';
+      if (task.repeat === 'daily') {
+        if (start.indexOf(prefix) > 0) return;
+        var endKey = task.resolvedAt > 0 ? U.dateKey(new Date(task.resolvedAt)) : todayKey;
+        if (endKey < prefix + '-01') return;
+        if (start > prefix + '-31') return;
+        total += 1;
+        recurring += 1;
+        return;
+      }
+      if (start.indexOf(prefix) === 0) total += 1;
+    });
+    return { total: total, recurring: recurring };
   }
 
   /* ---------------- preferences / metadata ---------------- */
@@ -7886,6 +9123,14 @@ body.is-window-resizing * {
     }
     if (Object.prototype.hasOwnProperty.call(changes, 'motion') && ['system', 'reduce'].indexOf(changes.motion) !== -1 && state.prefs.motion !== changes.motion) {
       state.prefs.motion = changes.motion;
+      changed = true;
+    }
+    if (Object.prototype.hasOwnProperty.call(changes, 'theme') && ['system', 'light', 'dark'].indexOf(changes.theme) !== -1 && state.prefs.theme !== changes.theme) {
+      state.prefs.theme = changes.theme;
+      changed = true;
+    }
+    if (Object.prototype.hasOwnProperty.call(changes, 'handFont') && ['kai', 'xing', 'serif'].indexOf(changes.handFont) !== -1 && state.prefs.handFont !== changes.handFont) {
+      state.prefs.handFont = changes.handFont;
       changed = true;
     }
     if (Object.prototype.hasOwnProperty.call(changes, 'welcomeDismissed') && state.prefs.welcomeDismissed !== !!changes.welcomeDismissed) {
@@ -7916,6 +9161,8 @@ body.is-window-resizing * {
       if (['cream', 'oat', 'fog'].indexOf(incoming.prefs.paperTone) !== -1) next.prefs.paperTone = incoming.prefs.paperTone;
       if (typeof incoming.prefs.showGrid === 'boolean') next.prefs.showGrid = incoming.prefs.showGrid;
       if (['system', 'reduce'].indexOf(incoming.prefs.motion) !== -1) next.prefs.motion = incoming.prefs.motion;
+      if (['system', 'light', 'dark'].indexOf(incoming.prefs.theme) !== -1) next.prefs.theme = incoming.prefs.theme;
+      if (['kai', 'xing', 'serif'].indexOf(incoming.prefs.handFont) !== -1) next.prefs.handFont = incoming.prefs.handFont;
       next.prefs.welcomeDismissed = !!incoming.prefs.welcomeDismissed;
     }
     if (incoming.meta && typeof incoming.meta === 'object') {
@@ -8273,6 +9520,7 @@ body.is-window-resizing * {
       x: 34,
       y: 34,
       sample: true,
+      z: 1,
       createdAt: now - day,
       updatedAt: now - day
     });
@@ -8283,6 +9531,7 @@ body.is-window-resizing * {
       x: 268,
       y: 66,
       sample: true,
+      z: 2,
       createdAt: now - day,
       updatedAt: now - day
     });
@@ -8293,6 +9542,7 @@ body.is-window-resizing * {
       x: 84,
       y: 252,
       sample: true,
+      z: 3,
       createdAt: now - day,
       updatedAt: now - day
     });
@@ -8301,60 +9551,29 @@ body.is-window-resizing * {
     var earlier = U.addDaysKey(today, -2);
     var later = U.addDaysKey(today, 1);
     var nextWeek = U.addDaysKey(today, 5);
-    tasks.push({
-      id: U.uid('task'),
-      date: today,
-      title: '整理桌面',
-      done: false,
-      sample: true,
-      createdAt: now - 8000,
-      updatedAt: now - 8000
-    });
-    tasks.push({
-      id: U.uid('task'),
-      date: today,
-      title: '写本周总结',
-      done: true,
-      sample: true,
-      createdAt: now - 7000,
-      updatedAt: now - 7000
-    });
-    tasks.push({
-      id: U.uid('task'),
-      date: today,
-      title: '预约体检',
-      done: false,
-      sample: true,
-      createdAt: now - 6000,
-      updatedAt: now - 6000
-    });
-    tasks.push({
-      id: U.uid('task'),
-      date: later,
-      title: '给妈妈打个电话',
-      done: false,
-      sample: true,
-      createdAt: now - 5000,
-      updatedAt: now - 5000
-    });
-    tasks.push({
-      id: U.uid('task'),
-      date: earlier,
-      title: '整理十月票据',
-      done: true,
-      sample: true,
-      createdAt: now - 4000,
-      updatedAt: now - 4000
-    });
-    tasks.push({
-      id: U.uid('task'),
-      date: nextWeek,
-      title: '写一份周计划',
-      done: false,
-      sample: true,
-      createdAt: now - 3000,
-      updatedAt: now - 3000
-    });
+    function seedTask(date, title, options) {
+      var opts = options || {};
+      var doneOn = opts.done ? [date] : [];
+      tasks.push({
+        id: U.uid('task'),
+        date: date,
+        title: title,
+        priority: opts.priority || 'none',
+        repeat: opts.repeat || 'once',
+        doneOn: doneOn,
+        resolvedAt: 0,
+        sample: true,
+        createdAt: now - (opts.age || 5000),
+        updatedAt: now - (opts.age || 5000)
+      });
+    }
+    seedTask(today, '整理桌面', { priority: 'important', age: 8500 });
+    seedTask(today, '写本周总结', { priority: 'urgent-important', done: true, age: 7000 });
+    seedTask(today, '预约体检', { priority: 'urgent', age: 6000 });
+    seedTask(today, '每天读十页书', { priority: 'important', repeat: 'daily', done: true, age: 5500 });
+    seedTask(later, '给妈妈打个电话', { priority: 'important', age: 5000 });
+    seedTask(earlier, '整理十月票据', { done: true, age: 4000 });
+    seedTask(nextWeek, '写一份周计划', { priority: 'none', age: 3000 });
 
     return {
       format: 'paper-os/workspace',
@@ -8363,6 +9582,8 @@ body.is-window-resizing * {
         paperTone: 'cream',
         showGrid: true,
         motion: 'system',
+        theme: 'system',
+        handFont: 'kai',
         welcomeDismissed: false
       },
       meta: {
@@ -8400,12 +9621,21 @@ body.is-window-resizing * {
     getExampleCounts: getExampleCounts,
     clearExamples: clearExamples,
     listStickies: listStickies,
+    listTrashedStickies: listTrashedStickies,
     createSticky: createSticky,
     updateSticky: updateSticky,
     deleteSticky: deleteSticky,
-    listTasks: listTasks,
-    taskSummary: taskSummary,
-    monthTaskCounts: monthTaskCounts,
+    restoreSticky: restoreSticky,
+    purgeSticky: purgeSticky,
+    raiseSticky: raiseSticky,
+    pruneTrash: pruneTrash,
+    trashDays: TRASH_DAYS,
+    projectTasks: projectTasks,
+    monthTaskCount: monthTaskCount,
+    setTaskDone: setTaskDone,
+    resolveTask: resolveTask,
+    unresolveTask: unresolveTask,
+    restoreTask: restoreTask,
     addTask: addTask,
     updateTask: updateTask,
     deleteTask: deleteTask,
@@ -8445,6 +9675,30 @@ body.is-window-resizing * {
   function numberOr(value, fallback) {
     var n = Number(value);
     return Number.isFinite(n) ? n : fallback;
+  }
+
+  var PRIORITY_IDS = ['urgent-important', 'important', 'urgent', 'none'];
+  var REPEAT_IDS = ['once', 'daily'];
+
+  function sanitizePriority(value) {
+    return PRIORITY_IDS.indexOf(value) !== -1 ? value : 'none';
+  }
+
+  function sanitizeRepeat(value) {
+    return REPEAT_IDS.indexOf(value) !== -1 ? value : 'once';
+  }
+
+  function sanitizeDayKeys(list) {
+    if (!Array.isArray(list)) return [];
+    var out = [];
+    for (var i = 0; i < list.length; i += 1) {
+      var key = String(list[i] || '');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) continue;
+      if (!U.parseDateKey(key)) continue;
+      if (out.indexOf(key) === -1) out.push(key);
+    }
+    out.sort();
+    return out;
   }
 
   function cleanName(value) {
@@ -8504,12 +9758,16 @@ body.is-window-resizing * {
       paperTone: 'cream',
       showGrid: true,
       motion: 'system',
+      theme: 'system',
+      handFont: 'kai',
       welcomeDismissed: false
     };
     if (!raw || typeof raw !== 'object') return prefs;
     if (['cream', 'oat', 'fog'].indexOf(raw.paperTone) !== -1) prefs.paperTone = raw.paperTone;
     if (typeof raw.showGrid === 'boolean') prefs.showGrid = raw.showGrid;
     if (['system', 'reduce'].indexOf(raw.motion) !== -1) prefs.motion = raw.motion;
+    if (['system', 'light', 'dark'].indexOf(raw.theme) !== -1) prefs.theme = raw.theme;
+    if (['kai', 'xing', 'serif'].indexOf(raw.handFont) !== -1) prefs.handFont = raw.handFont;
     prefs.welcomeDismissed = !!raw.welcomeDismissed;
     return prefs;
   }
@@ -8520,6 +9778,7 @@ body.is-window-resizing * {
     if (typeof raw.docId === 'string' && validId(raw.docId)) params.docId = raw.docId;
     if (typeof raw.folderId === 'string' && validId(raw.folderId)) params.folderId = raw.folderId;
     if (typeof raw.section === 'string' && /^[a-z-]{1,30}$/.test(raw.section)) params.section = raw.section;
+    if (typeof raw.view === 'string' && /^[A-Za-z0-9:_-]{1,90}$/.test(raw.view)) params.view = raw.view;
     return params;
   }
 
@@ -8571,6 +9830,7 @@ body.is-window-resizing * {
     if (raw.format !== 'paper-os/workspace') {
       return invalid('文件缺少 PAPER OS 工作区标记，可能不是由纸屿导出的。');
     }
+    // 这里只做"当前版本"的严格比对；旧版本必须先经由 P.migrateWorkspace 升级。
     if (raw.version !== P.schemaVersion) {
       return invalid('工作区版本不受支持（文件版本：' + String(raw.version) + '，当前版本：' + P.schemaVersion + '）。');
     }
@@ -8668,6 +9928,8 @@ body.is-window-resizing * {
         x: U.clamp(numberOr(rawSticky.x, 26), 0, 20000),
         y: U.clamp(numberOr(rawSticky.y, 26), 0, 20000),
         sample: !!rawSticky.sample,
+        z: U.clamp(numberOr(rawSticky.z, i + 1), 0, 1000000),
+        trashedAt: Math.max(0, numberOr(rawSticky.trashedAt, 0)),
         createdAt: numberOr(rawSticky.createdAt, now),
         updatedAt: numberOr(rawSticky.updatedAt, now)
       });
@@ -8687,7 +9949,10 @@ body.is-window-resizing * {
         id: rawTask.id,
         date: rawTask.date,
         title: rawTask.title.replace(/\s+/g, ' ').trim().slice(0, 300),
-        done: !!rawTask.done,
+        priority: sanitizePriority(rawTask.priority),
+        repeat: rawTask.repeat === 'daily' ? 'daily' : 'once',
+        doneOn: sanitizeDayKeys(rawTask.doneOn),
+        resolvedAt: Math.max(0, numberOr(rawTask.resolvedAt, 0)),
         sample: !!rawTask.sample,
         createdAt: numberOr(rawTask.createdAt, now),
         updatedAt: numberOr(rawTask.updatedAt, now)
@@ -8734,6 +9999,31 @@ body.is-window-resizing * {
       windows: desktopResult.value.windows.length
     };
     return { ok: true, snapshot: snapshot, summary: summary };
+  }
+
+  /**
+   * 唯一入口：任意来源的工作区（host 快照 / IndexedDB / localStorage / 恢复日志 / 导入文件）
+   * 都先过迁移阶梯，再过当前版本的严格校验。
+   * 迁移失败时绝不返回快照 —— 调用方必须拒绝，而不是拿一个旧版本对象继续跑。
+   */
+  function ingestWorkspace(raw) {
+    if (!raw || typeof raw !== 'object') return { ok: false, error: '这不是一个可识别的工作区。' };
+    var migrated = P.migrateWorkspace(raw);
+    if (!migrated.ok) {
+      if (migrated.reason === 'newer') {
+        return {
+          ok: false,
+          newer: true,
+          error: '这份工作区来自更新的纸屿（文件版本 v' + String(raw && raw.version) + '，当前只认到 v' + P.schemaVersion + '）。请升级插件后再打开。'
+        };
+      }
+      return { ok: false, error: '工作区版本无法迁移：' + (migrated.detail || migrated.reason) };
+    }
+    var validated = validateWorkspace(migrated.snapshot);
+    if (!validated.ok) return validated;
+    validated.migratedFrom = migrated.from;
+    validated.migrated = migrated.from !== P.schemaVersion;
+    return validated;
   }
 
   /* ---------------- IndexedDB plumbing ---------------- */
@@ -8876,7 +10166,7 @@ body.is-window-resizing * {
       if (!raw) return null;
       var record = JSON.parse(raw);
       if (!record || !record.snapshot) return null;
-      var validation = P.validateWorkspace(record.snapshot);
+      var validation = P.ingestWorkspace(record.snapshot);
       if (!validation.ok) {
         removeRecoveryJournal();
         return null;
@@ -8897,6 +10187,20 @@ body.is-window-resizing * {
       snapshot.version = P.schemaVersion;
       snapshot.journalAt = Date.now();
       window.localStorage.setItem(JOURNAL_KEY, JSON.stringify({ at: Date.now(), snapshot: snapshot }));
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  /* 被拒的工作区原稿：best-effort 留一份，方便事后取回。
+     超配额或不可写时静默放弃 —— 它只是兜底，不能挡住启动。 */
+  function stashRejectedWorkspace(raw, reason) {
+    if (!raw) return false;
+    try {
+      var text = JSON.stringify({ at: Date.now(), reason: reason || '', snapshot: raw });
+      if (text.length > 3 * 1024 * 1024) return false;
+      window.localStorage.setItem('paper-os.rejected.v' + String(raw.version) + '.' + Date.now(), text);
       return true;
     } catch (err) {
       return false;
@@ -8950,8 +10254,11 @@ body.is-window-resizing * {
       if (mode === 'memory' || (!('localStorage' in window) && mode === 'localStorage')) {
         mode = 'memory';
       }
+      /* Host 快照可能还是旧 schema：先按版本号比新旧（旧文件也要能和本地缓存比对），
+         再交给 ingestWorkspace 迁移。以前这里写死 version === P.schemaVersion，
+         版本一升就等于把 host 里的用户数据整份忽略掉。 */
       var hostSnapshot = window.__SCHEDULE_HOST_SNAPSHOT__;
-      if (hostSnapshot && hostSnapshot.format === 'paper-os/workspace' && hostSnapshot.version === P.schemaVersion) {
+      if (hostSnapshot && hostSnapshot.format === 'paper-os/workspace') {
         var localAt = raw && raw.meta && Number(raw.meta.updatedAt) || 0;
         var hostAt = hostSnapshot.meta && Number(hostSnapshot.meta.updatedAt) || 0;
         if (!raw || hostAt >= localAt) raw = hostSnapshot;
@@ -9011,8 +10318,48 @@ body.is-window-resizing * {
     },
     writeRecoveryJournal: writeRecoveryJournal,
     clearRecoveryJournal: removeRecoveryJournal,
+    blocked: false,
+    /* 卸载前的同步路径：不留 promise、不排队，能写多少写多少。
+       宿主拆 iframe 时只有这一下机会，异步链会在文档销毁时断掉。 */
+    flushNow: function () {
+      if (!ready || Storage.blocked) return false;
+      var snapshot;
+      try {
+        snapshot = typeof Storage.capture === 'function' ? Storage.capture() : null;
+      } catch (err) {
+        return false;
+      }
+      if (!snapshot) return false;
+      writeRecoveryJournal();
+      if (mode === 'localStorage') {
+        try {
+          writeLocalStorage(snapshot);
+          dirty = false;
+          setStatus('saved', Date.now(), null);
+          savedDataRevision = dataRevision;
+          setDataStatus('saved', Date.now(), null);
+          return true;
+        } catch (err) {
+          return false;
+        }
+      }
+      /* IndexedDB 只能异步写，但仍然要发起：事务在文档销毁前通常能提交。 */
+      try {
+        dbPut(snapshot).then(function () {
+          dirty = false;
+          setStatus('saved', Date.now(), null);
+          savedDataRevision = dataRevision;
+          setDataStatus('saved', Date.now(), null);
+        }).catch(function () { /* ignore */ });
+        return true;
+      } catch (err) {
+        return false;
+      }
+    },
     flush: function () {
       if (!ready) return Promise.resolve();
+      // 来自更新版本的快照：宁可什么都不写，也不能把用户的数据覆盖成旧格式。
+      if (Storage.blocked) return Promise.resolve();
       if (savePromise) {
         dirty = true;
         return savePromise;
@@ -9086,12 +10433,11 @@ body.is-window-resizing * {
       return JSON.stringify(Storage.buildExport(), null, 2);
     },
     replaceWith: async function (snapshot) {
-      if (!snapshot || snapshot.format !== 'paper-os/workspace' || snapshot.version !== P.schemaVersion) {
-        throw new Error('待导入的工作区格式无效。');
-      }
+      var ingested = P.ingestWorkspace(snapshot);
+      if (!ingested.ok) throw new Error(ingested.error || '待导入的工作区格式无效。');
       suppressJournal = true;
       removeRecoveryJournal();
-      await writeSnapshot(snapshot);
+      await writeSnapshot(ingested.snapshot);
       return { mode: mode };
     },
     clearAll: async function () {
@@ -9114,6 +10460,7 @@ body.is-window-resizing * {
   };
 
   P.validateWorkspace = validateWorkspace;
+  P.ingestWorkspace = ingestWorkspace;
   P.storage = Storage;
 
   window.addEventListener('pagehide', function () {
@@ -9279,16 +10626,16 @@ body.is-window-resizing * {
     win.el.style.height = bounds.h + 'px';
   }
 
+  /* 每个应用第一次打开都铺满工作区：同一矩形、不再按各自尺寸错开。
+     用户拖过/缩过之后的位置照旧按 desktop 布局保存。 */
   function defaultBounds(app) {
     var area = workArea();
-    var count = getVisibleWindows().length;
-    var w = Math.min(app.defaultSize.w, area.w);
-    var h = Math.min(app.defaultSize.h, area.h);
-    var offset = (count % 5) * 24;
-    var x = area.x + Math.round((area.w - w) / 2) - 64 + offset;
-    var y = area.y + Math.round((area.h - h) / 2) - 34 + offset;
-    var b = clampBounds({ x: x, y: y, w: w, h: h }, area);
-    return b;
+    return clampBounds({
+      x: area.x,
+      y: area.y,
+      w: Math.max(Math.min(app.minSize.w, area.w), area.w),
+      h: Math.max(Math.min(app.minSize.h, area.h), area.h)
+    }, area);
   }
 
   function maximizeBounds(win) {
@@ -9514,15 +10861,20 @@ body.is-window-resizing * {
       subscribeWindows: subscribeWindows,
       cleanup: function (fn) { if (typeof fn === 'function') track(fn); },
       setTitle: function (title) { updateTitle(win, title); },
+      /* 记住应用自己正在看什么（选了哪张纸、停在哪个月、哪个分区）。
+         存在窗口 params 里，跟着 desktop 布局一起落盘，所以切换 DSH 面板回来还在。
+         layout 作用域不算"数据改动"，不会推高 schema 或触发整包数据重算。 */
       setParams: function (params) {
         var next = {};
         if (params && typeof params === 'object') {
           if (params.docId && typeof params.docId === 'string') next.docId = params.docId;
           if (params.folderId && typeof params.folderId === 'string') next.folderId = params.folderId;
           if (params.section && typeof params.section === 'string') next.section = params.section;
+          if (params.view && typeof params.view === 'string') next.view = params.view;
         }
+        var same = JSON.stringify(next) === JSON.stringify(win.params || {});
         win.params = next;
-        scheduleLayoutSave();
+        if (!same) scheduleLayoutSave();
       },
       getParams: function () { return U.clone(win.params); },
       openApp: function (appId, params) { return open(appId, params); },
@@ -9788,6 +11140,7 @@ body.is-window-resizing * {
       if (typeof params.docId === 'string') incoming.docId = params.docId;
       if (typeof params.folderId === 'string') incoming.folderId = params.folderId;
       if (typeof params.section === 'string') incoming.section = params.section;
+      if (typeof params.view === 'string') incoming.view = params.view;
       win.params = incoming;
     }
     var el = document.createElement('section');
@@ -9931,6 +11284,7 @@ body.is-window-resizing * {
       if (key === 'docId' && typeof params[key] === 'string') merged[key] = params[key];
       if (key === 'folderId' && typeof params[key] === 'string') merged[key] = params[key];
       if (key === 'section' && typeof params[key] === 'string') merged[key] = params[key];
+      if (key === 'view' && typeof params[key] === 'string') merged[key] = params[key];
     });
     win.params = merged;
     if (win.controller && typeof win.controller.updateParams === 'function') {
@@ -10116,7 +11470,7 @@ body.is-window-resizing * {
     var visible = getVisibleWindows();
     if (visible.length) {
       visible.forEach(function (win) { minimize(win.id); });
-      P.ui.toast('桌面收好了。点应用坞图标或房子按钮，就能再翻开。', { kind: 'info' });
+      P.ui.toast('桌面收好了。点应用坞图标或房子按钮，就能再翻开。', { kind: 'info', placement: 'corner' });
       return true;
     }
     var candidates = wins.filter(function (w) { return w.minimized && !w.closing; });
@@ -10377,11 +11731,56 @@ body.is-window-resizing * {
 
   /* ---------------- appearance ---------------- */
 
+  /* 主题：跟随 DSH 时读宿主写好的 body[data-ds-dark-theme]，读不到再退回系统偏好。
+     只读宿主 DOM，绝不写它 —— 别的皮肤插件怎么改都不会和我们打架。 */
+  function hostPrefersDark() {
+    try {
+      var hostBody = window.parent && window.parent !== window ? window.parent.document.body : null;
+      if (hostBody && typeof hostBody.hasAttribute === 'function') {
+        return hostBody.hasAttribute('data-ds-dark-theme');
+      }
+    } catch (err) { /* 跨域读不到就退回系统偏好 */ }
+    return null;
+  }
+
+  function resolveTheme(mode) {
+    if (mode === 'light' || mode === 'dark') return mode;
+    var host = hostPrefersDark();
+    if (host !== null) return host ? 'dark' : 'light';
+    try {
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
+    } catch (err) { /* ignore */ }
+    return 'light';
+  }
+
+  var themeQuery = null;
+
+  function applyTheme() {
+    var prefs = P.data.getPrefs();
+    var resolved = resolveTheme(prefs.theme);
+    document.documentElement.setAttribute('data-theme', resolved);
+    document.documentElement.setAttribute('data-theme-pref', prefs.theme);
+    document.documentElement.setAttribute('data-hand', prefs.handFont);
+    return resolved;
+  }
+
+  function watchTheme() {
+    if (themeQuery) return;
+    try {
+      themeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      var onChange = function () { if (P.data.getPrefs().theme === 'system') applyTheme(); };
+      if (typeof themeQuery.addEventListener === 'function') themeQuery.addEventListener('change', onChange);
+      else if (typeof themeQuery.addListener === 'function') themeQuery.addListener(onChange);
+    } catch (err) { /* ignore */ }
+  }
+
   function applyPrefs() {
     var prefs = P.data.getPrefs();
     document.documentElement.setAttribute('data-paper', prefs.paperTone);
     document.documentElement.setAttribute('data-motion', prefs.motion);
     if (refs.os) refs.os.classList.toggle('no-grid', !prefs.showGrid);
+    applyTheme();
+    watchTheme();
     return prefs;
   }
 
@@ -10406,12 +11805,34 @@ body.is-window-resizing * {
     if (refs.dayWeek) refs.dayWeek.textContent = U.weekdayName(now);
     if (refs.dayYear) refs.dayYear.textContent = String(now.getFullYear());
     if (refs.handheldDate) refs.handheldDate.textContent = (now.getMonth() + 1) + '月' + now.getDate() + '日 · ' + U.weekdayName(now);
+    paintSeal(now);
     updateDayTasks();
   }
 
+  /* 「宜…」：按日期做种子，同一天恒定、跨天变化。 */
+  var ALMANAC = [
+    '宜书写', '宜读书', '宜散步', '宜早睡', '宜早归', '宜整理', '宜写信',
+    '宜远眺', '宜发呆', '宜留白', '宜独处', '宜慢做', '宜睡觉'
+  ];
+
+  function almanacFor(date) {
+    var key = U.dateKey(date || new Date());
+    var seed = 0;
+    for (var i = 0; i < key.length; i += 1) seed = (seed * 31 + key.charCodeAt(i)) % 100000;
+    return ALMANAC[seed % ALMANAC.length];
+  }
+
+  function paintSeal(date) {
+    var seal = document.getElementById('day-seal');
+    if (!seal) return;
+    var text = almanacFor(date).slice(1);
+    seal.innerHTML = '宜<br>' + U.escapeHTML(text);
+    seal.setAttribute('title', '宜' + text);
+  }
+
   function daySummaryText() {
-    var list = P.data.listTasks(U.todayKey());
-    var done = list.filter(function (task) { return task.done; }).length;
+    var list = P.data.projectTasks(U.todayKey());
+    var done = list.filter(function (task) { return task.done || task.resolved; }).length;
     if (!list.length) return '今天还没有待办。';
     if (done >= list.length) return '今天的 ' + list.length + ' 件事都完成了。';
     return '今天还有 ' + (list.length - done) + ' 件事没做。';
@@ -10419,7 +11840,7 @@ body.is-window-resizing * {
 
   function updateDayTasks() {
     if (!refs.dayTasks || !P.data) return;
-    var list = P.data.listTasks(U.todayKey());
+    var list = P.data.projectTasks(U.todayKey());
     var summary = daySummaryText();
     if (refs.dayQuote) refs.dayQuote.textContent = summary;
     if (refs.handheldQuote) refs.handheldQuote.textContent = summary;
@@ -10429,7 +11850,7 @@ body.is-window-resizing * {
     var title = document.createElement('span');
     title.textContent = '今天的事';
     var count = document.createElement('span');
-    var done = list.filter(function (task) { return task.done; }).length;
+    var done = list.filter(function (task) { return task.done || task.resolved; }).length;
     count.textContent = list.length ? done + ' / ' + list.length : '留白';
     head.appendChild(title);
     head.appendChild(count);
@@ -10450,9 +11871,11 @@ body.is-window-resizing * {
       refs.dayTasks.appendChild(row);
     });
     if (list.length > 3) {
+      /* 待办一多就只给一个省略号；具体件数在「翻开日历」里看。 */
       var more = document.createElement('p');
       more.className = 'day-card__tasks-more';
-      more.textContent = '还有 ' + (list.length - 3) + ' 件 · 翻开日历';
+      more.textContent = '……';
+      more.setAttribute('aria-hidden', 'true');
       refs.dayTasks.appendChild(more);
     }
   }
@@ -10527,7 +11950,8 @@ body.is-window-resizing * {
       } else if (all.length) {
         focusEl.textContent = all.length + ' 张纸收在应用坞里';
       } else {
-        focusEl.textContent = '选择底部应用开始';
+        /* 没有窗口时不写任何提示文字，保持顶栏安静。 */
+        focusEl.textContent = '';
       }
     }
     if (refs.dock) {
@@ -11211,12 +12635,23 @@ body.is-window-resizing * {
     recoveredJournal = !!P.storage.loadedFromJournal;
     var validated = null;
     if (raw) {
-      var result = P.validateWorkspace(raw);
+      var result = P.ingestWorkspace(raw);
       if (result.ok) validated = result;
       else {
         recoveredJournal = false;
-        loadWarning = '旧工作区无法读取：' + result.error + ' 已为你打开示例桌面。';
-        if (window.console) console.warn('PaperOS workspace rejected', result.error);
+        /* 只要存储里本来有东西却过不了闸门，就不许再写盘。
+           这条分支以前会 seed 后立刻 flush，把用户唯一一份旧数据换成示例；
+           Host 也只在版本号变化时备份，同版本覆盖连副本都没有。
+           现在一律只读 + 原稿另存，宁可不保存也不覆盖。 */
+        P.storage.blocked = true;
+        stashRejectedWorkspace(raw, result.error);
+        validated = null;
+        if (result.newer) {
+          loadWarning = '这份工作区来自更新的纸屿（' + result.error + '）。为了不覆盖它，本次只读，不会写入任何数据。请升级插件后再打开。';
+        } else {
+          loadWarning = '存储里的工作区没能通过校验（' + result.error + '）。为了不覆盖它，本次只读，原稿已另存一份。';
+        }
+        if (window.console) console.warn('PaperOS workspace rejected, running read-only', result.error);
       }
     }
     if (validated) {
@@ -11227,6 +12662,8 @@ body.is-window-resizing * {
       P.data.hydrate(seed);
       firstRun = true;
     }
+    /* 废纸篓的 7 天清理要在启动时跑一次，否则不打开废纸篓就永远不清理。 */
+    P.data.pruneTrash();
     try {
       applyPrefs();
       bindTopbar();
@@ -11336,8 +12773,63 @@ body.is-window-resizing * {
     minSize: { w: 390, h: 340 },
     create: function (ctx) {
       var root, board, inner, hint, emptyBox, countEl, saveEl;
+      var refsTrashCount = null;
       var cards = new Map();
       var resizeObserver = null;
+
+      function updateTrashCount() {
+        if (!refsTrashCount) return;
+        var n = P.data.listTrashedStickies().length;
+        refsTrashCount.textContent = n ? String(n) : '';
+        refsTrashCount.hidden = !n;
+      }
+
+      /* 废纸篓：列出被删掉的非空便签，可以放回去；超过 7 天自动彻底删除。 */
+      function node(tag, cls, text) {
+        var made = document.createElement(tag);
+        if (cls) made.className = cls;
+        if (text !== undefined && text !== null) made.textContent = text;
+        return made;
+      }
+
+      function openTrash() {
+        var items = P.data.listTrashedStickies();
+        P.ui.dialog({
+          kicker: 'PAPER OS · 废纸篓',
+          title: '被揭下来的便签',
+          wide: true,
+          width: 520,
+          actions: [{ label: '收起', value: null, kind: 'primary' }],
+          render: function (body) {
+            body.appendChild(node('p', 'dialog-note', '这里只留 ' + P.data.trashDays + ' 天，之后会自动清掉。'));
+            var host = node('div', 'trash-list');
+            body.appendChild(host);
+            if (!items.length) {
+              host.appendChild(node('p', 'trash-empty', '废纸篓是空的。'));
+              return;
+            }
+            items.forEach(function (item) {
+              var row = node('div', 'trash-item');
+              row.appendChild(node('p', 'trash-item__text', String(item.text || '').slice(0, 160)));
+              row.appendChild(node('div', 'trash-item__meta', '删于 ' + U.formatListDate(item.trashedAt)));
+              var actions = node('div', 'trash-item__actions');
+              var back = node('button', 'paper-btn paper-btn--tiny', '放回去');
+              back.type = 'button';
+              back.addEventListener('click', function () {
+                P.data.restoreSticky(item.id);
+                row.remove();
+                if (!P.data.listTrashedStickies().length) {
+                  host.appendChild(node('p', 'trash-empty', '废纸篓是空的。'));
+                }
+                P.ui.toast('便签放回去了。', { kind: 'info' });
+              });
+              actions.appendChild(back);
+              row.appendChild(actions);
+              host.appendChild(row);
+            });
+          }
+        });
+      }
 
       function saveStateText(status) {
         if (!saveEl) return;
@@ -11391,6 +12883,8 @@ body.is-window-resizing * {
           } else {
             updateCard(card, sticky);
           }
+          /* 叠放顺序 = 数据里的 z；最后碰过的那张一定在最上面。 */
+          card.el.style.zIndex = String(10 + Math.round(Number(sticky.z) || 0));
         });
         cards.forEach(function (card, id) {
           if (!current.has(id)) {
@@ -11411,7 +12905,7 @@ body.is-window-resizing * {
         el.style.setProperty('--tilt', (((parseInt(sticky.id.slice(-2), 36) || 0) % 5) - 2) * 0.45 + 'deg');
         el.innerHTML = '<span class="sticky__tape" aria-hidden="true"></span>' +
           '<header class="sticky__head">' +
-          '<button class="sticky__drag" type="button" aria-label="拖动便签" title="按住拖动便签"><i></i><i></i><i></i></button>' +
+          '<span class="sticky__drag" aria-hidden="true"><i></i><i></i><i></i></span>' +
           '<span class="sticky__swatches" role="group" aria-label="便签颜色"></span>' +
           '<button class="sticky__del" type="button" aria-label="删掉这张便签" title="删掉">×</button>' +
           '</header>' +
@@ -11450,12 +12944,16 @@ body.is-window-resizing * {
         });
 
         var head = el.querySelector('.sticky__head');
-        var dragHandle = el.querySelector('.sticky__drag');
-        if (dragHandle) {
-          dragHandle.addEventListener('pointerdown', function (event) {
-            beginDrag(event, card);
-          });
-        }
+        /* 整张纸都能拖着走：只放过正文输入区、滚动条、色块和删除按钮。 */
+        el.addEventListener('pointerdown', function (event) {
+          if (event.target.closest('.sticky__text, .sticky__swatches, .sticky__del')) return;
+          beginDrag(event, card);
+        });
+        el.addEventListener('pointerdown', function () {
+          P.data.raiseSticky(sticky.id);
+          viewTarget = sticky.id;
+          scheduleViewSave();
+        }, true);
         head.addEventListener('dblclick', function (event) {
           if (event.target.closest('button')) return;
           card.text.focus();
@@ -11512,29 +13010,14 @@ body.is-window-resizing * {
         inner.style.height = Math.round(h) + 'px';
       }
 
+      /* 删除不再弹可撤销提示（来不及点、容易误触丢内容）。
+         非空便签进废纸篓，7 天内都能在顶部「废纸篓」里找回来。 */
       function removeSticky(id) {
-        var sticky = stickyById(id);
-        var removed = P.data.deleteSticky(id);
-        if (removed) {
-          P.ui.toast('便签已经揭下来了。', {
-            kind: 'info',
-            actionLabel: '贴回去',
-            onAction: function () {
-              P.data.createSticky({
-                text: removed.text,
-                color: removed.color,
-                x: removed.x,
-                y: removed.y,
-                sample: removed.sample
-              });
-            }
-          });
-        }
+        P.data.deleteSticky(id);
       }
 
       function beginDrag(event, card) {
         if (event.button !== 0 && event.pointerType === 'mouse') return;
-        if (!event.target.closest('.sticky__drag')) return;
         if (board.clientWidth < 560) return;
         event.preventDefault();
         var sticky = stickyById(card.id);
@@ -11604,14 +13087,56 @@ body.is-window-resizing * {
         return created;
       }
 
-      function mount() {
+      /* 这个窗口正在看什么：滚动位置 + 最后碰过的那张便签。
+         存进窗口 params，跟着 desktop 一起落盘，切走再回来能复原。 */
+      var viewTarget = '';
+      var viewScroll = { left: 0, top: 0 };
+      var viewTimer = null;
+
+      function rememberView() {
+        if (viewTimer) { clearTimeout(viewTimer); viewTimer = null; }
+        if (!board) return;
+        viewScroll.left = Math.round(board.scrollLeft);
+        viewScroll.top = Math.round(board.scrollTop);
+        var payload = viewTarget ? viewTarget + '@' + viewScroll.left + ',' + viewScroll.top
+                                    : '@' + viewScroll.left + ',' + viewScroll.top;
+        ctx.setParams({ view: payload });
+      }
+
+      function scheduleViewSave() {
+        if (viewTimer) clearTimeout(viewTimer);
+        viewTimer = setTimeout(function () { viewTimer = null; rememberView(); }, 260);
+      }
+
+      function restoreView(view) {
+        if (!view || !board) return;
+        var at = String(view).indexOf('@');
+        var id = at > 0 ? String(view).slice(0, at) : '';
+        var pos = at >= 0 ? String(view).slice(at + 1) : String(view);
+        var parts = pos.split(',');
+        var left = Number(parts[0]);
+        var top = Number(parts[1]);
+        if (id) viewTarget = id;
+        if (Number.isFinite(left) && Number.isFinite(top)) {
+          viewScroll.left = left;
+          viewScroll.top = top;
+          board.scrollLeft = left;
+          board.scrollTop = top;
+        }
+        if (id && cards.get(id) && cards.get(id).el) {
+          var cardEl = cards.get(id).el;
+          cardEl.classList.add('is-view-focus');
+          setTimeout(function () { cardEl.classList.remove('is-view-focus'); }, 900);
+        }
+      }
+
+      function mount(container, params) {
         root = document.createElement('div');
         root.className = 'app stickies-app';
         root.innerHTML = '<div class="app-toolbar">' +
-          '<div class="app-toolbar__meta"><p class="eyebrow">STICKY NOTES</p>' +
-          '<h2 class="app-toolbar__title">便签</h2>' +
-          '<span class="count-chip" data-testid="sticky-count">0</span></div>' +
+          '<div class="app-toolbar__meta"><span class="count-chip" data-testid="sticky-count">0</span></div>' +
           '<div class="app-toolbar__actions"><span class="save-state" data-state="idle">自动保存</span>' +
+          '<button class="paper-btn paper-btn--tiny paper-btn--ghost" type="button" data-testid="open-trash" aria-label="打开废纸篓">废纸篓<span class="trash-count" data-trash-count hidden></span></button>' +
           '<button class="paper-btn paper-btn--tiny" type="button" data-testid="new-sticky">' + P.icon('plus') + ' 新便签</button></div>' +
           '</div>' +
           '<div class="sticky-board" data-testid="sticky-board">' +
@@ -11631,6 +13156,9 @@ body.is-window-resizing * {
         saveEl = root.querySelector('.save-state');
         ctx.setTitle('便签');
         root.querySelector('[data-testid="new-sticky"]').addEventListener('click', newSticky);
+        root.querySelector('[data-testid="open-trash"]').addEventListener('click', openTrash);
+        refsTrashCount = root.querySelector('[data-trash-count]');
+        updateTrashCount();
         var emptyButton = root.querySelector('[data-empty-new]');
         if (emptyButton) emptyButton.addEventListener('click', newSticky);
         ctx.subscribe(function (event) {
@@ -11640,11 +13168,17 @@ body.is-window-resizing * {
         resizeObserver = ctx.observeResize(function () { updateBoardSize(); });
         rebuildBoard();
         updateBoardSize();
+        /* 先重建卡片，再恢复滚动位置与聚焦的那张。 */
+        if (params && params.view) restoreView(params.view);
+        ctx.on(board, 'scroll', scheduleViewSave, { passive: true });
+        ctx.cleanup(function () { if (viewTimer) clearTimeout(viewTimer); });
       }
 
       return {
         mount: mount,
-        updateParams: function () {},
+        updateParams: function (params) {
+          if (params && params.view) restoreView(params.view);
+        },
         destroy: function () {
           // Subscriptions, observers and timers are released by the window
           // manager's app context. Nothing else outlives the window.
@@ -11682,13 +13216,19 @@ body.is-window-resizing * {
 
       var TITLE_DELAY = 340;
       var SEARCH_DELAY = 70;
+      /* 没起名字的纸页：标题区像正文一样显示 placeholder，而不是把「未命名纸页」当成正文写进去。 */
+      var UNTITLED = '未命名纸页';
+
+      function isUntitled(name) {
+        return typeof name === 'string' && name.indexOf(UNTITLED) === 0;
+      }
 
       function currentDoc() {
         return currentId ? P.data.getNode(currentId) : null;
       }
 
       function saveStatusText(status) {
-        var label = '已保存到纸屿';
+        var label = '已保存';
         if (status.phase === 'pending') label = '改动待保存';
         else if (status.phase === 'saving') label = '正在保存…';
         else if (status.phase === 'error') label = '保存遇到问题';
@@ -11778,7 +13318,8 @@ body.is-window-resizing * {
         if (refs.empty) refs.empty.hidden = true;
         if (refs.missing) refs.missing.hidden = true;
         if (refs.titleInput && (!refs.titleInput.matches(':focus') || opts.force) && !composingTitle) {
-          if (refs.titleInput.value !== doc.name) refs.titleInput.value = doc.name;
+          var shownTitle = isUntitled(doc.name) ? '' : doc.name;
+          if (refs.titleInput.value !== shownTitle) refs.titleInput.value = shownTitle;
         }
         if (refs.body && (!refs.body.matches(':focus') || opts.force) && refs.body.value !== (doc.content || '')) {
           refs.body.value = doc.content || '';
@@ -11854,7 +13395,7 @@ body.is-window-resizing * {
         var parentId = active ? active.parentId : undefined;
         var created;
         try {
-          created = P.data.createNote({ name: '未命名纸页', parentId: parentId });
+          created = P.data.createNote({ name: UNTITLED, parentId: parentId });
         } catch (err) {
           P.ui.toast('纸页没有建成：' + (err && err.message ? err.message : '未知原因'), { kind: 'error' });
           return;
@@ -11925,9 +13466,11 @@ body.is-window-resizing * {
         var doc = currentDoc();
         if (!doc || !refs.titleInput) return;
         var value = refs.titleInput.value;
-        if ((value || '').trim() === doc.name) return;
+        var target = (value || '').trim();
+        if (!target) return;
+        if (target === doc.name) return;
         try {
-          var updated = P.data.updateNode(doc.id, { name: value });
+          var updated = P.data.updateNode(doc.id, { name: target });
           if (updated) {
             ctx.setTitle(updated.name);
             if (!refs.titleInput.matches(':focus')) refs.titleInput.value = updated.name;
@@ -11987,13 +13530,13 @@ body.is-window-resizing * {
         root.innerHTML = '<div class="notes-layout">' +
           '<aside class="notes-rail">' +
           '<div class="notes-rail__head">' +
-          '<div class="notes-rail__top"><p class="eyebrow">PAPER NOTES</p>' +
+          '<div class="notes-rail__top">' +
+          '<span class="notes-rail__label">纸页</span>' +
           '<button class="notes-new" type="button" data-testid="new-note">＋ 新建</button></div>' +
           '<div class="search-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.2"/><path d="M15.2 15.2 20 20"/></svg>' +
           '<input class="text-input notes-search" type="search" data-testid="note-search" aria-label="搜索纸页" placeholder="找一张纸页…" autocomplete="off">' +
           '<button class="search-box__clear" type="button" aria-label="清空搜索" hidden>×</button></div>' +
-          '<div class="notes-rail__status"><span class="notes-rail__count">0 张纸页</span>' +
-          '<span class="save-state" data-state="idle">已保存</span></div>' +
+          '<div class="notes-rail__status"><span class="notes-rail__count">0 张纸页</span></div>' +
           '</div>' +
           '<div class="notes-list" data-testid="note-list"></div>' +
           '</aside>' +
@@ -12016,9 +13559,8 @@ body.is-window-resizing * {
           '<span data-updated>刚刚</span><span class="editor-subrow__sep" aria-hidden="true"></span>' +
           '<span data-word-count>空白纸页</span><span class="editor-subrow__sep" aria-hidden="true"></span>' +
           '<span class="save-state" data-editor-save data-state="idle">已保存</span></div>' +
-          '<div class="note-writing"><textarea class="note-body" data-testid="note-body" aria-label="纸页正文" placeholder="从这里开始写。纸会自动收好。"></textarea></div>' +
-          '<div class="editor-foot"><span>自动保存 · 无需手动提交</span><span data-foot-save></span>' +
-          '<button class="editor-foot__delete" type="button" data-foot-delete>删除这张纸页</button></div>' +
+          '<div class="note-writing"><textarea class="note-body" data-testid="note-body" aria-label="纸页正文" placeholder="从这里开始写，纸会自动收好。"></textarea></div>' +
+          '<div class="editor-foot"><span data-foot-save></span></div>' +
           '</div>' +
           '<div class="notes-missing" hidden><span class="notes-missing__mark" aria-hidden="true">缺</span>' +
           '<h3>这张纸页已经被删除</h3>' +
@@ -12031,7 +13573,7 @@ body.is-window-resizing * {
         refs.searchClear = root.querySelector('.search-box__clear');
         refs.list = root.querySelector('.notes-list');
         refs.count = root.querySelector('.notes-rail__count');
-        refs.railSave = root.querySelector('.notes-rail__status .save-state');
+        refs.railSave = null;
         refs.editorSave = root.querySelector('[data-editor-save]');
         refs.empty = root.querySelector('[data-empty]');
         refs.emptyTitle = root.querySelector('[data-empty-title]');
@@ -12048,7 +13590,6 @@ body.is-window-resizing * {
         refs.deleteBtn = root.querySelector('[data-delete]');
         refs.saveNow = root.querySelector('[data-save-now]');
         refs.renameBtn = root.querySelector('[data-rename]');
-        refs.footDelete = root.querySelector('[data-foot-delete]');
         var renameIcon = refs.renameBtn.querySelector('span');
         if (renameIcon) renameIcon.innerHTML = P.icon('pencil');
         var deleteIcon = refs.deleteBtn.querySelector('span');
@@ -12058,7 +13599,6 @@ body.is-window-resizing * {
         root.querySelector('[data-empty-new]').addEventListener('click', createNote);
         root.querySelector('[data-rename]').addEventListener('click', promptRename);
         refs.deleteBtn.addEventListener('click', confirmDelete);
-        if (refs.footDelete) refs.footDelete.addEventListener('click', confirmDelete);
         root.querySelector('[data-missing-new]').addEventListener('click', createNote);
         root.querySelector('[data-missing-back]').addEventListener('click', function () {
           var rest = P.data.listNotes();
@@ -12097,7 +13637,7 @@ body.is-window-resizing * {
         });
         refs.titleInput.addEventListener('input', function () {
           var value = refs.titleInput.value.trim();
-          ctx.setTitle(value || '未命名纸页');
+          ctx.setTitle(value || UNTITLED);
           scheduleTitleCommit();
         });
         refs.titleInput.addEventListener('blur', function () {
@@ -12238,8 +13778,7 @@ body.is-window-resizing * {
         if (refs.selectedDate) {
           refs.selectedDate.textContent = (d.getMonth() + 1) + '月' + d.getDate() + '日 · ' + U.weekdayName(d);
         }
-        var prefix = d.getFullYear() + '-' + U.pad2(d.getMonth() + 1);
-        var tasks = P.data.listTasks(selectedKey);
+        var tasks = P.data.projectTasks(selectedKey);
         if (refs.taskCount) refs.taskCount.textContent = String(tasks.length);
         if (refs.taskInput) {
           refs.taskInput.placeholder = '在 ' + (d.getMonth() + 1) + '月' + d.getDate() + '日 留一件事…';
@@ -12248,12 +13787,21 @@ body.is-window-resizing * {
           var done = tasks.filter(function (t) { return t.done; }).length;
           refs.taskFoot.textContent = tasks.length ? '共 ' + tasks.length + ' 件 · 完成 ' + done + ' 件' : '空白的一天也值得被记下';
         }
-        if (refs.monthCount) refs.monthCount.textContent = monthCount + ' 件本月';
+        if (refs.monthCount) {
+          var monthly = P.data.monthTaskCount(viewYear + '-' + U.pad2(viewMonth + 1));
+          monthCount = monthly.total;
+          refs.monthCount.textContent = monthCount + ' 件本月';
+          refs.monthCount.setAttribute('title', monthly.recurring
+            ? '其中 ' + monthly.recurring + ' 件是每天出现的持久待办，只算 1 件'
+            : '本月的待办条目');
+        }
       }
 
+      /* 待办行：勾选 + 标题 + 右侧两枚控件（色点 / 仅今日·每天）。
+         色点点开是四色小浮层，胶囊点一下直接切换，都不进详情。 */
       function buildTaskList() {
         if (!refs.taskList) return;
-        var tasks = P.data.listTasks(selectedKey);
+        var tasks = P.data.projectTasks(selectedKey);
         refs.taskList.innerHTML = '';
         if (!tasks.length) {
           var empty = document.createElement('div');
@@ -12264,7 +13812,7 @@ body.is-window-resizing * {
         }
         tasks.forEach(function (task) {
           var row = document.createElement('div');
-          row.className = 'task-item' + (task.done ? ' is-done' : '');
+          row.className = 'task-item' + (task.done ? ' is-done' : '') + (task.resolved ? ' is-resolved' : '');
           row.setAttribute('data-task-id', task.id);
           row.setAttribute('data-testid', 'task-' + task.id);
           var check = document.createElement('button');
@@ -12275,7 +13823,7 @@ body.is-window-resizing * {
           check.setAttribute('aria-label', task.done ? '标记为未完成：' + task.title : '标记为已完成：' + task.title);
           check.innerHTML = P.icon('check');
           check.addEventListener('click', function () {
-            P.data.updateTask(task.id, { done: !task.done });
+            P.data.setTaskDone(task.id, selectedKey, !task.done);
           });
           var body = document.createElement('div');
           body.className = 'task-body';
@@ -12291,17 +13839,78 @@ body.is-window-resizing * {
             sample.textContent = '示例';
             meta.appendChild(sample);
           }
-          var status = document.createElement('span');
-          status.textContent = task.done ? '已完成 · ' + U.formatTime(task.updatedAt) : '被放在这一天';
-          meta.appendChild(status);
+          /* 没有信息就不占位：未完成且非持久待办不再显示任何状态文字。 */
+          var statusText = '';
+          if (task.resolved) {
+            statusText = '已解决 · ' + U.dateKey(new Date(task.resolvedAt)) + ' · 打卡 ' + task.checkins + ' 天';
+          } else if (task.repeat === 'daily') {
+            statusText = task.done
+              ? '今天做完了 · 打卡 ' + task.checkins + ' 天'
+              : '打卡 ' + task.checkins + ' 天';
+          } else if (task.done) {
+            statusText = '已完成 · ' + U.formatTime(task.updatedAt);
+          }
+          if (statusText) {
+            var status = document.createElement('span');
+            status.textContent = statusText;
+            meta.appendChild(status);
+          }
+          if (task.repeat === 'daily' && !task.resolved && task.done) {
+            var resolve = document.createElement('button');
+            resolve.type = 'button';
+            resolve.className = 'task-item__resolve';
+            resolve.textContent = '这件事算结束了';
+            resolve.addEventListener('click', function () { resolveTaskItem(task); });
+            meta.appendChild(resolve);
+          }
+          if (task.resolved) {
+            var reopen = document.createElement('button');
+            reopen.type = 'button';
+            reopen.className = 'task-item__resolve';
+            reopen.textContent = '恢复';
+            reopen.addEventListener('click', function () {
+              P.data.unresolveTask(task.id);
+              P.ui.toast('这件事又回到每天出现了。', { kind: 'info' });
+            });
+            meta.appendChild(reopen);
+          }
           body.appendChild(meta);
+
+          /* 右侧：色点 + 状态胶囊，然后才是编辑/删除。 */
+          var controls = document.createElement('div');
+          controls.className = 'task-controls';
+          var pip = document.createElement('button');
+          pip.type = 'button';
+          pip.className = 'task-pip-btn';
+          pip.setAttribute('data-priority', task.priority);
+          pip.setAttribute('aria-label', '紧急程度：' + task.priorityLabel + '，点击更换');
+          pip.setAttribute('title', task.priorityLabel);
+          pip.addEventListener('click', function (event) {
+            event.stopPropagation();
+            openPriorityPopover(pip, task);
+          });
+          controls.appendChild(pip);
+          var repeatChip = document.createElement('button');
+          repeatChip.type = 'button';
+          repeatChip.className = 'task-repeat' + (task.repeat === 'daily' ? ' is-daily' : '');
+          repeatChip.textContent = task.repeat === 'daily' ? '每天' : '仅今日';
+          repeatChip.setAttribute('aria-label', '状态：' + (task.repeat === 'daily' ? '每天出现，直到解决' : '仅限今日') + '，点击切换');
+          repeatChip.setAttribute('title', task.repeat === 'daily' ? '每天出现，直到解决（点一下改成仅限今日）' : '只在这一天（点一下改成每天出现）');
+          repeatChip.addEventListener('click', function (event) {
+            event.stopPropagation();
+            var next = task.repeat === 'daily' ? 'once' : 'daily';
+            P.data.updateTask(task.id, { repeat: next });
+            P.ui.toast(next === 'daily' ? '改成每天出现，直到解决。' : '只在这一天出现。', { kind: 'info' });
+          });
+          controls.appendChild(repeatChip);
+
           var actions = document.createElement('div');
           actions.className = 'task-actions';
           var edit = document.createElement('button');
           edit.type = 'button';
           edit.className = 'icon-btn';
           edit.setAttribute('aria-label', '编辑待办：' + task.title);
-          edit.setAttribute('title', '编辑');
+          edit.setAttribute('title', '改标题与更多');
           edit.innerHTML = P.icon('pencil');
           edit.addEventListener('click', function () { editTask(task); });
           var del = document.createElement('button');
@@ -12313,16 +13922,102 @@ body.is-window-resizing * {
           del.addEventListener('click', function () { deleteTask(task); });
           actions.appendChild(edit);
           actions.appendChild(del);
+          controls.appendChild(actions);
+
           row.appendChild(check);
           row.appendChild(body);
-          row.appendChild(actions);
+          row.appendChild(controls);
           refs.taskList.appendChild(row);
+        });
+      }
+
+      /* 四色小浮层：点色点就地换档，不弹大对话框。 */
+      var priorityPopover = null;
+
+      function closePriorityPopover() {
+        if (!priorityPopover) return;
+        priorityPopover.remove();
+        priorityPopover = null;
+        document.removeEventListener('pointerdown', onPriorityOutside, true);
+        document.removeEventListener('keydown', onPriorityKey, true);
+      }
+
+      function onPriorityOutside(event) {
+        if (priorityPopover && !priorityPopover.contains(event.target)) closePriorityPopover();
+      }
+
+      function onPriorityKey(event) {
+        if (event.key === 'Escape') closePriorityPopover();
+      }
+
+      function openPriorityPopover(anchor, task) {
+        var alreadyOpen = priorityPopover && priorityPopover.getAttribute('data-for') === task.id;
+        closePriorityPopover();
+        if (alreadyOpen) return;
+        var pop = document.createElement('div');
+        pop.className = 'priority-popover';
+        pop.setAttribute('data-for', task.id);
+        pop.setAttribute('role', 'menu');
+        pop.setAttribute('aria-label', '紧急程度');
+        P.TASK_PRIORITIES.forEach(function (item) {
+          var option = document.createElement('button');
+          option.type = 'button';
+          option.className = 'priority-popover__item' + (item.id === task.priority ? ' is-active' : '');
+          option.setAttribute('role', 'menuitemradio');
+          option.setAttribute('aria-checked', item.id === task.priority ? 'true' : 'false');
+          var dot = document.createElement('span');
+          dot.className = 'task-pip';
+          dot.setAttribute('data-priority', item.id);
+          dot.setAttribute('aria-hidden', 'true');
+          option.appendChild(dot);
+          var label = document.createElement('span');
+          label.className = 'priority-popover__label';
+          label.textContent = item.label;
+          option.appendChild(label);
+
+          option.addEventListener('click', function () {
+            P.data.updateTask(task.id, { priority: item.id });
+            closePriorityPopover();
+            P.ui.toast('已标为「' + item.label + '」。', { kind: 'info' });
+          });
+          pop.appendChild(option);
+        });
+        document.body.appendChild(pop);
+        var box = anchor.getBoundingClientRect();
+        var popBox = pop.getBoundingClientRect();
+        var left = Math.min(window.innerWidth - popBox.width - 12, Math.max(12, box.left - popBox.width + box.width));
+        var top = box.bottom + 6;
+        if (top + popBox.height > window.innerHeight - 12) top = Math.max(12, box.top - popBox.height - 6);
+        pop.style.left = Math.round(left) + 'px';
+        pop.style.top = Math.round(top) + 'px';
+        priorityPopover = pop;
+        document.addEventListener('pointerdown', onPriorityOutside, true);
+        document.addEventListener('keydown', onPriorityKey, true);
+        var first = pop.querySelector('.priority-popover__item');
+        if (first) first.focus();
+      }
+
+      function resolveTaskItem(task) {
+        P.ui.confirm({
+          kicker: 'PAPER OS · 收起来',
+          title: '把这件事收起来？',
+          message: '「' + task.title + '」从明天起不再出现。今天做的这一天会留在日历上，随时可以恢复。',
+          confirmLabel: '收起来',
+          cancelLabel: '再想想'
+        }).then(function (ok) {
+          if (!ok) return;
+          P.data.resolveTask(task.id);
+          P.ui.toast('这件事收起来了，打卡 ' + task.checkins + ' 天。', { kind: 'info' });
         });
       }
 
       function dayCellLabel(date, tasks) {
         var label = U.formatDateCN(date) + ' ' + U.weekdayName(date);
-        if (tasks.length) label += '，' + tasks.length + ' 件待办';
+        if (tasks.length) {
+          var urgent = tasks.filter(function (t) { return t.priority === 'urgent-important' && !t.done; }).length;
+          label += '，' + tasks.length + ' 件待办';
+          if (urgent) label += '，其中 ' + urgent + ' 件重要且紧急';
+        }
         return label;
       }
 
@@ -12331,16 +14026,18 @@ body.is-window-resizing * {
         var first = new Date(viewYear, viewMonth, 1);
         var offset = (first.getDay() + 6) % 7;
         var gridStart = new Date(viewYear, viewMonth, 1 - offset);
-        var allTasks = P.data.listTasks();
+        /* 42 格一次投影算完，不要每格再扫一遍全部待办。 */
+        var todayKey = U.todayKey();
+        var keys = [];
+        for (var k = 0; k < 42; k += 1) {
+          var probe = new Date(gridStart);
+          probe.setDate(gridStart.getDate() + k);
+          keys.push(U.dateKey(probe));
+        }
         var byDate = {};
-        allTasks.forEach(function (task) {
-          if (!byDate[task.date]) byDate[task.date] = [];
-          byDate[task.date].push(task);
-        });
-        monthCount = 0;
-        allTasks.forEach(function (task) {
-          if (task.date && task.date.indexOf(viewYear + '-' + U.pad2(viewMonth + 1)) === 0) monthCount += 1;
-        });
+        keys.forEach(function (key) { byDate[key] = P.data.projectTasks(key, todayKey); });
+        var monthly = P.data.monthTaskCount(viewYear + '-' + U.pad2(viewMonth + 1));
+        monthCount = monthly.total;
         refs.monthTitle.textContent = U.monthNamesCN()[viewMonth];
         refs.monthYear.textContent = String(viewYear);
         refs.grid.innerHTML = '';
@@ -12366,17 +14063,34 @@ body.is-window-resizing * {
           cell.appendChild(num);
           var dots = document.createElement('span');
           dots.className = 'cal-day__dots';
-          dayTasks.slice(0, 3).forEach(function (task) {
+          var openRow = document.createElement('span');
+          openRow.className = 'cal-day__dot-row';
+          var doneRow = document.createElement('span');
+          doneRow.className = 'cal-day__dot-row cal-day__dot-row--done';
+          var openList = dayTasks.filter(function (task) { return !task.done; });
+          var doneList = dayTasks.filter(function (task) { return task.done; });
+          openList.slice(0, 3).forEach(function (task) {
             var dot = document.createElement('span');
-            dot.className = 'cal-day__dot' + (task.done ? ' cal-day__dot--done' : '');
-            dots.appendChild(dot);
+            dot.className = 'cal-day__dot';
+            dot.setAttribute('data-priority', task.priority);
+            openRow.appendChild(dot);
           });
-          if (dayTasks.length > 3) {
+          var openMore = openList.length - Math.min(openList.length, 3);
+          doneList.slice(0, 3).forEach(function (task) {
+            var dot = document.createElement('span');
+            dot.className = 'cal-day__dot cal-day__dot--done';
+            dot.setAttribute('data-priority', task.priority);
+            doneRow.appendChild(dot);
+          });
+          var hidden = openMore + (doneList.length - Math.min(doneList.length, 3));
+          if (hidden > 0) {
             var more = document.createElement('span');
             more.className = 'cal-day__more';
-            more.textContent = '+' + (dayTasks.length - 3);
-            dots.appendChild(more);
+            more.textContent = '+' + hidden;
+            openRow.appendChild(more);
           }
+          dots.appendChild(openRow);
+          dots.appendChild(doneRow);
           cell.appendChild(dots);
           cell.addEventListener('click', function () {
             var d = U.parseDateKey(this.getAttribute('data-date'));
@@ -12384,6 +14098,7 @@ body.is-window-resizing * {
             selectedKey = U.dateKey(d);
             viewYear = d.getFullYear();
             viewMonth = d.getMonth();
+            rememberView();
             renderAll();
             var target = refs.grid.querySelector('[data-date="' + selectedKey + '"]');
             if (target) target.focus({ preventScroll: true });
@@ -12424,6 +14139,7 @@ body.is-window-resizing * {
         selectedKey = U.dateKey(date);
         viewYear = date.getFullYear();
         viewMonth = date.getMonth();
+        rememberView();
         renderAll();
         var target = refs.grid.querySelector('[data-date="' + selectedKey + '"]');
         if (target) target.focus({ preventScroll: true });
@@ -12449,6 +14165,7 @@ body.is-window-resizing * {
         } else {
           selectedKey = U.dateKey(new Date(viewYear, viewMonth, 1));
         }
+        rememberView();
         renderAll();
       }
 
@@ -12457,36 +14174,130 @@ body.is-window-resizing * {
         viewYear = d.getFullYear();
         viewMonth = d.getMonth();
         selectedKey = U.dateKey(d);
+        rememberView();
         renderAll();
         var target = refs.grid.querySelector('[data-date="' + selectedKey + '"]');
         if (target) target.focus({ preventScroll: true });
       }
 
+      /* 本模块自己建节点：core.js 的 el() 不在这个作用域里，用它就会 ReferenceError。 */
+      function mk(tag, cls, text) {
+        var made = document.createElement(tag);
+        if (cls) made.className = cls;
+        if (text !== undefined && text !== null) made.textContent = text;
+        return made;
+      }
+
+      /* 待办详情：标题 + 紧急程度栏 + 状态（仅限今日 / 每天）+ 那一天。 */
       function editTask(task) {
-        P.ui.prompt({
+        var draft = {
+          title: task.title,
+          priority: task.priority,
+          repeat: task.repeat
+        };
+        var titleInput = null;
+        P.ui.dialog({
           kicker: 'PAPER OS · 待办',
-          title: '改一件事',
-          message: '它仍然属于 ' + (U.parseDateKey(task.date).getMonth() + 1) + ' 月 ' + U.parseDateKey(task.date).getDate() + ' 日。',
-          label: '待办内容',
-          value: task.title,
-          confirmLabel: '改好',
-          maxLength: 300
-        }).then(function (title) {
-          if (!title) return;
-          P.data.updateTask(task.id, { title: title });
+          title: '这件事',
+          wide: true,
+          width: 520,
+          actions: [
+            { label: '取消', value: null, kind: 'ghost' },
+            { label: '改好', value: 'ok', kind: 'primary' }
+          ],
+          getValue: function (value) {
+            if (value !== 'ok') return null;
+            var clean = titleInput ? titleInput.value.replace(/\s+/g, ' ').trim().slice(0, 300) : '';
+            if (!clean) return null;
+            draft.title = clean;
+            return draft;
+          },
+          initialFocus: function () { return titleInput; },
+          render: function (body) {
+            titleInput = mk('input', 'text-input dialog-input');
+            titleInput.type = 'text';
+            titleInput.value = task.title;
+            titleInput.maxLength = 300;
+            titleInput.setAttribute('aria-label', '待办内容');
+            body.appendChild(titleInput);
+
+            body.appendChild(mk('p', 'field-label', '紧急程度'));
+            var priorityRow = mk('div', 'priority-list');
+            priorityRow.setAttribute('role', 'radiogroup');
+            priorityRow.setAttribute('aria-label', '紧急程度');
+            P.TASK_PRIORITIES.forEach(function (item) {
+              var option = mk('button', 'priority-option');
+              option.type = 'button';
+              option.setAttribute('role', 'radio');
+              option.setAttribute('data-priority', item.id);
+              option.setAttribute('aria-checked', item.id === draft.priority ? 'true' : 'false');
+              if (item.id === draft.priority) option.classList.add('is-active');
+              var pip = mk('span', 'task-pip');
+              pip.setAttribute('data-priority', item.id);
+              pip.setAttribute('aria-hidden', 'true');
+              option.appendChild(pip);
+              option.appendChild(mk('span', 'priority-option__label', item.label));
+              option.appendChild(mk('span', 'priority-option__hint', item.hint));
+              option.addEventListener('click', function () {
+                draft.priority = item.id;
+                priorityRow.querySelectorAll('.priority-option').forEach(function (node) {
+                  var active = node.getAttribute('data-priority') === item.id;
+                  node.classList.toggle('is-active', active);
+                  node.setAttribute('aria-checked', active ? 'true' : 'false');
+                });
+              });
+              priorityRow.appendChild(option);
+            });
+            body.appendChild(priorityRow);
+
+            body.appendChild(mk('p', 'field-label', '状态'));
+            var repeatRow = mk('div', 'priority-list priority-list--repeat');
+            repeatRow.setAttribute('role', 'radiogroup');
+            repeatRow.setAttribute('aria-label', '状态');
+            P.TASK_REPEATS.forEach(function (item) {
+              var option = mk('button', 'priority-option');
+              option.type = 'button';
+              option.setAttribute('role', 'radio');
+              option.setAttribute('data-repeat', item.id);
+              option.setAttribute('aria-checked', item.id === draft.repeat ? 'true' : 'false');
+              if (item.id === draft.repeat) option.classList.add('is-active');
+              option.appendChild(mk('span', 'priority-option__label', item.label));
+              option.appendChild(mk('span', 'priority-option__hint', item.hint));
+              option.addEventListener('click', function () {
+                draft.repeat = item.id;
+                repeatRow.querySelectorAll('.priority-option').forEach(function (node) {
+                  var active = node.getAttribute('data-repeat') === item.id;
+                  node.classList.toggle('is-active', active);
+                  node.setAttribute('aria-checked', active ? 'true' : 'false');
+                });
+              });
+              repeatRow.appendChild(option);
+            });
+            body.appendChild(repeatRow);
+
+            var info = mk('p', 'dialog-note', '');
+            if (task.repeat === 'daily' || task.repeat === 'once') {
+              info.textContent = '首次出现在 ' + task.date + ' · 已打卡 ' + task.checkins + ' 天';
+            }
+            body.appendChild(info);
+          }
+        }).then(function (result) {
+          if (!result) return;
+          P.data.updateTask(task.id, {
+            title: result.title,
+            priority: result.priority,
+            repeat: result.repeat
+          });
         });
       }
 
       function deleteTask(task) {
         var removed = P.data.deleteTask(task.id);
         if (!removed) return;
-        P.ui.toast('待办已经从这一天取走。', {
+        P.ui.toast('待办已经取走。', {
           kind: 'info',
           actionLabel: '撤销',
-          onAction: function () {
-            var restored = P.data.addTask(removed.date, removed.title);
-            if (restored && removed.done) P.data.updateTask(restored.id, { done: true });
-          }
+          onAction: function () { P.data.restoreTask(removed); }
         });
       }
 
@@ -12502,19 +14313,29 @@ body.is-window-resizing * {
         refs.taskInput.focus();
       }
 
-      function mount() {
+      function rememberView() {
+        /* 只记"哪一天"，月份由这一天决定，不需要第二个真相源。 */
+        ctx.setParams({ view: selectedKey });
+      }
+
+      function restoreView(view) {
+        if (!view) return false;
+        var parsed = U.parseDateKey(view);
+        if (!parsed) return false;
+        selectedKey = U.dateKey(parsed);
+        viewYear = parsed.getFullYear();
+        viewMonth = parsed.getMonth();
+        return true;
+      }
+
+      function mount(container, params) {
         var root = document.createElement('div');
         root.className = 'app calendar-app';
-        root.innerHTML = '<div class="app-toolbar">' +
-          '<div class="app-toolbar__meta"><p class="eyebrow">CALENDAR & TASKS</p>' +
-          '<h2 class="app-toolbar__title">日历与待办</h2>' +
-          '<span class="count-chip" data-month-count></span></div>' +
-          '</div>' +
-          '<div class="calendar-layout">' +
+        root.innerHTML = '<div class="calendar-layout">' +
           '<section class="calendar-month" aria-label="月历">' +
           '<div class="calendar-month__head">' +
           '<button class="calendar-month__nav" type="button" data-prev aria-label="上一个月"></button>' +
-          '<div class="calendar-month__title-wrap"><h3 class="calendar-month__title" data-month-title></h3><span class="calendar-month__year" data-month-year></span></div>' +
+          '<div class="calendar-month__title-wrap"><h3 class="calendar-month__title" data-month-title></h3><span class="calendar-month__year" data-month-year></span><span class="count-chip count-chip--month" data-month-count></span></div>' +
           '<button class="calendar-month__today" type="button" data-today>今天</button>' +
           '<button class="calendar-month__nav" type="button" data-next aria-label="下一个月"></button>' +
           '</div>' +
@@ -12555,6 +14376,8 @@ body.is-window-resizing * {
         root.querySelector('[data-next]').addEventListener('click', function () { changeMonth(1); });
         root.querySelector('[data-today]').addEventListener('click', goToday);
         ctx.setTitle('日历与待办');
+        /* 回到上次看的那一天（切换 DSH 面板再回来不会跳回今天）。 */
+        if (params && params.view) restoreView(params.view);
         ctx.subscribe(function (event) {
           if (event.type === 'tasks') renderAll();
         });
@@ -12645,7 +14468,73 @@ body.is-window-resizing * {
         if (refs.redo) refs.redo.disabled = !docExists || redoStack.length === 0;
         if (refs.clear) refs.clear.disabled = !docExists || strokes.length === 0;
         if (refs.exportBtn) refs.exportBtn.disabled = !docExists;
+        if (refs.deleteBtn) refs.deleteBtn.disabled = !docExists;
         if (refs.eraserBtn) refs.eraserBtn.disabled = !docExists;
+      }
+
+      /* 画纸簿：左右翻一张，按当前卡片宽度滚动，翻到头就禁用。 */
+      function stepGallery(direction) {
+        if (!refs.gallery) return;
+        var card = refs.gallery.querySelector('.draw-card');
+        var stride = card ? card.offsetWidth + 10 : Math.round(refs.gallery.clientWidth * 0.8);
+        var max = refs.gallery.scrollWidth - refs.gallery.clientWidth;
+        var next = Math.max(0, Math.min(max, refs.gallery.scrollLeft + direction * stride));
+        refs.gallery.scrollTo({ left: next, behavior: U.prefersReducedMotion() ? 'auto' : 'smooth' });
+        syncGalleryNav();
+      }
+
+      function syncGalleryNav() {
+        if (!refs.gallery || !refs.galleryPrev || !refs.galleryNext) return;
+        var max = refs.gallery.scrollWidth - refs.gallery.clientWidth;
+        refs.galleryPrev.disabled = refs.gallery.scrollLeft <= 1;
+        refs.galleryNext.disabled = max <= 1 || refs.gallery.scrollLeft >= max - 1;
+      }
+
+      function confirmDeleteDrawing() {
+        var doc = currentDoc();
+        if (!doc) return;
+        P.ui.confirm({
+          kicker: 'PAPER OS · 画纸',
+          title: '删掉这张画纸？',
+          message: '「' + doc.name + '」和上面的笔迹都会被移走，撤销还能找回来。',
+          confirmLabel: '删掉',
+          cancelLabel: '留着',
+          danger: true
+        }).then(function (ok) {
+          if (!ok) return;
+          try {
+            P.data.deleteNode(doc.id);
+          } catch (err) {
+            P.ui.toast('画纸没有删掉：' + (err && err.message ? err.message : '未知原因'), { kind: 'error' });
+            return;
+          }
+          var rest = P.data.listDrawings();
+          if (rest.length) selectDrawing(rest[0].id);
+          else showEmpty();
+          P.ui.toast('画纸已经删掉，撤销还能找回。', {
+            kind: 'info',
+            actionLabel: '撤销',
+            onAction: function () { restoreDrawing(doc); }
+          });
+        });
+      }
+
+      /* 撤销删除：按原样把节点放回原来的文件夹。 */
+      function restoreDrawing(snapshot) {
+        try {
+          var recreated = P.data.createDrawing({
+            name: snapshot.name,
+            parentId: snapshot.parentId,
+            strokes: snapshot.strokes || [],
+            width: snapshot.width,
+            height: snapshot.height,
+            thumb: snapshot.thumb || '',
+            sample: snapshot.sample
+          });
+          if (recreated) selectDrawing(recreated.id);
+        } catch (err) {
+          P.ui.toast('画纸没有找回来：' + (err && err.message ? err.message : '未知原因'), { kind: 'error' });
+        }
       }
 
       function renderGallery() {
@@ -12686,6 +14575,7 @@ body.is-window-resizing * {
           button.addEventListener('click', function () { selectDrawing(doc.id); });
           refs.gallery.appendChild(button);
         });
+        syncGalleryNav();
       }
 
       function updateToolbar() {
@@ -13096,18 +14986,20 @@ body.is-window-resizing * {
         var root = document.createElement('div');
         root.className = 'app draw-app';
         root.innerHTML = '<div class="app-toolbar">' +
-          '<div class="app-toolbar__meta"><p class="eyebrow">DRAWING PAPER</p>' +
-          '<h2 class="app-toolbar__title" data-doc-title>画纸</h2>' +
+          '<div class="app-toolbar__meta">' +
           '<span class="save-state" data-state="idle" data-testid="draw-save-state">已保存</span></div>' +
           '<div class="app-toolbar__actions">' +
           '<button class="draw-tool-btn" type="button" data-undo title="撤销 (Ctrl+Z)" aria-label="撤销"></button>' +
           '<button class="draw-tool-btn" type="button" data-redo title="重做 (Ctrl+Shift+Z)" aria-label="重做"></button>' +
           '<span class="app-toolbar__rule" aria-hidden="true"></span>' +
           '<button class="draw-tool-btn" type="button" data-clear aria-label="清空画纸"></button>' +
+          '<button class="draw-tool-btn" type="button" data-delete-drawing aria-label="删掉这张画纸" title="删掉这张画纸"></button>' +
           '<button class="draw-tool-btn draw-tool-btn--export" type="button" data-export aria-label="导出 PNG"></button>' +
           '</div></div>' +
           '<div class="draw-shelf"><span class="draw-shelf__label">画纸<br>簿</span>' +
+          '<button class="draw-nav" type="button" data-gallery-prev aria-label="往前翻画纸" title="往前翻">' + P.icon('chevronLeft') + '</button>' +
           '<div class="draw-gallery" data-gallery></div>' +
+          '<button class="draw-nav" type="button" data-gallery-next aria-label="往后翻画纸" title="往后翻">' + P.icon('chevronRight') + '</button>' +
           '<button class="draw-new" type="button" data-new-drawing><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> 新纸</button></div>' +
           '<div class="draw-controls">' +
           '<div class="draw-control-group"><span class="draw-control-label">墨色</span><span data-colors style="display:flex;align-items:center;gap:5px"></span></div>' +
@@ -13144,6 +15036,9 @@ body.is-window-resizing * {
         refs.undo = root.querySelector('[data-undo]');
         refs.redo = root.querySelector('[data-redo]');
         refs.clear = root.querySelector('[data-clear]');
+        refs.deleteBtn = root.querySelector('[data-delete-drawing]');
+        refs.galleryPrev = root.querySelector('[data-gallery-prev]');
+        refs.galleryNext = root.querySelector('[data-gallery-next]');
         refs.exportBtn = root.querySelector('[data-export]');
         refs.empty = root.querySelector('[data-empty]');
         refs.missing = root.querySelector('[data-missing]');
@@ -13156,11 +15051,15 @@ body.is-window-resizing * {
         refs.redo.innerHTML = P.icon('redo') + '<span>重做</span>';
         refs.clear.innerHTML = P.icon('clear') + '<span>清空</span>';
         refs.exportBtn.innerHTML = P.icon('download') + '<span>导出 PNG</span>';
+        refs.deleteBtn.innerHTML = P.icon('trash') + '<span>删掉这张</span>';
         refs.eraserBtn.innerHTML = P.icon('eraser') + '<span>橡皮</span>';
         buildTools();
         refs.undo.addEventListener('click', undo);
         refs.redo.addEventListener('click', redo);
         refs.clear.addEventListener('click', clearPaper);
+        refs.deleteBtn.addEventListener('click', confirmDeleteDrawing);
+        refs.galleryPrev.addEventListener('click', function () { stepGallery(-1); });
+        refs.galleryNext.addEventListener('click', function () { stepGallery(1); });
         refs.exportBtn.addEventListener('click', exportPNG);
         refs.eraserBtn.addEventListener('click', toggleEraser);
         root.querySelector('[data-new-drawing]').addEventListener('click', createDrawing);
@@ -13194,6 +15093,8 @@ body.is-window-resizing * {
           if (focused && focused.id === ctx.winId) fitCanvas();
         });
         ctx.observeResize(function () { fitCanvas(); }, refs.stage);
+        ctx.observeResize(function () { syncGalleryNav(); }, refs.gallery);
+        ctx.on(refs.gallery, 'scroll', syncGalleryNav, { passive: true });
         ctx.subscribe(function (event) {
           if (event.type !== 'nodes') return;
           var doc = currentDoc();
@@ -13314,6 +15215,8 @@ body.is-window-resizing * {
           refs.gridToggle.setAttribute('aria-pressed', prefs.showGrid ? 'true' : 'false');
         }
         if (refs.motionSelect) refs.motionSelect.value = prefs.motion;
+        if (refs.themeSelect) refs.themeSelect.value = prefs.theme;
+        if (refs.handSelect) refs.handSelect.value = prefs.handFont;
       }
 
       function updateStorageLine() {
@@ -13401,7 +15304,7 @@ body.is-window-resizing * {
             showImportError('这不是一份有效的 JSON', '文件解析失败。当前工作区没有任何改动。');
             return;
           }
-          var result = P.validateWorkspace(raw);
+          var result = P.ingestWorkspace(raw);
           if (!result.ok) {
             showImportError('这份工作区没有被接受', result.error + '\n\n当前工作区没有任何改动。');
             return;
@@ -13507,7 +15410,17 @@ body.is-window-resizing * {
 
       function buildAppearance() {
         return '<h2 class="settings-section__title">外观</h2>' +
-          '<p class="settings-section__intro">调整纸张颜色、桌面网格和动效。设置会自动保存。</p>' +
+          '<p class="settings-section__intro">调整配色、纸张颜色、便签字形、桌面网格和动效。设置会自动保存。</p>' +
+          '<div class="setting-row"><div class="setting-row__copy"><span class="setting-row__label">配色</span>' +
+          '<p class="setting-row__desc">跟随 DSH 时会跟着宿主的浅色／深色一起变。</p></div>' +
+          '<div class="select-wrap"><select data-theme-select aria-label="配色方案">' +
+          '<option value="system">跟随 DSH</option><option value="light">浅色</option><option value="dark">深色</option>' +
+          '</select></div></div>' +
+          '<div class="setting-row"><div class="setting-row__copy"><span class="setting-row__label">便签字形</span>' +
+          '<p class="setting-row__desc">只影响便签正文；标题与按钮保持纸张字体。</p></div>' +
+          '<div class="select-wrap"><select data-hand-select aria-label="便签字形">' +
+          '<option value="kai">霞鹜文楷（内置）</option><option value="xing">系统行楷</option><option value="serif">纸张宋体</option>' +
+          '</select></div></div>' +
           '<div class="setting-row"><div class="setting-row__copy"><span class="setting-row__label">纸张颜色</span>' +
           '<p class="setting-row__desc">换一种底色，内容不会移动。</p></div>' +
           '<div class="paper-swatches" data-tones>' + TONES.map(function (tone) {
@@ -13592,8 +15505,8 @@ body.is-window-resizing * {
         refs.root = root;
         root.className = 'app settings-app';
         root.innerHTML = '<div class="settings-head"><span class="settings-head__seal" aria-hidden="true">屿</span>' +
-          '<div class="settings-head__text"><p class="eyebrow">PAPER SETTINGS</p><h2>纸屿设置</h2>' +
-          '<p>外观 · 数据 · 快捷键 · 关于</p></div><span class="settings-version">v' + P.version + '</span></div>' +
+          '<div class="settings-head__text"><h2>设置</h2></div>' +
+          '<span class="settings-version">v' + P.version + '</span></div>' +
           '<div class="settings-layout">' +
           '<nav class="settings-nav" role="tablist" aria-label="设置分区" data-nav>' +
           '<button type="button" role="tab" data-section="appearance" aria-selected="true">外观</button>' +
@@ -13613,6 +15526,8 @@ body.is-window-resizing * {
         refs.tones = root.querySelector('[data-tones]');
         refs.gridToggle = root.querySelector('[data-grid-toggle]');
         refs.motionSelect = root.querySelector('[data-motion-select]');
+        refs.themeSelect = root.querySelector('[data-theme-select]');
+        refs.handSelect = root.querySelector('[data-hand-select]');
         refs.storageLine = root.querySelector('[data-storage-line]');
         refs.storageMode = root.querySelector('[data-storage-mode]');
         refs.stats = root.querySelector('[data-stats]');
@@ -13659,6 +15574,16 @@ body.is-window-resizing * {
         });
         refs.motionSelect.addEventListener('change', function () {
           P.data.setPrefs({ motion: refs.motionSelect.value });
+          P.shell.applyPrefs();
+          updateToneButtons();
+        });
+        refs.themeSelect.addEventListener('change', function () {
+          P.data.setPrefs({ theme: refs.themeSelect.value });
+          P.shell.applyPrefs();
+          updateToneButtons();
+        });
+        refs.handSelect.addEventListener('change', function () {
+          P.data.setPrefs({ handFont: refs.handSelect.value });
           P.shell.applyPrefs();
           updateToneButtons();
         });
@@ -13967,6 +15892,17 @@ body.is-window-resizing * {
     if (snap) send('save', { snapshot: snap });
   }
   window.__SCHEDULE_RESTART__ = function (payload) { send('restart', payload || {}); };
+  /* 宿主拆 iframe 之前会要一份"现在就存"的快照（flush-now）。
+     这里先立刻落一次盘再回话，把 420ms 防抖窗口关掉。 */
+  window.addEventListener('message', function (event) {
+    var data = event.data;
+    if (!data || data.type !== 'dsh-plugin-control-your-schedule:flush-now') return;
+    try {
+      if (P.storage && typeof P.storage.flushNow === 'function') P.storage.flushNow();
+    } catch (err) { /* best effort */ }
+    var snap = snapshot();
+    if (snap) send('snapshot', { snapshot: snap });
+  });
   P.storage.subscribeData(function (status) {
     if (status.phase === 'saved') postSave();
   });

@@ -1,0 +1,137 @@
+{
+  "format": "paper-os/workspace",
+  "version": 1,
+  "prefs": {
+    "paperTone": "oat",
+    "showGrid": false,
+    "motion": "reduce",
+    "welcomeDismissed": true
+  },
+  "meta": {
+    "createdAt": 1792000000000,
+    "updatedAt": 1792500000000,
+    "seededAt": 1792000000000,
+    "welcomeDocId": "doc_welcome"
+  },
+  "nodes": [
+    {
+      "id": "folder_notes",
+      "type": "folder",
+      "name": "纸页",
+      "parentId": null,
+      "sample": false,
+      "createdAt": 1792000000000,
+      "updatedAt": 1792000000000
+    },
+    {
+      "id": "doc_welcome",
+      "type": "doc",
+      "kind": "note",
+      "name": "从哪里开始",
+      "parentId": "folder_notes",
+      "content": "第一行\n第二行",
+      "sample": false,
+      "createdAt": 1792000000000,
+      "updatedAt": 1792400000000
+    },
+    {
+      "id": "folder_draw",
+      "type": "folder",
+      "name": "画纸",
+      "parentId": null,
+      "sample": false,
+      "createdAt": 1792000000000,
+      "updatedAt": 1792000000000
+    },
+    {
+      "id": "draw_one",
+      "type": "doc",
+      "kind": "drawing",
+      "name": "未命名画纸",
+      "parentId": "folder_draw",
+      "strokes": [
+        {
+          "color": "#34362f",
+          "width": 2,
+          "points": [
+            {
+              "x": 10,
+              "y": 12
+            },
+            {
+              "x": 20,
+              "y": 24
+            }
+          ]
+        }
+      ],
+      "width": 1200,
+      "height": 800,
+      "thumb": "",
+      "sample": false,
+      "createdAt": 1792000000000,
+      "updatedAt": 1792300000000
+    }
+  ],
+  "stickies": [
+    {
+      "id": "sticky_a",
+      "text": "第一张便签",
+      "color": "peach",
+      "x": 34,
+      "y": 44,
+      "sample": false,
+      "createdAt": 1792100000000,
+      "updatedAt": 1792100000000
+    },
+    {
+      "id": "sticky_b",
+      "text": "第二张便签",
+      "color": "sage",
+      "x": 268,
+      "y": 66,
+      "sample": true,
+      "createdAt": 1792200000000,
+      "updatedAt": 1792200000000
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task_done",
+      "date": "2026-10-18",
+      "title": "做完的事",
+      "done": true,
+      "sample": false,
+      "createdAt": 1792000000000,
+      "updatedAt": 1792100000000
+    },
+    {
+      "id": "task_open",
+      "date": "2026-10-20",
+      "title": "没做完的事",
+      "done": false,
+      "sample": false,
+      "createdAt": 1792000000000,
+      "updatedAt": 1792000000000
+    }
+  ],
+  "desktop": {
+    "windows": [
+      {
+        "appId": "notes",
+        "bounds": {
+          "x": 10,
+          "y": 10,
+          "w": 900,
+          "h": 620
+        },
+        "minimized": false,
+        "maximized": false,
+        "focused": true,
+        "params": {
+          "docId": "doc_welcome"
+        }
+      }
+    ]
+  }
+}
