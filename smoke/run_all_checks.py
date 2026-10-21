@@ -15,6 +15,14 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Windows CI runners default stdout to cp1252, while every message here is Chinese:
+# printing must never be the thing that turns a gate red. Pin UTF-8 explicitly.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:  # noqa: BLE001 - older streams may not support it
+        pass
+
 ROOT = Path(__file__).resolve().parent.parent
 PLUGIN = ROOT / "plugin" if (ROOT / "plugin" / "package.json").is_file() else ROOT
 PAGE = PLUGIN / "assets" / "paper-os.html"
