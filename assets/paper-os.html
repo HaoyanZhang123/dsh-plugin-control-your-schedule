@@ -2058,6 +2058,621 @@ body.os-ready .os {
   pointer-events: none;
 }
 
+/* ---------------- desk notice ---------------- */
+
+.desk-notice {
+  position: fixed;
+  top: 62px;
+  left: 50%;
+  z-index: 9000;
+  display: flex;
+  max-width: min(720px, 90vw);
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 12px 10px 14px;
+  border: 1px solid rgba(185, 111, 80, 0.42);
+  border-left: 3px solid var(--clay);
+  background: rgba(253, 249, 240, 0.97);
+  box-shadow: 0 12px 26px -20px rgba(70, 52, 38, 0.7);
+  color: var(--ink-soft);
+  font-family: var(--font-serif);
+  font-size: 13.5px;
+  line-height: 1.75;
+  transform: translateX(-50%);
+}
+
+.desk-notice__mark {
+  flex: 0 0 auto;
+  padding-top: 1px;
+  color: var(--clay-deep);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+
+.desk-notice__text {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.desk-notice__close {
+  flex: 0 0 auto;
+  padding: 0 2px;
+  border: 0;
+  color: var(--ink-ghost);
+  background: transparent;
+  font-family: var(--font-serif);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.desk-notice__close:hover {
+  color: var(--clay-deep);
+}
+
+html[data-theme="dark"] .desk-notice {
+  border-color: rgba(216, 150, 120, 0.45);
+  background: rgba(46, 44, 39, 0.97);
+  color: var(--ink-soft);
+}
+
+html[data-theme="dark"] .desk-notice__mark {
+  color: #d89678;
+}
+
+/* ---------------- prompts ----------------
+   提示词有自己的一套视觉语言，不是笔记的换皮：
+   · 主调是陶土色（--clay），笔记是鼠尾草绿（--sage），两个应用一眼能分开；
+   · 左栏是「索引卡抽屉」：编号 01/02/03 + 左侧陶土色书签条，不是笔记的圆角卡片；
+   · 右栏是「一张立起来的卡」：顶部陶土色压线、大号衬线标题、左侧虚线书脊；
+   · 正文写在纸上（无边框、带书脊），不是表单输入框的样子。
+   ------------------------------------------ */
+
+.prompts-app {
+  box-sizing: border-box;
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  grid-template-columns: minmax(0, 318px) minmax(0, 1fr);
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(185, 111, 80, 0.07), transparent 62%),
+    linear-gradient(180deg, rgba(249, 243, 231, 0.95), rgba(242, 233, 218, 0.95));
+}
+
+/* ---------- left: index drawer ---------- */
+
+.prompts-rail {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  border-right: 1px dashed rgba(155, 120, 96, 0.42);
+  background: transparent;
+}
+
+.prompts-rail__head {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 17px 16px 12px;
+}
+
+.prompts-rail__head::after {
+  content: '';
+  position: absolute;
+  right: 16px;
+  bottom: 0;
+  left: 16px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(185, 111, 80, 0.85), rgba(185, 111, 80, 0.12));
+}
+
+.prompts-rail__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 11px;
+}
+
+.prompts-rail__top .eyebrow {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  color: var(--clay-deep);
+  letter-spacing: 0.22em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prompts-new {
+  display: inline-flex;
+  height: 25px;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 0 9px;
+  border: 1px solid rgba(155, 83, 58, 0.5);
+  border-radius: 0;
+  color: var(--clay-deep);
+  background: transparent;
+  font-family: var(--font-serif);
+  font-size: 13.5px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.prompts-new:hover {
+  color: #fbf4e6;
+  background: var(--clay-deep);
+}
+
+.prompts-new:active {
+  transform: translateY(1px);
+}
+
+.prompts-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 29px;
+  padding: 0 9px;
+  border: 0;
+  border-bottom: 1px solid rgba(155, 120, 96, 0.4);
+  border-radius: 0;
+  color: var(--ink-faint);
+  background: transparent;
+}
+
+.prompts-search:focus-within {
+  border-bottom-color: var(--clay-deep);
+}
+
+.prompts-search svg {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+.prompts-search input {
+  min-width: 0;
+  flex: 1 1 auto;
+  border: 0;
+  outline: 0;
+  color: var(--ink);
+  background: transparent;
+  font-family: var(--font-serif);
+  font-size: 14px;
+}
+
+.prompts-rail__status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 9px;
+}
+
+.prompts-rail__count {
+  color: var(--ink-ghost);
+  font-family: var(--font-serif);
+  font-size: 12.5px;
+  letter-spacing: 0.08em;
+}
+
+.prompts-list {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 10px 10px 4px;
+}
+
+.prompts-list__empty {
+  padding: 30px 14px;
+  color: var(--ink-ghost);
+  font-family: var(--font-serif);
+  font-size: 14px;
+  line-height: 1.9;
+  text-align: center;
+}
+
+.prompts-rail__foot {
+  flex: 0 0 auto;
+  padding: 9px 16px 13px;
+  border-top: 1px dashed rgba(155, 120, 96, 0.32);
+  color: var(--ink-ghost);
+  font-family: var(--font-serif);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+/* an index card: number + bookmark bar, no rounded card, no fill until active */
+.prompt-item {
+  position: relative;
+  display: grid;
+  width: 100%;
+  grid-template-columns: 26px minmax(0, 1fr);
+  grid-column-gap: 9px;
+  padding: 9px 10px 9px 4px;
+  border: 0;
+  border-radius: 0;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.14s;
+}
+
+.prompt-item + .prompt-item {
+  margin-top: 1px;
+}
+
+.prompt-item::before {
+  content: '';
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  left: 0;
+  width: 2px;
+  background: transparent;
+  transition: background 0.14s, width 0.14s;
+}
+
+.prompt-item:hover {
+  background: rgba(185, 111, 80, 0.06);
+}
+
+.prompt-item.is-active {
+  background: rgba(185, 111, 80, 0.1);
+}
+
+.prompt-item.is-active::before {
+  width: 3px;
+  background: var(--clay);
+}
+
+.prompt-item__index {
+  padding-top: 2px;
+  color: rgba(155, 120, 96, 0.75);
+  font-family: var(--font-serif);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.prompt-item.is-active .prompt-item__index {
+  color: var(--clay-deep);
+}
+
+.prompt-item__col {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.prompt-item__name {
+  overflow: hidden;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 14.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prompt-item__excerpt {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--ink-faint);
+  font-family: var(--font-serif);
+  font-size: 13.5px;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.prompt-item__foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 1px;
+  color: var(--ink-ghost);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.prompt-item__dash {
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.prompt-item__pin {
+  flex: 0 0 auto;
+  color: var(--clay);
+}
+
+.prompt-item__pin svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ---------- right: one standing card ---------- */
+
+.prompts-main {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  padding: 16px 20px 14px;
+}
+
+.prompts-card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  padding: 18px 22px 16px 26px;
+  border: 1px solid rgba(155, 120, 96, 0.34);
+  border-top: 2px solid rgba(185, 111, 80, 0.72);
+  background: rgba(253, 249, 240, 0.72);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 10px 22px -18px rgba(70, 52, 38, 0.5);
+}
+
+/* the dashed spine: this card is a card, not a form */
+.prompts-card::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 11px;
+  width: 1px;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(185, 111, 80, 0.38) 0 5px,
+    transparent 5px 10px
+  );
+}
+
+.prompts-main__bar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed rgba(155, 120, 96, 0.32);
+}
+
+.prompts-main__title {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prompts-main__title::before {
+  content: '正在编辑 · ';
+  color: var(--ink-ghost);
+  font-size: 12.5px;
+  letter-spacing: 0.1em;
+}
+
+.prompts-main__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+}
+
+.prompts-main__actions .paper-btn {
+  min-height: 24px;
+  padding: 2px 7px;
+  border-radius: 0;
+  font-family: var(--font-serif);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+
+.prompts-main__body {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 12px;
+}
+
+.prompts-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.prompts-field--body {
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.prompts-field__label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ink-ghost);
+  font-family: var(--font-serif);
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+}
+
+/* the title reads as a headline, not an input */
+.prompts-title-input {
+  width: 100%;
+  padding: 2px 0 6px;
+  border: 0;
+  border-bottom: 1px solid rgba(155, 120, 96, 0.28);
+  border-radius: 0;
+  color: var(--ink);
+  background: transparent;
+  font-family: var(--font-serif);
+  font-size: 25px;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  outline: 0;
+}
+
+.prompts-title-input:focus {
+  border-bottom-color: var(--clay);
+}
+
+.prompts-body-input {
+  width: 100%;
+  min-height: 190px;
+  flex: 1 1 auto;
+  padding: 8px 0 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--ink);
+  background: transparent;
+  font-family: var(--font-serif);
+  font-size: 15.5px;
+  line-height: 2;
+  outline: 0;
+  resize: none;
+}
+
+.prompts-body-input:focus {
+  outline: 0;
+}
+
+.prompts-main__foot {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(155, 120, 96, 0.32);
+  color: var(--ink-ghost);
+  font-family: var(--font-serif);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
+
+.prompts-empty {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  padding: 30px 24px;
+  color: var(--ink-faint);
+  font-family: var(--font-serif);
+  font-size: 15px;
+  line-height: 1.85;
+  text-align: center;
+}
+
+.prompts-empty__mark {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid rgba(185, 111, 80, 0.42);
+  border-radius: 0;
+  color: var(--clay-deep);
+  font-family: var(--font-serif);
+  font-size: 21px;
+}
+
+.prompts-empty__title {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 17px;
+}
+
+.prompts-empty__hint {
+  max-width: 400px;
+  margin: 0;
+  color: var(--ink-ghost);
+  font-size: 13.5px;
+  line-height: 1.9;
+}
+
+.prompts-empty__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.prompts-sample-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 4px;
+  border: 1px solid rgba(185, 111, 80, 0.4);
+  border-radius: 0;
+  color: var(--clay-deep);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+}
+
+@media (max-width: 860px) {
+  .prompts-app {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(150px, 38%) minmax(0, 1fr);
+  }
+
+  .prompts-rail {
+    border-right: 0;
+    border-bottom: 1px dashed rgba(155, 120, 96, 0.42);
+  }
+
+  .prompts-rail__foot {
+    display: none;
+  }
+
+  .prompts-main {
+    padding: 10px 12px 10px;
+  }
+
+  .prompts-card {
+    padding: 12px 14px 12px 20px;
+  }
+
+  .prompts-title-input {
+    font-size: 20px;
+  }
+
+  .prompts-main__actions .paper-btn {
+    padding: 2px 5px;
+  }
+
+  .prompts-body-input {
+    min-height: 130px;
+  }
+}
+
 /* ---------------- command palette ---------------- */
 
 .palette-layer {
@@ -6797,8 +7412,6 @@ html[data-theme="dark"] .cal-day__dot.cal-day__dot--done {
 }
 
 
-
-
 /* ===== guided tour ===== */
 .tour {
   position: fixed;
@@ -7080,6 +7693,9 @@ html[data-theme="dark"] .text-input,
 html[data-theme="dark"] .notes-search,
 html[data-theme="dark"] .note-title-input,
 html[data-theme="dark"] .note-body,
+html[data-theme="dark"] .prompts-search,
+html[data-theme="dark"] .prompts-title-input,
+html[data-theme="dark"] .prompts-body-input,
 html[data-theme="dark"] .task-add input,
 html[data-theme="dark"] select {
   border-color: rgba(226, 217, 197, 0.18);
@@ -7094,6 +7710,116 @@ html[data-theme="dark"] .sticky-board {
 html[data-theme="dark"] .notes-rail {
   border-right-color: rgba(226, 217, 197, 0.12);
   background: rgba(42, 40, 35, 0.9);
+}
+
+/* prompts keeps its own dark palette: clay on warm charcoal, no light fills */
+html[data-theme="dark"] .prompts-app {
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(216, 150, 120, 0.1), transparent 62%),
+    linear-gradient(180deg, rgba(40, 38, 33, 0.96), rgba(33, 32, 28, 0.96));
+}
+
+html[data-theme="dark"] .prompts-rail {
+  border-right-color: rgba(226, 217, 197, 0.16);
+  background: transparent;
+}
+
+html[data-theme="dark"] .prompts-rail__head::after {
+  background: linear-gradient(90deg, rgba(216, 150, 120, 0.85), rgba(216, 150, 120, 0.1));
+}
+
+html[data-theme="dark"] .prompts-rail__top .eyebrow,
+html[data-theme="dark"] .prompt-item.is-active .prompt-item__index {
+  color: #d89678;
+}
+
+html[data-theme="dark"] .prompts-new {
+  border-color: rgba(216, 150, 120, 0.5);
+  color: #d89678;
+  background: transparent;
+}
+
+html[data-theme="dark"] .prompts-new:hover {
+  color: #23221e;
+  background: #d89678;
+}
+
+html[data-theme="dark"] .prompts-search {
+  border-bottom-color: rgba(226, 217, 197, 0.24);
+  color: var(--ink-faint);
+  background: transparent;
+}
+
+html[data-theme="dark"] .prompts-search:focus-within {
+  border-bottom-color: #d89678;
+}
+
+html[data-theme="dark"] .prompts-card {
+  border-color: rgba(226, 217, 197, 0.18);
+  border-top-color: rgba(216, 150, 120, 0.7);
+  background: rgba(46, 44, 39, 0.62);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .prompts-card::before {
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(216, 150, 120, 0.4) 0 5px,
+    transparent 5px 10px
+  );
+}
+
+html[data-theme="dark"] .prompts-main__bar,
+html[data-theme="dark"] .prompts-main__foot,
+html[data-theme="dark"] .prompts-rail__foot {
+  border-color: rgba(226, 217, 197, 0.16);
+}
+
+html[data-theme="dark"] .prompts-rail__foot {
+  color: var(--ink-ghost);
+}
+
+html[data-theme="dark"] .prompts-title-input {
+  border-bottom-color: rgba(226, 217, 197, 0.22);
+  color: var(--ink);
+  background: transparent;
+}
+
+html[data-theme="dark"] .prompts-title-input:focus {
+  border-bottom-color: #d89678;
+}
+
+html[data-theme="dark"] .prompts-body-input {
+  color: var(--ink);
+  background: transparent;
+}
+
+html[data-theme="dark"] .prompt-item:hover {
+  background: rgba(216, 150, 120, 0.08);
+}
+
+html[data-theme="dark"] .prompt-item.is-active {
+  background: rgba(216, 150, 120, 0.13);
+}
+
+html[data-theme="dark"] .prompt-item.is-active::before {
+  background: #d89678;
+}
+
+html[data-theme="dark"] .prompt-item__index {
+  color: rgba(226, 217, 197, 0.5);
+}
+
+html[data-theme="dark"] .prompts-sample-badge,
+html[data-theme="dark"] .prompts-empty__mark {
+  border-color: rgba(216, 150, 120, 0.45);
+  color: #d89678;
+}
+
+html[data-theme="dark"] .prompts-list__empty,
+html[data-theme="dark"] .prompts-empty,
+html[data-theme="dark"] .prompts-empty__hint {
+  color: var(--ink-faint);
 }
 
 html[data-theme="dark"] .note-item,
@@ -7604,7 +8330,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
   P.codename = '纸屿';
   /* 版本号由 tools/build_page.py 从 package.json 注入，页面里不再有第二份事实源。 */
   P.version = '__PAGE_VERSION__';
-  P.schemaVersion = 2;
+  P.schemaVersion = 3;
 
   /* 待办的紧急程度：顺序即强弱（数字越小越急），颜色沿用便签色板。
      存语义 id 而不是 q1..q4，重排表项不会改写既有数据的含义。 */
@@ -7631,7 +8357,48 @@ html[data-theme="dark"] .priority-popover__item.is-active {
      - 迁移块不碰 DOM / P.util，可在 node 里用 new Function 单独跑。
      - 新增 v3：往 MIGRATIONS 加一项，别改这里的循环。
      ============================================================ */
+
+
   /* @migrate-begin */
+
+  /* 原生示例提示词：唯一一份定义。
+     三条都用 sample: true 标记，随「清除示例」一起清掉；id 固定，重复落地不会长出第二份。
+     放在迁移块里，是因为 createSeed、v2→v3 迁移、以及"读到缺少 prompts 的旧文件"三处都要用它，
+     而迁移块是本文件唯一会被单独抽出跑测试的片段。 */
+  P.SAMPLE_PROMPTS = [
+    {
+      id: 'prompt_sample_research',
+      title: '调研同类产品再动手',
+      body: '先调研其他人的产品、github项目、x上的内容，然后总结学习，参考、差异、可学习可借鉴的地方。'
+    },
+    {
+      id: 'prompt_sample_align',
+      title: '先对齐需求再动手',
+      body: '我可能对自己的需求和项目的表述不清楚，请你理解我的意思和需求，给出你的方案思路建议，有需要补充的信息跟我说，和我讨论确定之后再去做。'
+    },
+    {
+      id: 'prompt_sample_agents',
+      title: '多开子代理争最好效果',
+      body: '你可以开很多的子代理，我要最好的效果。'
+    }
+  ];
+
+  function freshSamplePrompts(now) {
+    var stamp = Number(now) || Date.now();
+    return P.SAMPLE_PROMPTS.map(function (item, index) {
+      var at = stamp - (index + 1) * 6000;
+      return {
+        id: item.id,
+        title: item.title,
+        body: item.body,
+        pinned: false,
+        sample: true,
+        createdAt: at,
+        updatedAt: at
+      };
+    });
+  }
+  P.freshSamplePrompts = freshSamplePrompts;
   var MIGRATIONS = {
     1: function v1ToV2(raw) {
       var out = JSON.parse(JSON.stringify(raw));
@@ -7657,6 +8424,22 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       out.stickies = stickies;
       if (!out.meta || typeof out.meta !== 'object') out.meta = {};
       out.meta.migratedFrom = 1;
+      out.meta.migratedAt = Date.now();
+      out.meta.updatedAt = Date.now();
+      return out;
+    },
+    2: function v2ToV3(raw) {
+      /* v3 只做加法：多一份提示词库。既有节点/便签/待办/桌面一字不动，
+         这样"升级不丢数据"在 v2→v3 上也是逐值可验证的。 */
+      var out = JSON.parse(JSON.stringify(raw));
+      out.version = 3;
+      /* 缺失（从没写过）才铺示例；已是空数组 = 用户自己删空/清过示例，不能偷偷长回来。 */
+      var seededHere = !Array.isArray(out.prompts);
+      out.prompts = seededHere ? freshSamplePrompts(Date.now()) : out.prompts;
+      if (!out.meta || typeof out.meta !== 'object') out.meta = {};
+      if (seededHere && !out.meta.sampleClearedAt) out.meta.promptsSeededAt = Date.now();
+      /* migratedFrom 记的是"最初从哪个版本升上来"，中间步骤不许覆盖它。 */
+      if (out.meta.migratedFrom === undefined) out.meta.migratedFrom = 2;
       out.meta.migratedAt = Date.now();
       out.meta.updatedAt = Date.now();
       return out;
@@ -7873,6 +8656,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     notes: '<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="16" y="8" width="36" height="48" rx="2" fill="#f6efdf" stroke="#b8ab92" stroke-width="1"/><rect x="12" y="6" width="36" height="48" rx="2.5" fill="#82977a" stroke="#5f7359" stroke-width="1.1"/><path d="M19 6v48" stroke="#5f7359" stroke-width="1.2" opacity=".7"/><g fill="#f1e9d8"><circle cx="17" cy="13" r="1"/><circle cx="17" cy="21" r="1"/><circle cx="17" cy="29" r="1"/><circle cx="17" cy="37" r="1"/><circle cx="17" cy="45" r="1"/></g><rect x="24" y="17" width="21" height="22" rx="1" fill="#f3ecdc" stroke="#6f8268" stroke-width=".8"/><path d="M28 24h13M28 29h9M28 34h11" stroke="#9a947f" stroke-width="1.2" stroke-linecap="round"/><path d="M48 8v20l-4-3-4 3V8" fill="#b96f50" opacity=".8"/></svg>',
     calendar: '<svg viewBox="0 0 64 64" aria-hidden="true"><rect x="11" y="14" width="42" height="42" rx="2" fill="#faf4e7" stroke="#8b7b63" stroke-width="1.1"/><path d="M11 24h42" stroke="#8b7b63" stroke-width="1"/><path d="M20 9v9M44 9v9" stroke="#7d8f72" stroke-width="2.2" stroke-linecap="round"/><path d="M18 32h7M29 32h7M40 32h5M18 41h7M29 41h7" stroke="#b3a58e" stroke-width="1.4" stroke-linecap="round"/><circle cx="42" cy="42" r="8" fill="none" stroke="#b96f50" stroke-width="1.7"/><path d="M38.9 42l2.3 2.5 4.4-5.2" fill="none" stroke="#b96f50" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     draw: '<svg viewBox="0 0 64 64" aria-hidden="true"><g transform="rotate(-2 30 31)"><rect x="8" y="15" width="41" height="33" fill="#fbf5e9" stroke="#93836b" stroke-width="1"/><path d="M14 40c7-2 8-12 15-11 7 1 5 9 14 1" fill="none" stroke="#4c6a7c" stroke-width="3.4" stroke-linecap="round"/><path d="M15 24c5-2 8 1 12-1" fill="none" stroke="#b96f50" stroke-width="2.2" stroke-linecap="round" opacity=".8"/></g><g transform="rotate(35 47 33)"><rect x="43" y="9" width="7" height="27" rx="1" fill="#d1a669" stroke="#8d6c40" stroke-width="1"/><path d="M43 36h7l-3.5 10z" fill="#b96f50" stroke="#8d6c40" stroke-width="1"/><path d="M43.7 12h5.6" stroke="#8d6c40" stroke-width=".8"/></g></svg>',
+    prompts: '<svg viewBox="0 0 64 64" aria-hidden="true"><g transform="rotate(-4 31 34)"><rect x="15" y="17" width="33" height="30" rx="1.5" fill="#e7dbc4" stroke="#a2957d" stroke-width="1"/><rect x="19" y="23" width="33" height="30" rx="1.5" fill="#f7f0e0" stroke="#a2957d" stroke-width="1.2"/><path d="M19 23h33v30H19z" fill="none"/><path d="M22.5 23v30" stroke="#b96f50" stroke-width="2.2" opacity=".85"/><path d="M27 31h17M27 36.5h20M27 42h13" stroke="#a49a86" stroke-width="1.5" stroke-linecap="round" opacity=".8"/><path d="M47 40.5l1.7 4.8 4.8 1.7-4.8 1.7-1.7 4.8-1.7-4.8-4.8-1.7 4.8-1.7z" fill="#b96f50"/></g></svg>',
     settings: '<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="36" r="18" fill="#b96f50" opacity=".84" stroke="#8f4f38" stroke-width="1"/><circle cx="32" cy="36" r="12.6" fill="#efd9c7" opacity=".92"/><path d="M32 25l3.4 6.9 7.6 1.1-5.5 5.4 1.3 7.6-6.8-3.6-6.8 3.6 1.3-7.6-5.5-5.4 7.6-1.1z" fill="#b96f50" opacity=".8"/><rect x="27" y="9" width="10" height="7" rx="2" fill="#7d6949"/><path d="M27 12h10" stroke="#5f5039" stroke-width="1"/></svg>',
   };
 
@@ -8400,7 +9184,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       },
       nodes: [],
       stickies: [],
-      tasks: []
+      tasks: [],
+      prompts: []
     };
   }
 
@@ -8699,7 +9484,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     return {
       nodes: state.nodes.filter(function (n) { return n.sample; }).length,
       stickies: state.stickies.filter(function (n) { return n.sample; }).length,
-      tasks: state.tasks.filter(function (n) { return n.sample; }).length
+      tasks: state.tasks.filter(function (n) { return n.sample; }).length,
+      prompts: state.prompts.filter(function (n) { return n.sample; }).length
     };
   }
 
@@ -8721,11 +9507,14 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     state.stickies = state.stickies.filter(function (n) { return !n.sample; });
     var removedTasks = state.tasks.filter(function (n) { return n.sample; }).map(function (n) { return n.id; });
     state.tasks = state.tasks.filter(function (n) { return !n.sample; });
+    var removedPrompts = state.prompts.filter(function (n) { return n.sample; }).map(function (n) { return n.id; });
+    state.prompts = state.prompts.filter(function (n) { return !n.sample; });
     state.meta.sampleClearedAt = Date.now();
-    var result = { nodes: removedNodes, stickies: removedStickies, tasks: removedTasks };
+    var result = { nodes: removedNodes, stickies: removedStickies, tasks: removedTasks, prompts: removedPrompts };
     if (removedNodes.length) emit('nodes', { action: 'samples-cleared', ids: removedNodes });
     if (removedStickies.length) emit('stickies', { action: 'samples-cleared', ids: removedStickies });
     if (removedTasks.length) emit('tasks', { action: 'samples-cleared', ids: removedTasks });
+    if (removedPrompts.length) emit('prompts', { action: 'samples-cleared', ids: removedPrompts });
     state.meta.updatedAt = Date.now();
     touch();
     return result;
@@ -8862,6 +9651,136 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     state.stickies = state.stickies.filter(function (s) { return ids.indexOf(s.id) === -1; });
     commit('stickies', { action: 'prune', count: ids.length });
     return ids.length;
+  }
+
+  /* ---------------- prompts ----------------
+     提示词库是"可复用的一句话/一段话"，不是对话记录：
+     - 只有一个写入口（本文件的 CRUD），页面与宿主输入框都读同一份快照；
+     - 排序 = 置顶优先，其次最近修改；
+     - 删除直接删（提示词很短，误删成本低），确认框在 UI 层做。
+     标题清洗与上限放在这里，是因为 model 和 storage 都要用：
+     事实源只有这一份，storage 侧通过 P.* 借用。
+     ------------------------------------------ */
+
+  P.PROMPT_TITLE_MAX = 120;
+  P.PROMPT_BODY_MAX = 20000;
+  P.PROMPT_LIMIT = 300;
+
+  function cleanPromptTitle(value, fallback) {
+    var title = String(value === undefined || value === null ? '' : value)
+      .replace(/[\r\n\t]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (title.length > P.PROMPT_TITLE_MAX) title = title.slice(0, P.PROMPT_TITLE_MAX);
+    if (!title) title = fallback;
+    return title;
+  }
+
+  function promptTitleFromBody(body) {
+    var first = String(body || '').split('\n').map(function (line) { return line.trim(); }).filter(function (line) { return line !== ''; })[0] || '';
+    if (first.length > P.PROMPT_TITLE_MAX) first = first.slice(0, P.PROMPT_TITLE_MAX);
+    return first || '未命名提示词';
+  }
+
+  P.cleanPromptTitle = cleanPromptTitle;
+  P.promptTitleFromBody = promptTitleFromBody;
+
+  function promptSort(a, b) {
+    if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+    return Number(b.updatedAt) - Number(a.updatedAt);
+  }
+
+  function listPrompts(query) {
+    var q = String(query === undefined || query === null ? '' : query).trim().toLowerCase();
+    var items = state.prompts.slice().sort(promptSort);
+    if (!q) return items.map(function (p) { return U.clone(p); });
+    return items.filter(function (p) {
+      return (String(p.title || '') + '\n' + String(p.body || '')).toLowerCase().indexOf(q) !== -1;
+    }).map(function (p) { return U.clone(p); });
+  }
+
+  function getPrompt(id) {
+    var prompt = state.prompts.find(function (p) { return p.id === id; });
+    return prompt ? U.clone(prompt) : null;
+  }
+
+  function createPrompt(data) {
+    if (state.prompts.length >= P.PROMPT_LIMIT) return null;
+    var info = data || {};
+    var now = Date.now();
+    var body = typeof info.body === 'string' ? info.body.slice(0, P.PROMPT_BODY_MAX) : '';
+    var prompt = {
+      id: U.uid('prompt'),
+      title: cleanPromptTitle(info.title, promptTitleFromBody(body)),
+      body: body,
+      pinned: !!info.pinned,
+      sample: false,
+      createdAt: now,
+      updatedAt: now
+    };
+    state.prompts.push(prompt);
+    commit('prompts', { action: 'create', id: prompt.id });
+    return U.clone(prompt);
+  }
+
+  function updatePrompt(id, patch) {
+    var prompt = state.prompts.find(function (p) { return p.id === id; });
+    if (!prompt) return null;
+    var changes = patch || {};
+    var nextBody = prompt.body;
+    if (Object.prototype.hasOwnProperty.call(changes, 'body')) {
+      nextBody = String(changes.body === undefined || changes.body === null ? '' : changes.body).slice(0, P.PROMPT_BODY_MAX);
+      prompt.body = nextBody;
+    }
+    if (Object.prototype.hasOwnProperty.call(changes, 'title')) {
+      prompt.title = cleanPromptTitle(changes.title, promptTitleFromBody(nextBody));
+    }
+    if (Object.prototype.hasOwnProperty.call(changes, 'pinned')) prompt.pinned = !!changes.pinned;
+    prompt.updatedAt = Date.now();
+    commit('prompts', { action: 'update', id: id });
+    return U.clone(prompt);
+  }
+
+  function deletePrompt(id) {
+    var prompt = state.prompts.find(function (p) { return p.id === id; });
+    if (!prompt) return null;
+    state.prompts = state.prompts.filter(function (p) { return p.id !== id; });
+    commit('prompts', { action: 'delete', id: id });
+    return U.clone(prompt);
+  }
+
+  /* 把原生示例放回来（空态里的「放入示例」）。已存在同 id 的不重复加。 */
+  function insertSamplePrompts() {
+    var existing = {};
+    state.prompts.forEach(function (p) { existing[p.id] = true; });
+    var added = 0;
+    P.freshSamplePrompts(Date.now()).forEach(function (item) {
+      if (existing[item.id]) return;
+      if (state.prompts.length >= P.PROMPT_LIMIT) return;
+      state.prompts.push(item);
+      added += 1;
+    });
+    if (added) commit('prompts', { action: 'samples-inserted', count: added });
+    return added;
+  }
+
+  /* 复制一条：标题加「副本」，正文照抄，方便在别人的基础上改。 */
+  function duplicatePrompt(id) {
+    var source = state.prompts.find(function (p) { return p.id === id; });
+    if (!source || state.prompts.length >= P.PROMPT_LIMIT) return null;
+    var now = Date.now();
+    var copy = {
+      id: U.uid('prompt'),
+      title: cleanPromptTitle(source.title + ' 副本', promptTitleFromBody(source.body)),
+      body: source.body,
+      pinned: false,
+      sample: false,
+      createdAt: now,
+      updatedAt: now
+    };
+    state.prompts.push(copy);
+    commit('prompts', { action: 'duplicate', id: copy.id });
+    return U.clone(copy);
   }
 
   /* ---------------- tasks ----------------
@@ -9171,10 +10090,21 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       next.meta.seededAt = Number(incoming.meta.seededAt) || 0;
       next.meta.welcomeDocId = typeof incoming.meta.welcomeDocId === 'string' ? incoming.meta.welcomeDocId : '';
       if (incoming.meta.sampleClearedAt) next.meta.sampleClearedAt = Number(incoming.meta.sampleClearedAt) || 0;
+      next.meta.promptsSeededAt = Number(incoming.meta.promptsSeededAt) || 0;
     }
     next.nodes = Array.isArray(incoming.nodes) ? incoming.nodes : [];
     next.stickies = Array.isArray(incoming.stickies) ? incoming.stickies : [];
     next.tasks = Array.isArray(incoming.tasks) ? incoming.tasks : [];
+    next.prompts = Array.isArray(incoming.prompts) ? incoming.prompts : [];
+    /* 原生示例只铺一次：从没铺过、也没清过示例的工作区（包括"库里已经有自己写的提示词"的老用户），
+       在这里补上三条并记下时间戳；此后无论手动删光还是清示例，都不会再长回来。 */
+    if (!next.meta.promptsSeededAt && !next.meta.sampleClearedAt) {
+      var seeded = P.freshSamplePrompts(next.meta.createdAt || Date.now());
+      var known = {};
+      next.prompts.forEach(function (p) { if (p && p.id) known[p.id] = true; });
+      seeded.forEach(function (p) { if (!known[p.id]) next.prompts.push(p); });
+      next.meta.promptsSeededAt = Date.now();
+    }
     state = next;
   }
 
@@ -9187,7 +10117,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       meta: U.clone(state.meta),
       nodes: U.clone(state.nodes),
       stickies: U.clone(state.stickies),
-      tasks: U.clone(state.tasks)
+      tasks: U.clone(state.tasks),
+      prompts: U.clone(state.prompts)
     };
   }
 
@@ -9467,6 +10398,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       '· 纸页笔记：左侧列表切换纸页，右侧直接写，自动保存。',
       '· 日历：点某一天，添加要做的待办。',
       '· 画纸：点「新纸」开始画，画完可以导出 PNG。',
+      '· 提示词：存下常用的提示词；在对话输入框左下角点「提示词」就能填进草稿。',
       '',
       '两个常用操作：',
       '· 收好桌面：点底部最右边的房子按钮，所有窗口会收进应用坞。',
@@ -9575,6 +10507,9 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     seedTask(earlier, '整理十月票据', { done: true, age: 4000 });
     seedTask(nextWeek, '写一份周计划', { priority: 'none', age: 3000 });
 
+    /* 示例提示词与迁移共用同一份定义（P.SAMPLE_PROMPTS），这里不再另存一份文案。 */
+    var prompts = P.freshSamplePrompts(now);
+
     return {
       format: 'paper-os/workspace',
       version: P.schemaVersion,
@@ -9590,11 +10525,13 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         createdAt: now,
         updatedAt: now,
         seededAt: now,
-        welcomeDocId: welcome.id
+        welcomeDocId: welcome.id,
+        promptsSeededAt: now
       },
       nodes: nodes,
       stickies: stickies,
-      tasks: tasks
+      tasks: tasks,
+      prompts: prompts
     };
   }
 
@@ -9630,6 +10567,13 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     raiseSticky: raiseSticky,
     pruneTrash: pruneTrash,
     trashDays: TRASH_DAYS,
+    listPrompts: listPrompts,
+    getPrompt: getPrompt,
+    createPrompt: createPrompt,
+    updatePrompt: updatePrompt,
+    deletePrompt: deletePrompt,
+    duplicatePrompt: duplicatePrompt,
+    insertSamplePrompts: insertSamplePrompts,
     projectTasks: projectTasks,
     monthTaskCount: monthTaskCount,
     setTaskDone: setTaskDone,
@@ -9772,6 +10716,40 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     return prefs;
   }
 
+  /* 提示词库：与便签/待办同一套"严格白名单 + 上限"纪律。
+     未知字段直接丢掉（不合并），这样从未来版本降级读旧文件时不会把脏字段写回。
+     标题清洗与长度上限是 model 层的事实源（P.cleanPromptTitle / P.PROMPT_BODY_MAX），
+     storage 只借用，不另存一份。 */
+  function sanitizePrompts(raw, now) {
+    /* 旧 v3 文件在提示词库出现之前写过盘，根本没有 prompts 字段 —— 那是"从没铺过"，
+       与"用户清空了"（空数组）不是一回事，所以这里铺原生示例。 */
+    if (raw === undefined || raw === null) return P.freshSamplePrompts(now);
+    if (!Array.isArray(raw)) return null;
+    if (raw.length > P.PROMPT_LIMIT) return null;
+    var out = [];
+    var seen = {};
+    for (var i = 0; i < raw.length; i += 1) {
+      var item = raw[i];
+      if (!item || typeof item !== 'object') return null;
+      if (!validId(item.id)) return null;
+      if (seen[item.id]) return null;
+      seen[item.id] = true;
+      if (item.body !== undefined && item.body !== null && typeof item.body !== 'string') return null;
+      var body = typeof item.body === 'string' ? item.body : '';
+      if (body.length > P.PROMPT_BODY_MAX) return null;
+      out.push({
+        id: item.id,
+        title: P.cleanPromptTitle(item.title, P.promptTitleFromBody(body)),
+        body: body,
+        pinned: !!item.pinned,
+        sample: !!item.sample,
+        createdAt: numberOr(item.createdAt, now),
+        updatedAt: numberOr(item.updatedAt, now)
+      });
+    }
+    return out;
+  }
+
   function sanitizeWindowParams(raw) {
     var params = {};
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return params;
@@ -9836,6 +10814,9 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     }
     if (!Array.isArray(raw.nodes) || !Array.isArray(raw.stickies) || !Array.isArray(raw.tasks)) {
       return invalid('工作区结构不完整：nodes / stickies / tasks 必须都是数组。');
+    }
+    if (raw.prompts !== undefined && raw.prompts !== null && !Array.isArray(raw.prompts)) {
+      return invalid('工作区里的提示词库格式不正确。');
     }
     if (raw.nodes.length > 5000) return invalid('工作区里的文件数量超出上限。');
     if (raw.stickies.length > 800) return invalid('工作区里的便签数量超出上限。');
@@ -9977,7 +10958,11 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         meta.welcomeDocId = raw.meta.welcomeDocId;
       }
       if (raw.meta.sampleClearedAt) meta.sampleClearedAt = numberOr(raw.meta.sampleClearedAt, 0);
+      if (raw.meta.promptsSeededAt) meta.promptsSeededAt = numberOr(raw.meta.promptsSeededAt, 0);
     }
+
+    var prompts = sanitizePrompts(raw.prompts, now);
+    if (prompts === null) return invalid('提示词库里有一条内容的格式无法识别（编号、标题或正文超限）。');
 
     var snapshot = {
       format: 'paper-os/workspace',
@@ -9988,6 +10973,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       nodes: nodes,
       stickies: stickies,
       tasks: tasks,
+      prompts: prompts,
       desktop: desktopResult.value
     };
     var summary = {
@@ -9996,6 +10982,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       drawings: nodes.filter(function (n) { return n.kind === 'drawing'; }).length,
       stickies: stickies.length,
       tasks: tasks.length,
+      prompts: prompts.length,
       windows: desktopResult.value.windows.length
     };
     return { ok: true, snapshot: snapshot, summary: summary };
@@ -10206,6 +11193,10 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       return false;
     }
   }
+  /* boot 在另一个 IIFE 里，词法作用域够不着 —— 必须显式挂到 P 上。
+     漏挂的后果不是"少存一份原稿"，而是 ReferenceError 打断 P.start()，
+     整页停在"正在铺纸"、宿主永远收不到 ready（0.2.3 线上就发生过）。 */
+  P.stashRejectedWorkspace = stashRejectedWorkspace;
 
   function removeRecoveryJournal() {
     try { window.localStorage.removeItem(JOURNAL_KEY); } catch (err) { /* ignore */ }
@@ -12644,10 +13635,13 @@ html[data-theme="dark"] .priority-popover__item.is-active {
            Host 也只在版本号变化时备份，同版本覆盖连副本都没有。
            现在一律只读 + 原稿另存，宁可不保存也不覆盖。 */
         P.storage.blocked = true;
-        stashRejectedWorkspace(raw, result.error);
+        /* 原稿另存是"尽力而为"：它失败也绝不能挡住启动，否则面板会永远转圈。 */
+        try {
+          if (typeof P.stashRejectedWorkspace === 'function') P.stashRejectedWorkspace(raw, result.error);
+        } catch (err) { /* run read-only anyway */ }
         validated = null;
         if (result.newer) {
-          loadWarning = '这份工作区来自更新的纸屿（' + result.error + '）。为了不覆盖它，本次只读，不会写入任何数据。请升级插件后再打开。';
+          loadWarning = result.error + ' 为了不覆盖它，本次只读，不会写入任何数据。';
         } else {
           loadWarning = '存储里的工作区没能通过校验（' + result.error + '）。为了不覆盖它，本次只读，原稿已另存一份。';
         }
@@ -12703,7 +13697,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         }, 650);
       }
       if (loadWarning) {
-        setTimeout(function () { P.ui.toast(loadWarning, { kind: 'warn' }); }, 500);
+        /* toast 已按产品决定整体关掉；只读这种"会改变你数据命运"的提示必须有常驻出口。 */
+        showDeskNotice(loadWarning);
       }
       if (P.storage.getMode() === 'memory') {
         setTimeout(function () {
@@ -12731,6 +13726,37 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       }, 700);
     });
   }
+
+  /* 一条常驻提示：不自动消失、可手动关掉。用于"只读""来自更新版本"这类必须看见的状态。 */
+  function showDeskNotice(text) {
+    if (!text) return null;
+    var previous = document.querySelector('.desk-notice');
+    if (previous && previous.parentNode) previous.parentNode.removeChild(previous);
+    var box = document.createElement('div');
+    box.className = 'desk-notice';
+    box.setAttribute('role', 'status');
+    box.setAttribute('data-testid', 'desk-notice');
+    var mark = document.createElement('span');
+    mark.className = 'desk-notice__mark';
+    mark.textContent = '只读';
+    var body = document.createElement('span');
+    body.className = 'desk-notice__text';
+    body.textContent = text;
+    var close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'desk-notice__close';
+    close.setAttribute('aria-label', '收起这条提示');
+    close.textContent = '×';
+    close.addEventListener('click', function () {
+      if (box.parentNode) box.parentNode.removeChild(box);
+    });
+    box.appendChild(mark);
+    box.appendChild(body);
+    box.appendChild(close);
+    document.body.appendChild(box);
+    return box;
+  }
+  P.showDeskNotice = showDeskNotice;
 
   P.shell = {
     syncChrome: syncChrome,
@@ -13182,6 +14208,424 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         destroy: function () {
           // Subscriptions, observers and timers are released by the window
           // manager's app context. Nothing else outlives the window.
+        }
+      };
+    }
+  });
+})();
+
+/* ===== src/js/apps/prompts.js ===== */
+/* ============================================================
+   PAPER OS — Prompt Library app
+   ============================================================ */
+(function () {
+  'use strict';
+
+  var P = window.PaperOS;
+  var U = P.util;
+
+  var SEARCH_DELAY = 80;
+
+  P.registerApp({
+    id: 'prompts',
+    name: '提示词',
+    english: 'PROMPTS',
+    description: '存下常用的提示词；在对话输入框点「提示词」就能填进去',
+    defaultSize: { w: 960, h: 640 },
+    minSize: { w: 520, h: 400 },
+    create: function (ctx) {
+      var root = null;
+      var refs = {};
+      var currentId = null;
+      var searchTimer = null;
+      var titleTimer = null;
+
+      function promptById(id) {
+        return id ? P.data.getPrompt(id) : null;
+      }
+
+      function stamp(ms) {
+        if (!ms) return '';
+        var date = new Date(Number(ms));
+        if (!Number.isFinite(date.getTime())) return '';
+        var now = new Date();
+        var sameDay = date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
+        if (sameDay) return '今天 ' + String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0');
+        return (date.getMonth() + 1) + '-' + date.getDate();
+      }
+
+      function excerpt(body) {
+        var text = String(body || '').replace(/\s+/g, ' ').trim();
+        if (!text) return '还没有正文';
+        return text.length > 96 ? text.slice(0, 96) + '…' : text;
+      }
+
+      function charCount(body) {
+        return String(body || '').length;
+      }
+
+      /* ---------- list ---------- */
+
+      function renderList() {
+        if (!refs.list) return;
+        var query = refs.searchInput ? refs.searchInput.value : '';
+        var list = P.data.listPrompts(query);
+        var total = P.data.listPrompts('').length;
+        if (refs.count) {
+          refs.count.textContent = query.trim()
+            ? '找到 ' + list.length + ' / ' + total + ' 条'
+            : (total ? total + ' 条提示词' : '还没有提示词');
+        }
+        refs.list.innerHTML = '';
+        if (!list.length) {
+          var empty = document.createElement('div');
+          empty.className = 'prompts-list__empty';
+          empty.textContent = query.trim()
+            ? '没有匹配的提示词。换个词试试。'
+            : '还没有提示词。点上面的「新建」写第一条。';
+          refs.list.appendChild(empty);
+          return;
+        }
+        list.forEach(function (item) {
+          var row = document.createElement('button');
+          row.type = 'button';
+          row.className = 'prompt-item' + (item.id === currentId ? ' is-active' : '');
+          row.setAttribute('data-prompt-id', item.id);
+          row.setAttribute('data-testid', 'prompt-item');
+
+          var index = document.createElement('span');
+          index.className = 'prompt-item__index';
+          index.textContent = ('0' + (list.indexOf(item) + 1)).slice(-2);
+          row.appendChild(index);
+
+          var col = document.createElement('span');
+          col.className = 'prompt-item__col';
+
+          var top = document.createElement('span');
+          top.className = 'prompt-item__top';
+          var name = document.createElement('span');
+          name.className = 'prompt-item__name';
+          name.textContent = item.title;
+          top.appendChild(name);
+          if (item.sample) {
+            var badge = document.createElement('span');
+            badge.className = 'prompts-sample-badge';
+            badge.textContent = '示例';
+            top.appendChild(badge);
+          }
+          if (item.pinned) {
+            var pin = document.createElement('span');
+            pin.className = 'prompt-item__pin';
+            pin.innerHTML = P.icon('sparkles');
+            pin.setAttribute('aria-label', '已置顶');
+            top.appendChild(pin);
+          }
+          col.appendChild(top);
+
+          var text = document.createElement('span');
+          text.className = 'prompt-item__excerpt';
+          text.textContent = excerpt(item.body);
+          col.appendChild(text);
+
+          var foot = document.createElement('span');
+          foot.className = 'prompt-item__foot';
+          var count = document.createElement('span');
+          count.textContent = charCount(item.body) + ' 字';
+          foot.appendChild(count);
+          var dash = document.createElement('span');
+          dash.className = 'prompt-item__dash';
+          foot.appendChild(dash);
+          var when = document.createElement('span');
+          when.textContent = stamp(item.updatedAt);
+          foot.appendChild(when);
+          col.appendChild(foot);
+          row.appendChild(col);
+
+          row.addEventListener('click', function () { selectPrompt(item.id); });
+          refs.list.appendChild(row);
+        });
+      }
+
+      /* ---------- editor ---------- */
+
+      function renderEditor() {
+        if (!refs.editor) return;
+        var item = promptById(currentId);
+        refs.editor.innerHTML = '';
+        if (!item) {
+          refs.editor.hidden = true;
+          if (refs.emptyBox) refs.emptyBox.hidden = false;
+          if (refs.barTitle) refs.barTitle.textContent = '提示词';
+          if (refs.actions) refs.actions.hidden = true;
+          return;
+        }
+        refs.editor.hidden = false;
+        if (refs.emptyBox) refs.emptyBox.hidden = true;
+        if (refs.barTitle) refs.barTitle.textContent = item.title;
+        if (refs.actions) refs.actions.hidden = false;
+
+        var body = document.createElement('div');
+        body.className = 'prompts-main__body';
+
+        var titleField = document.createElement('label');
+        titleField.className = 'prompts-field';
+        var titleLabel = document.createElement('span');
+        titleLabel.className = 'prompts-field__label';
+        titleLabel.textContent = '标题';
+        titleField.appendChild(titleLabel);
+        var titleInput = document.createElement('input');
+        titleInput.type = 'text';
+        titleInput.className = 'prompts-title-input';
+        titleInput.value = item.title;
+        titleInput.maxLength = 120;
+        titleInput.setAttribute('data-testid', 'prompt-title');
+        titleInput.addEventListener('input', function () {
+          clearTimeout(titleTimer);
+          titleTimer = setTimeout(function () {
+            P.data.updatePrompt(currentId, { title: titleInput.value });
+          }, 240);
+        });
+        titleField.appendChild(titleInput);
+        body.appendChild(titleField);
+
+        var bodyField = document.createElement('label');
+        bodyField.className = 'prompts-field prompts-field--body';
+        var bodyLabel = document.createElement('span');
+        bodyLabel.className = 'prompts-field__label';
+        bodyLabel.appendChild(document.createTextNode('正文 · 原样填入'));
+        var counter = document.createElement('span');
+        counter.setAttribute('data-testid', 'prompt-count');
+        counter.textContent = charCount(item.body) + ' / 20000 字';
+        bodyLabel.appendChild(counter);
+        bodyField.appendChild(bodyLabel);
+        var textarea = document.createElement('textarea');
+        textarea.className = 'prompts-body-input';
+        textarea.value = item.body;
+        textarea.placeholder = '把要反复使用的那段话写在这里。可以多行。';
+        textarea.setAttribute('data-testid', 'prompt-body');
+        textarea.addEventListener('input', function () {
+          counter.textContent = charCount(textarea.value) + ' / 20000 字';
+          P.data.updatePrompt(currentId, { body: textarea.value });
+        });
+        bodyField.appendChild(textarea);
+        body.appendChild(bodyField);
+        refs.editor.appendChild(body);
+        refs.titleInput = titleInput;
+        refs.bodyInput = textarea;
+        updatePinLabel(item);
+      }
+
+      function updatePinLabel(item) {
+        if (!refs.pinBtn) return;
+        var pinned = item ? !!item.pinned : false;
+        refs.pinBtn.textContent = pinned ? '取消置顶' : '置顶';
+        refs.pinBtn.setAttribute('aria-pressed', pinned ? 'true' : 'false');
+      }
+
+      function selectPrompt(id) {
+        currentId = id;
+        renderList();
+        renderEditor();
+      }
+
+      /* ---------- actions ---------- */
+
+      function newPrompt() {
+        var created = P.data.createPrompt({ title: '', body: '' });
+        if (!created) {
+          P.ui.toast('提示词数量已达上限（300 条）。', { kind: 'warn' });
+          return;
+        }
+        selectPrompt(created.id);
+        if (refs.bodyInput) refs.bodyInput.focus();
+      }
+
+      function duplicateCurrent() {
+        var item = promptById(currentId);
+        if (!item) return;
+        var copy = P.data.duplicatePrompt(item.id);
+        if (!copy) {
+          P.ui.toast('提示词数量已达上限（300 条）。', { kind: 'warn' });
+          return;
+        }
+        selectPrompt(copy.id);
+        P.ui.toast('已复制一条。', { kind: 'info' });
+      }
+
+      function togglePin() {
+        var item = promptById(currentId);
+        if (!item) return;
+        P.data.updatePrompt(item.id, { pinned: !item.pinned });
+        renderList();
+        updatePinLabel(promptById(currentId));
+      }
+
+      function deleteCurrent() {
+        var item = promptById(currentId);
+        if (!item) return;
+        P.ui.confirm({
+          kicker: 'PROMPTS · 删除',
+          title: '删掉「' + item.title + '」？',
+          message: '提示词删除后不能恢复。正文 ' + charCount(item.body) + ' 字。',
+          confirmLabel: '删除',
+          danger: true
+        }).then(function (confirmed) {
+          if (!confirmed) return;
+          P.data.deletePrompt(item.id);
+          var next = P.data.listPrompts('')[0];
+          currentId = next ? next.id : null;
+          renderList();
+          renderEditor();
+          P.ui.toast('已删除。', { kind: 'info' });
+        });
+      }
+
+      function copyBody() {
+        var item = promptById(currentId);
+        if (!item) return;
+        var text = item.body;
+        function fallback() {
+          try {
+            var area = document.createElement('textarea');
+            area.value = text;
+            area.style.position = 'fixed';
+            area.style.opacity = '0';
+            document.body.appendChild(area);
+            area.select();
+            document.execCommand('copy');
+            document.body.removeChild(area);
+            P.ui.toast('已复制正文。', { kind: 'info' });
+          } catch (err) {
+            P.ui.toast('复制失败，请手动选中正文。', { kind: 'warn' });
+          }
+        }
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+          navigator.clipboard.writeText(text).then(function () {
+            P.ui.toast('已复制正文。', { kind: 'info' });
+          }, fallback);
+          return;
+        }
+        fallback();
+      }
+
+      /* ---------- mount ---------- */
+
+      function mount(container, params) {
+        root = document.createElement('div');
+        root.className = 'prompts-app';
+
+        var rail = document.createElement('div');
+        rail.className = 'prompts-rail';
+        rail.innerHTML = '<div class="prompts-rail__head">' +
+          '<div class="prompts-rail__top"><span class="eyebrow">PROMPTS</span>' +
+          '<button class="prompts-new" type="button" data-testid="new-prompt">＋ 新建</button></div>' +
+          '<label class="prompts-search">' + P.icon('search') +
+          '<input type="search" placeholder="搜标题或正文" aria-label="搜索提示词" data-testid="prompt-search"></label>' +
+          '<div class="prompts-rail__status"><span class="prompts-rail__count" data-testid="prompt-count-total"></span></div>' +
+          '</div>' +
+          '<div class="prompts-list" data-testid="prompt-list"></div>' +
+          '<div class="prompts-rail__foot">在对话输入框点「提示词」取用<br>只填进草稿，不会发送</div>';
+
+        var main = document.createElement('div');
+        main.className = 'prompts-main';
+        main.innerHTML = '<div class="prompts-card">' +
+          '<div class="prompts-main__bar">' +
+          '<span class="prompts-main__title" data-testid="prompt-heading">提示词</span>' +
+          '<span class="prompts-main__actions" hidden>' +
+          '<button class="paper-btn paper-btn--tiny paper-btn--ghost" type="button" data-testid="prompt-copy" title="只复制正文">复制</button>' +
+          '<button class="paper-btn paper-btn--tiny paper-btn--ghost" type="button" data-testid="prompt-duplicate">复制一条</button>' +
+          '<button class="paper-btn paper-btn--tiny paper-btn--ghost" type="button" data-testid="prompt-pin">置顶</button>' +
+          '<button class="paper-btn paper-btn--tiny paper-btn--ghost" type="button" data-testid="prompt-delete">删除</button>' +
+          '</span></div>' +
+          '<div class="prompts-empty" data-testid="prompt-empty">' +
+          '<span class="prompts-empty__mark" aria-hidden="true">词</span>' +
+          '<p class="prompts-empty__title">把常说的那句话存成一张卡</p>' +
+          '<p class="prompts-empty__hint">存好之后，在任意对话的输入框点「提示词」，选一条就填进草稿。不写系统提示词，也不自动发送。</p>' +
+          '<div class="prompts-empty__actions">' +
+          '<button class="paper-btn paper-btn--ink" type="button" data-testid="prompt-empty-new">写第一条</button>' +
+          '<button class="paper-btn paper-btn--tiny paper-btn--ghost" type="button" data-testid="prompt-empty-samples">放入示例</button>' +
+          '</div></div>' +
+          '<div class="prompts-main__body" data-testid="prompt-editor" hidden></div>' +
+          '<div class="prompts-main__foot"><span data-testid="prompt-save-state">自动保存</span>' +
+          '<span data-testid="prompt-cap">正文上限 20000 字</span></div>' +
+          '</div>';
+
+        root.appendChild(rail);
+        root.appendChild(main);
+        ctx.body.appendChild(root);
+
+        refs.rail = rail;
+        refs.list = root.querySelector('[data-testid="prompt-list"]');
+        refs.count = root.querySelector('[data-testid="prompt-count-total"]');
+        refs.searchInput = root.querySelector('[data-testid="prompt-search"]');
+        refs.editor = root.querySelector('[data-testid="prompt-editor"]');
+        refs.emptyBox = root.querySelector('[data-testid="prompt-empty"]');
+        refs.actions = root.querySelector('.prompts-main__actions');
+        refs.barTitle = root.querySelector('[data-testid="prompt-heading"]');
+        refs.pinBtn = root.querySelector('[data-testid="prompt-pin"]');
+        refs.saveState = root.querySelector('[data-testid="prompt-save-state"]');
+        ctx.setTitle('提示词');
+
+        root.querySelector('[data-testid="new-prompt"]').addEventListener('click', newPrompt);
+        root.querySelector('[data-testid="prompt-empty-new"]').addEventListener('click', newPrompt);
+        var sampleBtn = root.querySelector('[data-testid="prompt-empty-samples"]');
+        if (sampleBtn) sampleBtn.addEventListener('click', function () {
+          var added = P.data.insertSamplePrompts();
+          if (!added) {
+            P.ui.toast('示例已经在库里了。', { kind: 'info' });
+            return;
+          }
+          renderList();
+          var next = P.data.listPrompts('')[0];
+          if (next) selectPrompt(next.id);
+        });
+        root.querySelector('[data-testid="prompt-copy"]').addEventListener('click', copyBody);
+        root.querySelector('[data-testid="prompt-duplicate"]').addEventListener('click', duplicateCurrent);
+        root.querySelector('[data-testid="prompt-pin"]').addEventListener('click', togglePin);
+        root.querySelector('[data-testid="prompt-delete"]').addEventListener('click', deleteCurrent);
+        refs.searchInput.addEventListener('input', function () {
+          clearTimeout(searchTimer);
+          searchTimer = setTimeout(renderList, SEARCH_DELAY);
+        });
+
+        ctx.subscribe(function (event) {
+          if (event.type === 'prompts' || event.type === 'prefs') {
+            if (currentId && !promptById(currentId)) currentId = null;
+            renderList();
+            renderEditor();
+          }
+        });
+        ctx.subscribeSave(function (status) {
+          if (!refs.saveState) return;
+          var label = '自动保存';
+          if (status.phase === 'saving') label = '正在收好';
+          else if (status.phase === 'pending') label = '待保存';
+          else if (status.phase === 'saved') label = '已保存';
+          else if (status.phase === 'error') label = '保存遇到问题';
+          else if (status.phase === 'booting') label = '正在铺纸';
+          refs.saveState.textContent = label;
+          refs.saveState.setAttribute('data-state', status.phase || 'idle');
+        });
+        ctx.cleanup(function () {
+          clearTimeout(searchTimer);
+          clearTimeout(titleTimer);
+        });
+
+        var first = params && params.promptId ? promptById(params.promptId) : null;
+        var list = P.data.listPrompts('');
+        currentId = first ? first.id : (list[0] ? list[0].id : null);
+        renderList();
+        renderEditor();
+      }
+
+      return {
+        mount: mount,
+        updateParams: function (params) {
+          if (params && params.promptId) selectPrompt(params.promptId);
+        },
+        destroy: function () {
+          clearTimeout(searchTimer);
+          clearTimeout(titleTimer);
         }
       };
     }
@@ -15625,7 +17069,6 @@ html[data-theme="dark"] .priority-popover__item.is-active {
 })();
 
 
-
 /* ===== guided tour ===== */
 (function () {
   'use strict';
@@ -15896,7 +17339,17 @@ html[data-theme="dark"] .priority-popover__item.is-active {
      这里先立刻落一次盘再回话，把 420ms 防抖窗口关掉。 */
   window.addEventListener('message', function (event) {
     var data = event.data;
-    if (!data || data.type !== 'dsh-plugin-control-your-schedule:flush-now') return;
+    if (!data || typeof data.type !== 'string') return;
+    if (data.type === 'dsh-plugin-control-your-schedule:open-app') {
+      /* 宿主输入框的「在便签里管理提示词」深链：只认注册过的应用 id。 */
+      var appId = typeof data.appId === 'string' ? data.appId : '';
+      if (!appId || !P.apps.has(appId)) return;
+      try {
+        P.wm.open(appId, data.params && typeof data.params === 'object' ? data.params : undefined);
+      } catch (err) { /* 窗口开不出来也不能拖垮整页 */ }
+      return;
+    }
+    if (data.type !== 'dsh-plugin-control-your-schedule:flush-now') return;
     try {
       if (P.storage && typeof P.storage.flushNow === 'function') P.storage.flushNow();
     } catch (err) { /* best effort */ }
@@ -15920,7 +17373,16 @@ html[data-theme="dark"] .priority-popover__item.is-active {
 })();
 
 /* ===== boot ===== */
-PaperOS.start();
+/* 启动失败也必须把"就绪"打出去：否则宿主永远停在加载遮罩上，
+   用户看到的是无限转圈，而不是一个能读懂的错误。 */
+try {
+  PaperOS.start();
+} catch (err) {
+  window.__PAPER_OS_BOOT_ERROR__ = String((err && err.message) || err);
+  if (window.console) console.error('PaperOS boot failed', err);
+} finally {
+  window.__PAPER_OS_READY__ = true;
+}
 
 </script>
 </body>

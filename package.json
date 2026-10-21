@@ -1,7 +1,7 @@
 {
   "name": "dsh-plugin-control-your-schedule",
-  "version": "0.2.3",
-  "description": "Paper-style sticky notes, paper notes, calendar and drawing inside DSH",
+  "version": "0.3.0",
+  "description": "Paper-style sticky notes, paper notes, calendar, drawing and a reusable prompt library inside DSH",
   "type": "module",
   "main": "index.js",
   "exports": {
@@ -30,7 +30,8 @@
   ],
   "peerDependencies": {
     "@deepseek-ai/dsh-client-ui-layout": ">=0.2.0-0",
-    "@deepseek-ai/dsh-client-ui-sidebar": ">=0.2.0-0"
+    "@deepseek-ai/dsh-client-ui-sidebar": ">=0.2.0-0",
+    "@deepseek-ai/dsh-client-ui-conversation": ">=0.2.0-0"
   },
   "license": "MIT",
   "author": "HaoyanZhang123",
@@ -66,7 +67,8 @@
       "inject": [
         "@deepseek-ai/dsh-client-locale",
         "@deepseek-ai/dsh-client-ui-layout",
-        "@deepseek-ai/dsh-client-ui-sidebar"
+        "@deepseek-ai/dsh-client-ui-sidebar",
+        "@deepseek-ai/dsh-client-ui-conversation"
       ]
     }
   }

@@ -131,6 +131,41 @@ if (!result.ok) {
   if (snap.meta.migratedFrom === 1) ok('meta records migratedFrom=1');
   else bad('meta records migratedFrom=1', JSON.stringify(snap.meta.migratedFrom));
 
+  // v3 只做加法：提示词库出现，并铺上三条原生示例；别的既有内容不变。
+  const sampleIds = ['prompt_sample_research', 'prompt_sample_align', 'prompt_sample_agents'];
+  const seeded = Array.isArray(snap.prompts) ? snap.prompts : [];
+  if (seeded.length === 3 && sampleIds.every((id) => seeded.some((p) => p.id === id))) ok('v1 -> v3 seeds the three native prompts');
+  else bad('v1 -> v3 seeds the three native prompts', JSON.stringify(seeded.map((p) => p.id)));
+  if (seeded.every((p) => p.sample === true)) ok('native prompts are marked as samples');
+  else bad('native prompts are marked as samples', JSON.stringify(seeded.map((p) => p.sample)));
+
+  // --- v2 -> v3 carries every v2 value through untouched ---
+  const v2 = JSON.parse(JSON.stringify(v1));
+  v2.version = 2;
+  v2.tasks = [{ id: 'task_v2', date: '2026-10-18', title: '旧待办', priority: 'urgent', repeat: 'daily', doneOn: ['2026-10-18'], resolvedAt: 0, createdAt: 1, updatedAt: 2 }];
+  v2.prompts = undefined;
+  const fromV2 = P.migrateWorkspace(JSON.parse(JSON.stringify(v2)));
+  if (!fromV2.ok) {
+    bad('v2 migrates', JSON.stringify(fromV2));
+  } else {
+    const s2 = fromV2.snapshot;
+    if (s2.version === P.schemaVersion) ok('v2 migration reaches the current version', 'v' + s2.version);
+    else bad('v2 migration reaches the current version', 'v' + s2.version);
+    same('v2 nodes preserved', s2.nodes, v2.nodes);
+    same('v2 stickies preserved', s2.stickies, v2.stickies);
+    same('v2 tasks preserved', s2.tasks, v2.tasks);
+    same('v2 desktop preserved', s2.desktop, v2.desktop);
+    if (Array.isArray(s2.prompts) && s2.prompts.length === 3) ok('v2 -> v3 seeds the three native prompts');
+    else bad('v2 -> v3 seeds the three native prompts', JSON.stringify(s2.prompts && s2.prompts.length));
+
+    // 一个含有提示词的 v3 快照原样保留
+    const withPrompt = JSON.parse(JSON.stringify(s2));
+    withPrompt.prompts = [{ id: 'prompt_a', title: '标题', body: '正文\n第二行', pinned: true, createdAt: 3, updatedAt: 4 }];
+    const kept = P.migrateWorkspace(JSON.parse(JSON.stringify(withPrompt)));
+    if (kept.ok && JSON.stringify(kept.snapshot.prompts) === JSON.stringify(withPrompt.prompts)) ok('v3 prompt entries pass through unchanged');
+    else bad('v3 prompt entries pass through unchanged', JSON.stringify(kept.ok && kept.snapshot.prompts));
+  }
+
   // Idempotent: migrating an already-current snapshot changes nothing.
   const again = P.migrateWorkspace(JSON.parse(JSON.stringify(snap)));
   if (again.ok && JSON.stringify(again.snapshot) === JSON.stringify(snap)) ok('migration is idempotent');

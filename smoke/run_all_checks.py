@@ -96,7 +96,10 @@ def main() -> int:
         "delete palette action": "关闭当前窗口",
         "desktop click dismiss": "bindDesktopDismiss",
         "page version placeholder": "__PAGE_VERSION__",
-        "schema is v2": "P.schemaVersion = 2;",
+        "schema is v3": "P.schemaVersion = 3;",
+        "prompt app registered": "id: 'prompts',",
+        "prompt sanitizer": "function sanitizePrompts(raw, now)",
+        "prompt migration step": "2: function v2ToV3(raw)",
         "migration markers": "/* @migrate-begin */",
         "single ingest gate": "function ingestWorkspace(raw)",
         "priority table": "P.TASK_PRIORITIES = [",
@@ -120,11 +123,24 @@ def main() -> int:
         else:
             bad("present: " + label, "missing: " + needle)
 
-    app_ids = re.findall(r"id: '(stickies|notes|calendar|draw|files)'", page)
-    if "files" not in app_ids and set(app_ids) == {"stickies", "notes", "calendar", "draw"}:
-        ok("app registry has exactly 4 dock apps")
+    app_ids = re.findall(r"id: '(stickies|prompts|notes|calendar|draw|files)'", page)
+    if "files" not in app_ids and set(app_ids) == {"stickies", "prompts", "notes", "calendar", "draw"}:
+        ok("app registry has exactly 5 dock apps")
     else:
         bad("app registry", "found: %r" % (app_ids,))
+
+    # --- every dock app must have its OWN icon ---
+    # appIcon(id) silently falls back to the notes icon, so a missing or renamed key
+    # ships the wrong icon with no error (this happened: key "prompt" vs id "prompts").
+    registered = re.findall(r"P\.registerApp\(\{[^}]*?id: '([a-z-]+)'", page, re.S)
+    icon_block = page.split("var appIcons = {", 1)[1].split("\n  };", 1)[0] if "var appIcons = {" in page else ""
+    icon_keys = set(re.findall(r"^    ([A-Za-z]+): '<svg", icon_block, re.M))
+    aliased = set(re.findall(r"^  appIcons\.([A-Za-z]+) = appIcons\.[A-Za-z]+;", page, re.M))
+    missing_icons = [app for app in registered if app not in icon_keys and app not in aliased]
+    if not missing_icons and registered:
+        ok("every dock app has its own icon", "%d apps, %d icon keys" % (len(registered), len(icon_keys)))
+    else:
+        bad("every dock app has its own icon", "no icon key for: " + (", ".join(missing_icons) or "none registered"))
 
     sizes = [float(value) for value in re.findall(r"font-size:\s*([0-9.]+)px", page)]
     if sizes and min(sizes) >= 10:
@@ -169,7 +185,6 @@ def main() -> int:
     else:
         bad("client bundle exists", str(CLIENT))
 
-    run("build reproducibility", [sys.executable, str(PLUGIN / "tools" / "build_page.py"), "--check"])
     if NODE:
         run("host route persistence", [NODE, str(ROOT / "smoke" / "host_route_test.mjs")])
     else:
@@ -274,6 +289,20 @@ def main() -> int:
         ok("font license shipped")
     else:
         bad("font license shipped", "OFL text missing")
+    # --- composer entry: slot + the public insertion face ---
+    src_text = client_src.read_text(encoding="utf-8") if client_src.is_file() else ""
+    client_needles = {
+        "composer entry registers conversation.input.left": "conversation.input.left",
+        "composer entry uses captureInsertion": "captureInsertion",
+        "composer entry inserts through insertText": "insertText",
+        "composer entry reads the shared workspace route": "loadPrompts",
+    }
+    missing_client = [label for label, needle in client_needles.items() if needle not in src_text]
+    if missing_client:
+        bad("composer prompt entry contract", "missing: " + ", ".join(missing_client))
+    else:
+        ok("composer prompt entry contract", "slot + public insertion API")
+
     if "FONT_ROUTE" in (PLUGIN / "index.js").read_text(encoding="utf-8"):
         ok("host serves the bundled font")
     else:
@@ -294,11 +323,24 @@ def main() -> int:
     else:
         bad("built client carries the package version", "version %s not found in client.js" % pkg.get("version"))
 
+    # --- build reproducibility, deliberately LAST ---
+    # "You edited the page but did not rebuild" is a bookkeeping failure, not a
+    # product failure. Parking it before the specific assertions made every
+    # page-side injection report only "stale bundle" and hid the real finding
+    # (reverse audit 2026-10-21: deleting the prompt body cap went unnoticed).
+    run("build reproducibility", [sys.executable, str(PLUGIN / "tools" / "build_page.py"), "--check"])
+
     # --- migration gate ---
     if NODE:
-        run("migration v1 -> v2 keeps every byte", [NODE, str(ROOT / "smoke" / "migrate_test.mjs")])
+        run("migration v1 -> v3 keeps every byte", [NODE, str(ROOT / "smoke" / "migrate_test.mjs")])
     else:
-        bad("migration v1 -> v2 keeps every byte", "node not found")
+        bad("migration v1 -> v3 keeps every byte", "node not found")
+
+    # --- composer insertion model (pure, no browser needed) ---
+    if NODE:
+        run("prompt insertion model", [NODE, str(ROOT / "smoke" / "prompt_model_test.mjs")])
+    else:
+        bad("prompt insertion model", "node not found")
 
     # --- real browser (opt-in: needs a local browser binary) ---
     if "--cdp" not in sys.argv:
@@ -308,6 +350,20 @@ def main() -> int:
         run("real browser checks", [NODE, str(ROOT / "smoke" / "page_e2e.mjs")])
     else:
         bad("real browser checks", "node not found")
+
+    # --- composer entry on a real DSH (opt-in: needs DSH_BASE + DSH_WEB_TOKEN) ---
+    composer_script = ROOT / "smoke" / "composer_e2e.mjs"
+    if composer_script.is_file():
+        if "--cdp" not in sys.argv:
+            skipped.append("composer entry on a real DSH (composer_e2e.mjs)")
+            print("SKIP | composer entry on a real DSH | 原因：未加 --cdp（需要真机 DSH 与 token；不加不算通过）")
+        elif NODE:
+            rc = run("composer entry on a real DSH", [NODE, str(composer_script)])
+            if rc == 3:
+                skipped.append("composer entry on a real DSH (no token)")
+                print("SKIP | composer entry on a real DSH | 原因：缺 DSH_BASE / DSH_WEB_TOKEN")
+        else:
+            bad("composer entry on a real DSH", "node not found")
 
     failed = [item for item in checks if not item[0]]
     if skipped:

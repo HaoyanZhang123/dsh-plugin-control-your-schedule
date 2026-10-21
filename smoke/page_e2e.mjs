@@ -114,7 +114,14 @@ const version = await ev('window.PaperOS.version');
 if (version && version !== '__PAGE_VERSION__') ok('page version injected by the build', String(version));
 else bad('page version injected by the build', String(version));
 const schema = await ev('window.PaperOS.schemaVersion');
-if (schema === 2) ok('schema is v2'); else bad('schema is v2', String(schema));
+if (schema === 3) ok('schema is v3'); else bad('schema is v3', String(schema));
+
+const seededPrompts = await run(function () {
+  var P = window.PaperOS;
+  return { samples: P.data.getExampleCounts().prompts, total: P.data.listPrompts('').length };
+});
+if (seededPrompts && seededPrompts.samples === 3) ok('first run seeds three sample prompts', JSON.stringify(seededPrompts));
+else bad('first run seeds three sample prompts', JSON.stringify(seededPrompts));
 
 // --- first open fills the work area ---
 const geometry = await run(function () {
@@ -649,6 +656,223 @@ else bad('task fields survive validate round-trip', JSON.stringify(roundTrip));
 if (roundTrip && roundTrip.sticky && roundTrip.sticky.color === 'sky' && roundTrip.sticky.z === 'number' && roundTrip.sticky.trashedAt === 0) ok('sticky fields survive validate round-trip', JSON.stringify(roundTrip.sticky));
 else bad('sticky fields survive validate round-trip', JSON.stringify(roundTrip));
 
+// --- prompts app: CRUD, search, pin, persistence, clearing samples ---
+const promptApi = await run(function () {
+  var P = window.PaperOS;
+  if (!P || !P.data.createPrompt) return { __err: 'createPrompt missing' };
+  P.wm.open('prompts');
+  var w = P.wm.getWindows().filter(function (x) { return x.appId === 'prompts'; })[0];
+  var created = P.data.createPrompt({ title: '', body: '第一行标题取自正文\n第二行内容' });
+  return {
+    opened: !!w,
+    created: created ? { title: created.title, body: created.body, pinned: created.pinned, sample: created.sample } : null,
+    count: P.data.listPrompts('').length
+  };
+});
+if (promptApi && promptApi.opened) ok('prompts app opens');
+else bad('prompts app opens', JSON.stringify(promptApi));
+if (promptApi && promptApi.created && promptApi.created.title === '第一行标题取自正文') ok('empty title falls back to the first body line', promptApi.created.title);
+else bad('empty title falls back to the first body line', JSON.stringify(promptApi && promptApi.created));
+if (promptApi && promptApi.created && promptApi.created.body.indexOf('\n') !== -1) ok('prompt body keeps its newlines');
+else bad('prompt body keeps its newlines', JSON.stringify(promptApi && promptApi.created));
+if (promptApi && promptApi.created && promptApi.created.sample === false) ok('user prompts are not marked as samples');
+else bad('user prompts are not marked as samples', JSON.stringify(promptApi && promptApi.created));
+
+const promptDom = await run(function () {
+  var P = window.PaperOS;
+  var list = document.querySelector('[data-testid="prompt-list"]');
+  var counts = document.querySelector('[data-testid="prompt-count-total"]');
+  var items = document.querySelectorAll('[data-testid="prompt-item"]');
+  var search = document.querySelector('[data-testid="prompt-search"]');
+  var head = document.querySelector('[data-testid="prompt-heading"]');
+  return {
+    listFound: !!list,
+    items: items.length,
+    countText: counts ? counts.textContent : '',
+    hasSearch: !!search,
+    firstTitle: (P.data.listPrompts('')[0] || {}).title || '',
+    heading: head ? head.textContent : '',
+    editorTitle: (document.querySelector('[data-testid="prompt-title"]') || {}).value || ''
+  };
+});
+if (promptDom && promptDom.listFound && promptDom.items >= 4) ok('prompt list renders rows', 'rows=' + promptDom.items + ' ' + promptDom.countText);
+else bad('prompt list renders rows', JSON.stringify(promptDom));
+if (promptDom && promptDom.hasSearch) ok('prompt list has a search box');
+else bad('prompt list has a search box', JSON.stringify(promptDom));
+if (promptDom && promptDom.editorTitle === '调研同类产品再动手') ok('editor opens on the first prompt', promptDom.editorTitle);
+else bad('editor opens on the first prompt', JSON.stringify(promptDom && promptDom.heading));
+
+const uiNew = await run(function () {
+  var button = document.querySelector('[data-testid="new-prompt"]');
+  if (!button) return { __err: 'new button missing' };
+  var before = window.PaperOS.data.listPrompts('').length;
+  button.click();
+  var titleInput = document.querySelector('[data-testid="prompt-title"]');
+  var heading = document.querySelector('[data-testid="prompt-heading"]');
+  return {
+    before: before,
+    after: window.PaperOS.data.listPrompts('').length,
+    editorTitle: titleInput ? titleInput.value : null,
+    heading: heading ? heading.textContent : ''
+  };
+});
+if (uiNew && uiNew.after === uiNew.before + 1) ok('the new button creates a prompt');
+else bad('the new button creates a prompt', JSON.stringify(uiNew));
+if (uiNew && uiNew.editorTitle === '未命名提示词' && uiNew.heading === '未命名提示词') ok('a new prompt opens in the editor immediately', JSON.stringify({ title: uiNew.editorTitle }));
+else bad('a new prompt opens in the editor immediately', JSON.stringify(uiNew));
+
+const pinned = await run(function () {
+  var P = window.PaperOS;
+  var first = P.data.listPrompts('')[0];
+  P.data.updatePrompt(first.id, { pinned: true });
+  var listed = P.data.listPrompts('')[0];
+  return { id: first.id, topId: listed.id, pinned: listed.pinned };
+});
+if (pinned && pinned.topId === pinned.id && pinned.pinned === true) ok('pinned prompt sorts first');
+else bad('pinned prompt sorts first', JSON.stringify(pinned));
+
+const searched = await run(function () {
+  var P = window.PaperOS;
+  var hit = P.data.listPrompts('第二行内容');
+  var miss = P.data.listPrompts('不存在的关键词xyz');
+  return { hit: hit.length, miss: miss.length };
+});
+if (searched && searched.hit >= 1 && searched.miss === 0) ok('search matches body text and rejects misses', JSON.stringify(searched));
+else bad('search matches body text and rejects misses', JSON.stringify(searched));
+
+const renamed = await run(function () {
+  var P = window.PaperOS;
+  var first = P.data.listPrompts('')[0];
+  P.data.updatePrompt(first.id, { title: '改过的标题' });
+  return P.data.getPrompt(first.id).title;
+});
+if (renamed === '改过的标题') ok('prompt title can be edited');
+else bad('prompt title can be edited', String(renamed));
+
+const duplicated = await run(function () {
+  var P = window.PaperOS;
+  var first = P.data.listPrompts('')[0];
+  var before = P.data.listPrompts('').length;
+  var copy = P.data.duplicatePrompt(first.id);
+  return { before: before, after: P.data.listPrompts('').length, title: copy ? copy.title : null };
+});
+if (duplicated && duplicated.after === duplicated.before + 1 && /副本/.test(duplicated.title || '')) ok('prompt can be duplicated', JSON.stringify(duplicated));
+else bad('prompt can be duplicated', JSON.stringify(duplicated));
+
+const deleted = await run(function () {
+  var P = window.PaperOS;
+  var all = P.data.listPrompts('');
+  var victim = all[all.length - 1];
+  var before = all.length;
+  P.data.deletePrompt(victim.id);
+  return { before: before, after: P.data.listPrompts('').length, gone: P.data.getPrompt(victim.id) === null };
+});
+if (deleted && deleted.after === deleted.before - 1 && deleted.gone) ok('prompt can be deleted');
+else bad('prompt can be deleted', JSON.stringify(deleted));
+
+const promptRoundTrip = await run(function () {
+  var P = window.PaperOS;
+  /* pick the prompt whose body we created above, not "whatever is first" */
+  var target = P.data.listPrompts('第二行内容')[0];
+  if (!target) return { __err: 'target prompt missing' };
+  var snap = P.data.snapshotData();
+  var ingested = P.ingestWorkspace(JSON.parse(JSON.stringify(snap)));
+  if (!ingested.ok) return { __err: ingested.error };
+  var back = ingested.snapshot.prompts.filter(function (p) { return p.id === target.id; })[0];
+  return {
+    count: ingested.snapshot.prompts.length,
+    kept: back ? { title: back.title, body: back.body, pinned: back.pinned } : null
+  };
+});
+if (promptRoundTrip && promptRoundTrip.kept && promptRoundTrip.kept.body === '第一行标题取自正文\n第二行内容' && promptRoundTrip.kept.title === '第一行标题取自正文') ok('prompt fields survive validate round-trip', JSON.stringify(promptRoundTrip.kept));
+else bad('prompt fields survive validate round-trip', JSON.stringify(promptRoundTrip));
+
+const promptSeeding = await run(function () {
+  var P = window.PaperOS;
+  var snap = P.data.snapshotData();
+  /* a v3 file written before the library existed has no prompts key at all */
+  var legacy = JSON.parse(JSON.stringify(snap));
+  legacy.version = 3;
+  delete legacy.prompts;
+  var legacyResult = P.ingestWorkspace(legacy);
+  /* but an explicitly emptied library (the user cleared the examples) must stay empty */
+  var emptied = JSON.parse(JSON.stringify(snap));
+  emptied.prompts = [];
+  emptied.meta = Object.assign({}, emptied.meta, { sampleClearedAt: Date.now(), promptsSeededAt: Date.now() });
+  var emptyResult = P.ingestWorkspace(emptied);
+  return {
+    legacyOk: legacyResult.ok,
+    legacyCount: legacyResult.ok ? legacyResult.snapshot.prompts.length : -1,
+    emptyOk: emptyResult.ok,
+    emptyCount: emptyResult.ok ? emptyResult.snapshot.prompts.length : -1
+  };
+});
+if (promptSeeding && promptSeeding.legacyOk && promptSeeding.legacyCount === 3) ok('a v3 file without a prompts field gets the native samples', 'count=' + promptSeeding.legacyCount);
+else bad('a v3 file without a prompts field gets the native samples', JSON.stringify(promptSeeding));
+if (promptSeeding && promptSeeding.emptyOk && promptSeeding.emptyCount === 0) ok('an emptied prompt library is not refilled', 'count=' + promptSeeding.emptyCount);
+else bad('an emptied prompt library is not refilled', JSON.stringify(promptSeeding));
+
+const promptLimits = await run(function () {
+  var P = window.PaperOS;
+  var snap = P.data.snapshotData();
+  /* body over the published cap must be refused by the single ingest gate */
+  var tooLong = JSON.parse(JSON.stringify(snap));
+  tooLong.prompts = [{ id: 'prompt_toolong', title: '超长', body: new Array(20002).join('x'), pinned: false, createdAt: 1, updatedAt: 1 }];
+  var longResult = P.ingestWorkspace(tooLong);
+  /* an id-less prompt must be refused too */
+  var badId = JSON.parse(JSON.stringify(snap));
+  badId.prompts = [{ id: 'has spaces', title: 't', body: 'b' }];
+  var idResult = P.ingestWorkspace(badId);
+  /* a non-array prompts field must be refused */
+  var badShape = JSON.parse(JSON.stringify(snap));
+  badShape.prompts = { nope: true };
+  var shapeResult = P.ingestWorkspace(badShape);
+  /* 301 entries exceed the library limit */
+  var tooMany = JSON.parse(JSON.stringify(snap));
+  tooMany.prompts = [];
+  for (var i = 0; i < 301; i += 1) tooMany.prompts.push({ id: 'prompt_' + i, title: 't' + i, body: 'b' });
+  var manyResult = P.ingestWorkspace(tooMany);
+  return {
+    tooLong: longResult.ok,
+    badId: idResult.ok,
+    badShape: shapeResult.ok,
+    tooMany: manyResult.ok,
+    cap: P.PROMPT_BODY_MAX,
+    limit: P.PROMPT_LIMIT
+  };
+});
+if (promptLimits && promptLimits.tooLong === false) ok('a prompt body past the cap is refused', 'cap=' + promptLimits.cap);
+else bad('a prompt body past the cap is refused', JSON.stringify(promptLimits));
+if (promptLimits && promptLimits.badId === false) ok('a prompt with an invalid id is refused');
+else bad('a prompt with an invalid id is refused', JSON.stringify(promptLimits && promptLimits.badId));
+if (promptLimits && promptLimits.badShape === false) ok('a non-array prompts field is refused');
+else bad('a non-array prompts field is refused', JSON.stringify(promptLimits && promptLimits.badShape));
+if (promptLimits && promptLimits.tooMany === false) ok('a library past the entry limit is refused', 'limit=' + promptLimits.limit);
+else bad('a library past the entry limit is refused', JSON.stringify(promptLimits));
+
+const samples = await run(function () {
+  var P = window.PaperOS;
+  var counts = P.data.getExampleCounts();
+  var before = P.data.listPrompts('').length;
+  var removed = P.data.clearExamples();
+  var restored = P.data.insertSamplePrompts();
+  var backIds = P.data.listPrompts('').filter(function (p) { return p.sample; }).map(function (p) { return p.id; }).sort();
+  return {
+    samplePrompts: counts.prompts,
+    before: before,
+    cleared: removed.prompts.length,
+    after: P.data.listPrompts('').length - restored,
+    left: 0,
+    restored: restored,
+    backIds: backIds
+  };
+});
+if (samples && samples.samplePrompts >= 2 && samples.cleared === samples.samplePrompts && samples.left === 0 && samples.after === samples.before - samples.cleared) ok('sample prompts are counted and cleared with the other examples', JSON.stringify(samples));
+else bad('sample prompts are counted and cleared with the other examples', JSON.stringify(samples));
+const nativeIds = ['prompt_sample_agents', 'prompt_sample_align', 'prompt_sample_research'];
+if (samples && samples.restored === 3 && JSON.stringify(samples.backIds) === JSON.stringify(nativeIds)) ok('the native samples can be put back from the empty state', JSON.stringify(samples.backIds));
+else bad('the native samples can be put back from the empty state', JSON.stringify(samples && { restored: samples.restored, backIds: samples.backIds }));
+
 // --- reload keeps data ---
 await run(function () {
   var P = window.PaperOS;
@@ -671,6 +895,54 @@ if (ready2 && survived && survived.titles.indexOf('刷新后还在') !== -1) ok(
 else bad('data survives a reload', JSON.stringify(survived && survived.titles));
 if (survived && survived.windows.indexOf('calendar') !== -1) ok('open windows survive a reload', JSON.stringify(survived.windows));
 else bad('open windows survive a reload', JSON.stringify(survived && survived.windows));
+
+// --- a workspace from a NEWER version must not hang the desk ---
+// Regression: v2.3's boot called a helper it could not see (different IIFE),
+// threw ReferenceError before setting READY, and the host stayed on the
+// loading overlay forever. The desk must boot read-only and say so.
+const newerPage = join(OUT, 'page.newer.html');
+const newerSnapshot = {
+  format: 'paper-os/workspace',
+  version: 99,
+  nodes: [],
+  stickies: [],
+  tasks: [],
+  prompts: [],
+  prefs: {},
+  /* the host snapshot only wins when it is at least as fresh as the local
+     cache, so this must carry a far-future stamp */
+  meta: { updatedAt: 4102444800000 }
+};
+const bootScript = '<' + 'script>window.__SCHEDULE_HOST_MODE__=true;window.__SCHEDULE_HOST_SNAPSHOT__='
+  + JSON.stringify(newerSnapshot).replace(/</g, '\\u003c') + ';<' + '/script>';
+writeFileSync(newerPage, readFileSync(PAGE, 'utf8').replace('<script>', bootScript + '<script>'));
+pageErrors.length = 0;
+await send('Page.navigate', { url: pathToFileURL(newerPage).href });
+let newerReady = false;
+for (let i = 0; i < 60; i += 1) {
+  await sleep(200);
+  if (await ev('!!window.__PAPER_OS_READY__')) { newerReady = true; break; }
+}
+if (newerReady) ok('a newer-version workspace still boots (no infinite loading)');
+else bad('a newer-version workspace still boots (no infinite loading)', 'READY never became true');
+const newerState = await run(function () {
+  var P = window.PaperOS;
+  var notice = document.querySelector('[data-testid="desk-notice"]');
+  return {
+    blocked: !!(P && P.storage && P.storage.blocked),
+    bootError: window.__PAPER_OS_BOOT_ERROR__ || '',
+    notice: notice ? notice.textContent : '',
+    text: document.body.innerText.slice(0, 400)
+  };
+});
+if (newerState && newerState.blocked) ok('a newer-version workspace is opened read-only');
+else bad('a newer-version workspace is opened read-only', JSON.stringify(newerState && { blocked: newerState.blocked }));
+if (newerState && /只读/.test(newerState.notice) && /更新/.test(newerState.notice)) ok('the read-only state is explained on screen', newerState.notice.slice(0, 40));
+else bad('the read-only state is explained on screen', JSON.stringify(newerState && newerState.notice));
+if (!newerState || !newerState.bootError) ok('boot does not throw on a newer-version workspace');
+else bad('boot does not throw on a newer-version workspace', newerState.bootError);
+if (!pageErrors.length) ok('no page exceptions on a newer-version workspace');
+else bad('no page exceptions on a newer-version workspace', pageErrors.slice(0, 2).join(' | '));
 
 if (!pageErrors.length) ok('no page exceptions');
 else bad('no page exceptions', pageErrors.slice(0, 3).join(' | '));
