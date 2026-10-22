@@ -137,6 +137,30 @@ def main() -> int:
     else:
         bad("app registry", "found: %r" % (app_ids,))
 
+    # --- the README keeps its top banner, and every local image it points at exists ---
+    # Twice now a README rewrite silently dropped the hero image (56aa9f8 removed the
+    # file, a later sync removed the line). Both are cheap to assert, so assert them.
+    readme_path = PLUGIN / "README.md"
+    if not readme_path.is_file():
+        bad("README keeps its top banner", "README.md missing at %s" % readme_path)
+    else:
+        readme = readme_path.read_text(encoding="utf-8")
+        imgs = re.findall(r'<img[^>]*src="([^"]+)"', readme)
+        lines = readme.split("\n")
+        h1 = next((i for i, line in enumerate(lines) if line.startswith("# ")), None)
+        # the banner must live directly under the title, not just "somewhere above ##"
+        banner_zone = lines[h1 + 1:h1 + 5] if h1 is not None else []
+        has_banner = any("<img" in line for line in banner_zone)
+        local = [src for src in imgs if not src.startswith(("http://", "https://"))]
+        missing = [src for src in local if not (PLUGIN / src).is_file()]
+        remote = [src for src in imgs if src.startswith(("http://", "https://"))]
+        if not has_banner:
+            bad("README keeps its top banner", "no <img> within 4 lines after the title")
+        elif missing:
+            bad("README keeps its top banner", "missing image files: " + ", ".join(missing))
+        else:
+            ok("README keeps its top banner", "%d images, %d local files, %d remote" % (len(imgs), len(local), len(remote)))
+
     # --- every dock app must have its OWN icon ---
     # appIcon(id) silently falls back to the notes icon, so a missing or renamed key
     # ships the wrong icon with no error (this happened: key "prompt" vs id "prompts").
