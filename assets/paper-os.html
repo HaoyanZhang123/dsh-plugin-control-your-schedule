@@ -14237,6 +14237,9 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       var root = null;
       var refs = {};
       var currentId = null;
+      /* 编辑器 DOM 是为哪一条建的。每次 commit 都重建 DOM 会摧毁正在输入的焦点，
+         所以只有"换了选中项"时才重建，其余情况只更新文字。 */
+      var editorFor = null;
       var searchTimer = null;
       var titleTimer = null;
 
@@ -14376,7 +14379,10 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         var titleInput = document.createElement('input');
         titleInput.type = 'text';
         titleInput.className = 'prompts-title-input';
-        titleInput.value = item.title;
+        /* 还没起名的提示词：标题栏空着显示 placeholder，而不是塞一句"未命名提示词"让用户先删。 */
+        var untitled = item.title === '未命名提示词' && !String(item.body || '').trim();
+        titleInput.value = untitled ? '' : item.title;
+        titleInput.placeholder = '未命名提示词';
         titleInput.maxLength = 120;
         titleInput.setAttribute('data-testid', 'prompt-title');
         titleInput.addEventListener('input', function () {
@@ -14412,7 +14418,36 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         refs.editor.appendChild(body);
         refs.titleInput = titleInput;
         refs.bodyInput = textarea;
+        refs.counter = counter;
+        editorFor = item.id;
         updatePinLabel(item);
+      }
+
+      /* 只更新"会变但不需要重建"的部分：栏头标题、字数、置顶态。 */
+      function updateEditorMeta(item) {
+        if (refs.barTitle) refs.barTitle.textContent = item.title;
+        if (refs.counter) refs.counter.textContent = charCount(item.body) + ' / 20000 字';
+        updatePinLabel(item);
+      }
+
+      function editorFocused() {
+        return !!(refs.editor && refs.editor.contains(document.activeElement));
+      }
+
+      /* 数据变了之后的统一入口：选中项没变就不碰输入框，保住光标。 */
+      function syncEditor() {
+        var item = promptById(currentId);
+        if (!item) {
+          currentId = null;
+          editorFor = null;
+          renderEditor();
+          return;
+        }
+        if (editorFor === item.id && refs.titleInput && refs.bodyInput) {
+          updateEditorMeta(item);
+          return;
+        }
+        renderEditor();
       }
 
       function updatePinLabel(item) {
@@ -14425,7 +14460,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       function selectPrompt(id) {
         currentId = id;
         renderList();
-        renderEditor();
+        syncEditor();
       }
 
       /* ---------- actions ---------- */
@@ -14437,7 +14472,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           return;
         }
         selectPrompt(created.id);
-        if (refs.bodyInput) refs.bodyInput.focus();
+        if (refs.titleInput) refs.titleInput.focus();
       }
 
       function duplicateCurrent() {
@@ -14587,13 +14622,17 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           clearTimeout(searchTimer);
           searchTimer = setTimeout(renderList, SEARCH_DELAY);
         });
+        /* 输入期间列表被延后重建，离开编辑器时补上。 */
+        refs.editor.addEventListener('focusout', function () {
+          setTimeout(function () { if (!editorFocused()) renderList(); }, 0);
+        });
 
         ctx.subscribe(function (event) {
-          if (event.type === 'prompts' || event.type === 'prefs') {
-            if (currentId && !promptById(currentId)) currentId = null;
-            renderList();
-            renderEditor();
-          }
+          if (event.type !== 'prompts' && event.type !== 'prefs') return;
+          if (currentId && !promptById(currentId)) { currentId = null; editorFor = null; }
+          syncEditor();
+          /* 正在编辑器里输入时不动列表：既省掉整表重建，也不会让行在脚下重排。 */
+          if (!editorFocused()) renderList();
         });
         ctx.subscribeSave(function (status) {
           if (!refs.saveState) return;

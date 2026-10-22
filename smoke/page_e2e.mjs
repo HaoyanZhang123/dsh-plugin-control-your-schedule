@@ -713,13 +713,60 @@ const uiNew = await run(function () {
     before: before,
     after: window.PaperOS.data.listPrompts('').length,
     editorTitle: titleInput ? titleInput.value : null,
+    titlePlaceholder: titleInput ? titleInput.placeholder : null,
     heading: heading ? heading.textContent : ''
   };
 });
 if (uiNew && uiNew.after === uiNew.before + 1) ok('the new button creates a prompt');
 else bad('the new button creates a prompt', JSON.stringify(uiNew));
-if (uiNew && uiNew.editorTitle === '未命名提示词' && uiNew.heading === '未命名提示词') ok('a new prompt opens in the editor immediately', JSON.stringify({ title: uiNew.editorTitle }));
-else bad('a new prompt opens in the editor immediately', JSON.stringify(uiNew));
+if (uiNew && uiNew.editorTitle === '' && uiNew.titlePlaceholder === '未命名提示词' && uiNew.heading === '未命名提示词') ok('a new prompt opens with an empty title + placeholder', JSON.stringify({ placeholder: uiNew.titlePlaceholder }));
+else bad('a new prompt opens with an empty title + placeholder', JSON.stringify(uiNew));
+
+// --- typing must survive the autosave round-trip ---
+// Regression 0.3.0: every commit rebuilt the editor DOM, so focus died after the
+// first keystroke and the field could only be filled by pasting. These drive the
+// real input path (CDP Input.insertText), not element.value.
+await send('Runtime.evaluate', { expression: "document.querySelector('[data-testid=\"prompt-title\"]').focus()" });
+await send('Input.insertText', { text: '打字标题' });
+await sleep(500);
+await send('Input.insertText', { text: '续写' });
+await sleep(250);
+const typedTitle = await run(function () {
+  var t = document.querySelector('[data-testid="prompt-title"]');
+  var first = window.PaperOS.data.listPrompts('')[0];
+  return {
+    value: t ? t.value : null,
+    focused: document.activeElement === t,
+    stored: first ? first.title : null
+  };
+});
+if (typedTitle && typedTitle.value === '打字标题续写') ok('typing into the title keeps focus past the autosave', typedTitle.value);
+else bad('typing into the title keeps focus past the autosave', JSON.stringify(typedTitle));
+if (typedTitle && typedTitle.focused) ok('the title field still owns focus after saving');
+else bad('the title field still owns focus after saving', JSON.stringify(typedTitle && typedTitle.focused));
+if (typedTitle && typedTitle.stored === '打字标题续写') ok('the typed title reached the store', typedTitle.stored);
+else bad('the typed title reached the store', JSON.stringify(typedTitle && typedTitle.stored));
+
+await send('Runtime.evaluate', { expression: "document.querySelector('[data-testid=\"prompt-body\"]').focus()" });
+await send('Input.insertText', { text: '第一行' });
+await sleep(350);
+await send('Input.insertText', { text: '第二行' });
+await sleep(250);
+const typedBody = await run(function () {
+  var b = document.querySelector('[data-testid="prompt-body"]');
+  var first = window.PaperOS.data.listPrompts('')[0];
+  return {
+    value: b ? b.value : null,
+    focused: document.activeElement === b,
+    stored: first ? first.body : null
+  };
+});
+if (typedBody && typedBody.value === '第一行第二行') ok('typing into the body keeps focus past the autosave', typedBody.value);
+else bad('typing into the body keeps focus past the autosave', JSON.stringify(typedBody));
+if (typedBody && typedBody.focused) ok('the body field still owns focus after saving');
+else bad('the body field still owns focus after saving', JSON.stringify(typedBody && typedBody.focused));
+if (typedBody && typedBody.stored === '第一行第二行') ok('the typed body reached the store', typedBody.stored);
+else bad('the typed body reached the store', JSON.stringify(typedBody && typedBody.stored));
 
 const pinned = await run(function () {
   var P = window.PaperOS;

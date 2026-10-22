@@ -6,7 +6,7 @@
 [![ci](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/actions/workflows/ci.yml/badge.svg)](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/HaoyanZhang123/dsh-plugin-control-your-schedule)](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/releases)
 
-当前版本 **0.3.0** · 开发依据 DSH **0.2.1-rc.2** · Windows 实测，macOS / Linux 由 CI 构建与静态门禁覆盖
+当前版本 **0.3.1** · 开发依据 DSH **0.2.1-rc.2** · Windows 实测，macOS / Linux 由 CI 构建与静态门禁覆盖
 
 ## 功能
 
@@ -28,7 +28,6 @@
 - **安静的界面**：不弹浮层提示；没有信息的状态行不占位。
 - **画纸**：手写/绘画，支持撤销、橡皮、导出 PNG；画纸簿可左右翻页，也能整张删掉。
 <img width="1400" alt="画纸" src="assets/screenshot-draw.webp">
-
 - **固定右侧栏**：今日纸签始终在右侧，窗口只在左侧工作区活动，不会被遮住。
 - **底部应用坞**：所有应用的唯一入口；点图标打开/收起窗口；最右边的房子按钮一键收好全部窗口，再点一次恢复。
 - **点桌面收好**：点击窗口外的空白桌面，也会把全部窗口收进应用坞（不销毁窗口，点图标可恢复）。
@@ -37,7 +36,6 @@
 - **数据备份**：设置 → 数据与备份，导出/导入完整工作区 JSON。
 - **三档配色**：跟随 DSH（默认，随宿主的浅色/深色一起变）/ 浅色 / 深色。插件只读宿主的主题信号，不写宿主 DOM，和别的皮肤插件不冲突。
 <img width="1400" alt="深色档" src="assets/screenshot-calendar-dark.webp">
-
 - **升级不丢数据**：工作区带版本号与迁移阶梯，v1 → v2 → v3 自动升级（v3 新增提示词库，只做加法）；Host 在写盘前会把旧版本另存为 `workspace.v<旧版本>.backup.json`，并在每次写入前留一份 `workspace.prev.json`。存储里的工作区若过不了校验，会**只读打开**并另存原稿，绝不拿示例桌面覆盖。
 - **切换不丢状态**：切到 DSH 其它界面再回来，窗口、以及每个应用正在看的东西（选中的纸页、日历停在哪天、便签滚到哪、画纸开哪张、设置哪个分区）都会复原。
 
@@ -51,7 +49,7 @@ DSH → Plugins → Add plugin，填：
 dsh-plugin-control-your-schedule
 ```
 
-也可以带版本：`dsh-plugin-control-your-schedule@0.3.0`。
+也可以带版本：`dsh-plugin-control-your-schedule@0.3.1`。
 
 ### GitHub（备选，不需要 npm 时）
 
