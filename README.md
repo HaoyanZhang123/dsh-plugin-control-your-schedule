@@ -1,6 +1,6 @@
 # dsh-plugin-control-your-schedule · 纸屿
 
-<img width="2172" height="724" alt="e2f9869ed45c0711738e4f67d7e7f642" src="https://github.com/user-attachments/assets/5d8de9ee-f57d-452d-8bab-9adf837f6aa3" />
+<img width="2172" height="724" alt="纸屿：把今天写成一张纸" src="assets/banner.webp">
 
 > 把便签、纸页笔记、日历待办、画纸和常用提示词，装进 DeepSeek Harness 的左侧栏。
 > 纸面风格的个人工作台：数据保存在本机，不联网。
