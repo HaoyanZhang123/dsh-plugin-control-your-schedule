@@ -18,7 +18,9 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
 const CLIENT = join(ROOT, 'plugin', 'client.js');
 const OUT = join(ROOT, '..', '..', 'output', '_probe', 'cys-e2e');
-const PORT = 9533;
+// 端口固定 + 上一个进程没退干净 = 新测试连到旧浏览器，测的是旧页面和旧状态，
+// 表现是一堆逻辑上不可能的失败。改成按 pid 取一个不冲突的端口。
+const PORT = 9533 + (process.pid % 400);
 
 const CANDIDATES = [
   'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
@@ -34,8 +36,9 @@ mkdirSync(OUT, { recursive: true });
 const client = readFileSync(CLIENT, 'utf8');
 const match = /var PAGE_B64 = '([A-Za-z0-9+/=]+)'/.exec(client);
 if (!match) { console.log('FAIL | PAGE_B64 not found in client.js'); process.exit(1); }
-const PROFILE = join(OUT, 'profile-page-e2e');
-rmSync(PROFILE, { recursive: true, force: true });
+// 每次用独立 profile：上一个进程若还没退干净，删目录会 EPERM，整轮测试直接崩。
+// 这跟产品无关，是测试自己的健壮性；留着旧目录比让门禁随机变红好。
+const PROFILE = join(OUT, 'profile-page-e2e-' + process.pid + '-' + Date.now());
 const PAGE = join(OUT, 'page.published.html');
 writeFileSync(PAGE, Buffer.from(match[1], 'base64').toString('utf8'));
 
@@ -517,6 +520,399 @@ const editDialog = await run(function () {
 });
 if (editDialog && editDialog.opened === true) ok('existing task opens its detail dialog', JSON.stringify(editDialog));
 else bad('existing task opens its detail dialog', JSON.stringify(editDialog));
+
+// --- 状态两项各占整行，不许逐字竖排（回归：10px 首列挤压中文） ---
+const repeatRow = await run(function () {
+  var shell = document.querySelector('.window[data-app=calendar]');
+  var btn = shell.querySelector('[aria-label^=编辑待办], [aria-label^="编辑待办"]');
+  if (!btn) return { error: 'no edit button' };
+  btn.click();
+  var dialog = document.querySelector('.paper-dialog[open]');
+  if (!dialog) return { error: 'no dialog' };
+  var labels = dialog.querySelectorAll('.priority-list--repeat .priority-option__label');
+  var out = { count: labels.length, rows: [], labels: [] };
+  for (var i = 0; i < labels.length; i += 1) {
+    var r = labels[i].getBoundingClientRect();
+    out.rows.push({ w: Math.round(r.width), h: Math.round(r.height) });
+    out.labels.push(labels[i].textContent);
+  }
+  dialog.close();
+  return out;
+});
+if (repeatRow && repeatRow.count === 2
+    && repeatRow.labels.join('|') === '仅限今日|每天，直到解决'
+    && repeatRow.rows.every(function (row) { return row.h < 30 && row.w > 60; })) {
+  ok('repeat status renders on one line each', JSON.stringify(repeatRow));
+} else {
+  bad('repeat status renders on one line each', JSON.stringify(repeatRow));
+}
+
+// --- 命令面板已经并进设置：只有一个入口，Ctrl+K 落在命令分区 ---
+const commandHome = await run(function () {
+  var P = window.PaperOS;
+  P.tour.close();
+  var overlay = document.querySelector('.palette-layer, .palette');
+  var topbarButton = document.getElementById('palette-btn');
+  P.shell.openSettings('commands');
+  var win = P.wm.getWindows().filter(function (w) { return w.appId === 'settings'; })[0];
+  var shellEl = document.querySelector('.window[data-app="settings"]');
+  var nav = shellEl ? shellEl.querySelector('[data-section="commands"]') : null;
+  return {
+    overlayGone: !overlay,
+    topbarButtonGone: !topbarButton,
+    settingsOpened: !!win,
+    commandPanel: !!document.querySelector('[data-section-panel="commands"] .command-sheet'),
+    navLabel: nav ? nav.textContent : null
+  };
+});
+if (commandHome && commandHome.overlayGone && commandHome.topbarButtonGone && commandHome.settingsOpened
+    && commandHome.commandPanel && commandHome.navLabel === '命令与应用') {
+  ok('command palette lives inside settings only', JSON.stringify(commandHome));
+} else {
+  bad('command palette lives inside settings only', JSON.stringify(commandHome));
+}
+
+// --- 命令列表真的能过滤、能回车执行 ---
+const commandRun = await run(function () {
+  var P = window.PaperOS;
+  var input = document.querySelector('[data-command-input]');
+  if (!input) return { error: 'no input' };
+  input.value = '便签';
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  var rows = document.querySelectorAll('.command-item');
+  var first = rows[0];
+  var name = first ? first.querySelector('.command-item__name').textContent : null;
+  input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  var settingsWindow = P.wm.getWindows().filter(function (w) { return w.appId === 'settings'; })[0];
+  var stickyWindow = P.wm.getWindows().filter(function (w) { return w.appId === 'stickies'; })[0];
+  return {
+    filtered: rows.length,
+    firstName: name,
+    settingsCollapsed: settingsWindow ? !!settingsWindow.minimized : false,
+    openedApp: !!stickyWindow
+  };
+});
+if (commandRun && commandRun.filtered >= 1 && commandRun.firstName === '打开 便签'
+    && commandRun.openedApp && commandRun.settingsCollapsed) {
+  ok('command list filters and runs from the settings panel', JSON.stringify(commandRun));
+} else {
+  bad('command list filters and runs from the settings panel', JSON.stringify(commandRun));
+}
+
+// --- 应用坞顺序：拖拽持久化、未知 id 丢弃、缺项补齐 ---
+const dockOrder = await run(function () {
+  var P = window.PaperOS;
+  var before = Array.prototype.map.call(document.querySelectorAll('[data-dock-app]'), function (n) { return n.getAttribute('data-dock-app'); });
+  P.data.setPrefs({ dockOrder: ['draw', 'nope', 'stickies', 'draw'] });
+  P.shell.buildDock();
+  var after = Array.prototype.map.call(document.querySelectorAll('[data-dock-app]'), function (n) { return n.getAttribute('data-dock-app'); });
+  P.data.setPrefs({ dockOrder: [] });
+  P.shell.buildDock();
+  var reset = Array.prototype.map.call(document.querySelectorAll('[data-dock-app]'), function (n) { return n.getAttribute('data-dock-app'); });
+  return { before: before, after: after, reset: reset, apps: before.length };
+});
+if (dockOrder && dockOrder.after[0] === 'draw' && dockOrder.after[1] === 'stickies'
+    && dockOrder.after.length === dockOrder.apps
+    && dockOrder.after.join(',') !== dockOrder.before.join(',')
+    && dockOrder.reset.join(',') === dockOrder.before.join(',')) {
+  ok('dock order is persisted, de-duplicated and completed', JSON.stringify(dockOrder));
+} else {
+  bad('dock order is persisted, de-duplicated and completed', JSON.stringify(dockOrder));
+}
+
+// --- 真拖拽：pointerdown → 移动 → pointerup，顺序落盘 ---
+const dockDrag = await run(function () {
+  var P = window.PaperOS;
+  var buttons = Array.prototype.slice.call(document.querySelectorAll('[data-dock-app]'));
+  var first = buttons[0];
+  var last = buttons[buttons.length - 1];
+  var a = first.getBoundingClientRect();
+  var b = last.getBoundingClientRect();
+  var opts = { bubbles: true, pointerId: 1, pointerType: 'mouse', button: 0, isPrimary: true };
+  first.dispatchEvent(new PointerEvent('pointerdown', Object.assign({ clientX: a.left + a.width / 2, clientY: a.top + a.height / 2 }, opts)));
+  window.dispatchEvent(new PointerEvent('pointermove', Object.assign({ clientX: b.left + b.width + 30, clientY: a.top + a.height / 2 }, opts)));
+  window.dispatchEvent(new PointerEvent('pointerup', Object.assign({ clientX: b.left + b.width + 30, clientY: a.top + a.height / 2 }, opts)));
+  var after = Array.prototype.map.call(document.querySelectorAll('[data-dock-app]'), function (n) { return n.getAttribute('data-dock-app'); });
+  var saved = P.data.getPrefs().dockOrder;
+  var clicked = null;
+  return { before: buttons.length, movedTo: after.indexOf(first.getAttribute('data-dock-app')), after: after, saved: saved, draggingLeft: !!document.querySelector('.dock__btn.is-dragging') };
+});
+if (dockDrag && dockDrag.movedTo === dockDrag.before - 1 && !dockDrag.draggingLeft
+    && JSON.stringify(dockDrag.saved) === JSON.stringify(dockDrag.after)) {
+  ok('dragging a dock icon reorders and persists', JSON.stringify(dockDrag));
+} else {
+  bad('dragging a dock icon reorders and persists', JSON.stringify(dockDrag));
+}
+
+// --- 拖到最左/最右/坞外都要有确定落点，不能「往左拖反而跑到末尾」 ---
+const dockEdges = await run(function () {
+  var P = window.PaperOS;
+  function dragRightmostTo(x) {
+    P.data.setPrefs({ dockOrder: [] });
+    P.shell.buildDock();
+    var buttons = Array.prototype.slice.call(document.querySelectorAll('[data-dock-app]'));
+    var last = buttons[buttons.length - 1];
+    var r = last.getBoundingClientRect();
+    var o = { bubbles: true, pointerId: 21, pointerType: 'mouse', button: 0, isPrimary: true };
+    last.dispatchEvent(new PointerEvent('pointerdown', Object.assign({ clientX: r.left + 8, clientY: r.top + 8 }, o)));
+    window.dispatchEvent(new PointerEvent('pointermove', Object.assign({ clientX: x, clientY: r.top + 8 }, o)));
+    window.dispatchEvent(new PointerEvent('pointerup', Object.assign({ clientX: x, clientY: r.top + 8 }, o)));
+    var order = P.data.getPrefs().dockOrder;
+    P.data.setPrefs({ dockOrder: [] });
+    P.shell.buildDock();
+    return order;
+  }
+  var first = document.querySelector('[data-dock-app]').getBoundingClientRect();
+  var lastBtn = document.querySelectorAll('[data-dock-app]')[4].getBoundingClientRect();
+  var toLeft = dragRightmostTo(first.left - 80);
+  var toRight = dragRightmostTo(lastBtn.right + 200);
+  return { toLeft: toLeft, toRight: toRight };
+});
+if (dockEdges && dockEdges.toLeft[0] === 'draw' && dockEdges.toRight[4] === 'draw') {
+  ok('dropping at the edges lands where the pointer is', JSON.stringify(dockEdges));
+} else {
+  bad('dropping at the edges lands where the pointer is', JSON.stringify(dockEdges));
+}
+
+// 这一段会动窗口（点击坞图标=聚焦/最小化）。跑完把现场恢复，
+// 否则后面的日历/提示词用例会对着被最小化的窗口找节点。
+const restoreDesk = async () => {
+  await run(function () {
+    var P = window.PaperOS;
+    P.data.setPrefs({ dockOrder: [] });
+    P.shell.buildDock();
+    P.wm.getWindows().forEach(function (w) {
+      if (w.appId === 'settings') { P.wm.close(w.id); return; }
+      if (w.minimized) P.wm.restore(w.id);
+    });
+    return 1;
+  });
+  await sleep(120);
+};
+
+// --- 点图标仍然只打开，不会被 6px 阈值误当成拖拽 ---
+const dockClick = await run(function () {
+  var P = window.PaperOS;
+  P.data.setPrefs({ dockOrder: [] });
+  P.shell.buildDock();
+  var btn = document.querySelector('[data-dock-app="calendar"]');
+  var r = btn.getBoundingClientRect();
+  var opts = { bubbles: true, pointerId: 2, pointerType: 'mouse', button: 0, isPrimary: true };
+  btn.dispatchEvent(new PointerEvent('pointerdown', Object.assign({ clientX: r.left + 4, clientY: r.top + 4 }, opts)));
+  window.dispatchEvent(new PointerEvent('pointermove', Object.assign({ clientX: r.left + 7, clientY: r.top + 6 }, opts)));
+  window.dispatchEvent(new PointerEvent('pointerup', Object.assign({ clientX: r.left + 7, clientY: r.top + 6 }, opts)));
+  btn.click();
+  var out = {
+    orderUntouched: JSON.stringify(P.data.getPrefs().dockOrder) === '[]',
+    calendarWindow: !!P.wm.getWindows().filter(function (w) { return w.appId === 'calendar'; })[0]
+  };
+  return out;
+});
+if (dockClick && dockClick.orderUntouched && dockClick.calendarWindow) {
+  ok('a small jitter still counts as a click', JSON.stringify(dockClick));
+} else {
+  bad('a small jitter still counts as a click', JSON.stringify(dockClick));
+}
+
+await restoreDesk();
+
+// --- 拖完不应该顺手把应用打开（浏览器会补发一次 click） ---
+const dockDragNoClick = await run(function () {
+  var P = window.PaperOS;
+  P.data.setPrefs({ dockOrder: [] });
+  P.shell.buildDock();
+  // 先关掉 notes，这样「被拖拽后的补发 click 打开」才会真的多出一扇窗
+  P.wm.getWindows().forEach(function (w) { if (w.appId === 'notes') P.wm.close(w.id); });
+  var before = P.wm.getWindows().filter(function (w) { return w.appId === 'notes'; }).length;
+  var buttons = Array.prototype.slice.call(document.querySelectorAll('[data-dock-app]'));
+  var bs = buttons.filter(function (n) { return n.getAttribute('data-dock-app') === 'notes'; })[0];
+  if (!bs) return { error: 'notes button missing' };
+  var a = bs.getBoundingClientRect();
+  var o = { bubbles: true, pointerId: 7, pointerType: 'mouse', button: 0, isPrimary: true };
+  bs.dispatchEvent(new PointerEvent('pointerdown', Object.assign({ clientX: a.left + 10, clientY: a.top + 10 }, o)));
+  window.dispatchEvent(new PointerEvent('pointermove', Object.assign({ clientX: a.left + 90, clientY: a.top + 10 }, o)));
+  window.dispatchEvent(new PointerEvent('pointerup', Object.assign({ clientX: a.left + 90, clientY: a.top + 10 }, o)));
+  bs.click();
+  var after = P.wm.getWindows().filter(function (w) { return w.appId === 'notes'; }).length;
+  P.data.setPrefs({ dockOrder: [] });
+  P.shell.buildDock();
+  return { before: before, after: after };
+});
+await restoreDesk();
+
+// --- 取消手势不能落盘：pointercancel 只清理，不提交 ---
+const dockCancel = await run(function () {
+  var P = window.PaperOS;
+  P.data.setPrefs({ dockOrder: [] });
+  P.shell.buildDock();
+  var buttons = Array.prototype.slice.call(document.querySelectorAll('[data-dock-app]'));
+  var first = buttons[0];
+  var third = buttons[2];
+  var a = first.getBoundingClientRect();
+  var c = third.getBoundingClientRect();
+  var o = { bubbles: true, pointerId: 31, pointerType: 'touch', button: 0, isPrimary: true };
+  first.dispatchEvent(new PointerEvent('pointerdown', Object.assign({ clientX: a.left + 20, clientY: a.top + 20 }, o)));
+  window.dispatchEvent(new PointerEvent('pointermove', Object.assign({ clientX: c.left + 20, clientY: a.top + 20 }, o)));
+  var midway = { dragging: !!document.querySelector('.dock__btn.is-dragging'), marker: !!document.querySelector('.is-drop-before, .is-drop-after') };
+  window.dispatchEvent(new PointerEvent('pointercancel', Object.assign({ clientX: c.left + 20, clientY: a.top + 20 }, o)));
+  var afterCancel = {
+    order: P.data.getPrefs().dockOrder,
+    dragging: !!document.querySelector('.dock__btn.is-dragging'),
+    marker: !!document.querySelector('.is-drop-before, .is-drop-after')
+  };
+  return { midway: midway, afterCancel: afterCancel };
+});
+if (dockCancel && dockCancel.midway.dragging && dockCancel.midway.marker
+    && Array.isArray(dockCancel.afterCancel.order) && dockCancel.afterCancel.order.length === 0
+    && !dockCancel.afterCancel.dragging && !dockCancel.afterCancel.marker) {
+  ok('a cancelled gesture leaves no order and no leftovers', JSON.stringify(dockCancel));
+} else {
+  bad('a cancelled gesture leaves no order and no leftovers', JSON.stringify(dockCancel));
+}
+
+await restoreDesk();
+
+// --- 命令列表：活动项要能被读屏跟着走 ---
+const commandAria = await run(function () {
+  var P = window.PaperOS;
+  P.shell.openSettings('commands');
+  var input = document.querySelector('[data-command-input]');
+  if (!input) return { error: 'no input' };
+  var role = input.getAttribute('role');
+  var controls = input.getAttribute('aria-controls');
+  var firstDesc = input.getAttribute('aria-activedescendant');
+  input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+  var secondDesc = input.getAttribute('aria-activedescendant');
+  var target = secondDesc ? document.getElementById(secondDesc) : null;
+  var listbox = controls ? document.getElementById(controls) : null;
+  return {
+    role: role, controls: controls, bound: !!listbox,
+    firstDesc: firstDesc, secondDesc: secondDesc,
+    descIsOption: !!(target && target.getAttribute('role') === 'option'),
+    changed: firstDesc !== secondDesc
+  };
+});
+if (commandAria && commandAria.role === 'combobox' && commandAria.bound && commandAria.descIsOption && commandAria.changed) {
+  ok('command list announces the active option', JSON.stringify(commandAria));
+} else {
+  bad('command list announces the active option', JSON.stringify(commandAria));
+}
+
+
+// --- 深色下前景窗口必须和普通窗口分得开 ---
+const darkFocus = await run(function () {
+  var P = window.PaperOS;
+  P.data.setPrefs({ theme: 'dark' });
+  P.shell.applyPrefs();
+  P.wm.open('calendar');
+  P.wm.open('notes');
+  var wins = P.wm.getWindows();
+  var focusedEl = document.querySelector('.window.is-focused');
+  var otherEl = document.querySelector('.window:not(.is-focused)');
+  var out = {
+    focused: focusedEl ? getComputedStyle(focusedEl).boxShadow : null,
+    other: otherEl ? getComputedStyle(otherEl).boxShadow : null,
+    borderFocused: focusedEl ? getComputedStyle(focusedEl).borderTopColor : null,
+    borderOther: otherEl ? getComputedStyle(otherEl).borderTopColor : null
+  };
+  // 只认阴影差异：边框在不同主题下本来就不同，拿它当证据会掩盖「投影被压平」。
+  out.differs = !!out.focused && !!out.other && out.focused !== out.other;
+  P.data.setPrefs({ theme: 'light' });
+  P.shell.applyPrefs();
+  return out;
+});
+if (darkFocus && darkFocus.differs) ok('dark mode still separates the focused window', JSON.stringify(darkFocus));
+else bad('dark mode still separates the focused window', JSON.stringify(darkFocus));
+
+// --- 深色下坞提示条必须看得清（白底白字第 N 次） ---
+const darkTooltip = await run(function () {
+  var P = window.PaperOS;
+  P.data.setPrefs({ theme: 'dark' });
+  P.shell.applyPrefs();
+  function lum(rgb) {
+    var m = /rgba?\(([0-9.]+), ?([0-9.]+), ?([0-9.]+)/.exec(rgb);
+    if (!m) return null;
+    var ch = [m[1], m[2], m[3]].map(function (v) {
+      var c = Number(v) / 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+  }
+  var tips = document.querySelectorAll('.dock__tip');
+  var worst = null;
+  for (var i = 0; i < tips.length; i += 1) {
+    var cs = getComputedStyle(tips[i]);
+    var fg = lum(cs.color);
+    var bg = lum(cs.backgroundColor);
+    if (fg === null || bg === null) continue;
+    var hi = Math.max(fg, bg);
+    var lo = Math.min(fg, bg);
+    var ratio = (hi + 0.05) / (lo + 0.05);
+    if (worst === null || ratio < worst.ratio) {
+      worst = { ratio: Math.round(ratio * 100) / 100, color: cs.color, bg: cs.backgroundColor, text: tips[i].textContent };
+    }
+  }
+  P.data.setPrefs({ theme: 'light' });
+  P.shell.applyPrefs();
+  return { count: tips.length, worst: worst };
+});
+if (darkTooltip && darkTooltip.count >= 5 && darkTooltip.worst && darkTooltip.worst.ratio >= 4.5) {
+  ok('dark dock tooltip stays readable', JSON.stringify(darkTooltip.worst));
+} else {
+  bad('dark dock tooltip stays readable', JSON.stringify(darkTooltip));
+}
+
+// --- Ctrl+K 真的落到命令分区（走键盘 handler，不是直接调 API）---
+const ctrlKOpen = await run(function () {
+  var P = window.PaperOS;
+  P.wm.getWindows().forEach(function (w) { if (w.appId === 'settings') P.wm.close(w.id); });
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }));
+  var win = P.wm.getWindows().filter(function (w) { return w.appId === 'settings'; })[0];
+  var panel = document.querySelector('[data-section-panel="commands"]');
+  return {
+    opened: !!win,
+    panelVisible: !!(panel && !panel.hidden),
+    overlay: !!document.querySelector('.palette-layer')
+  };
+});
+// 分区渲染会把焦点放到搜索框，但那是一次 setTimeout(40)，所以等一拍再读。
+await sleep(400);
+const ctrlKFocus = await run(function () {
+  var input = document.querySelector('[data-command-input]');
+  return { focusedInput: !!(input && document.activeElement === input) };
+});
+const ctrlK = Object.assign({}, ctrlKOpen, ctrlKFocus);
+await run(function () {
+  var P = window.PaperOS;
+  P.wm.getWindows().forEach(function (w) { if (w.appId === 'settings') P.wm.close(w.id); });
+  return 1;
+});
+if (ctrlK && ctrlK.opened && ctrlK.panelVisible && ctrlK.focusedInput && !ctrlK.overlay) ok('Ctrl+K opens the command section in settings', JSON.stringify(ctrlK));
+else bad('Ctrl+K opens the command section in settings', JSON.stringify(ctrlK));
+
+// --- 键盘移动应用坞要播报位置 ---
+const dockAnnounce = await run(function () {
+  var P = window.PaperOS;
+  P.data.setPrefs({ dockOrder: [] });
+  P.shell.buildDock();
+  var btn = document.querySelectorAll('[data-dock-app]')[1];
+  btn.focus();
+  btn.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', altKey: true, bubbles: true }));
+  var live = document.getElementById('dock-live');
+  return { text: live ? live.textContent : null, order: P.data.getPrefs().dockOrder };
+});
+if (dockAnnounce && /第 3 位，共 5 位/.test(dockAnnounce.text || '')) {
+  ok('keyboard reorder announces the new position', JSON.stringify(dockAnnounce));
+} else {
+  bad('keyboard reorder announces the new position', JSON.stringify(dockAnnounce));
+}
+
+if (dockDragNoClick && dockDragNoClick.before === dockDragNoClick.after) {
+  ok('a finished drag does not also open the app', JSON.stringify(dockDragNoClick));
+} else {
+  bad('a finished drag does not also open the app', JSON.stringify(dockDragNoClick));
+}
+
 
 // --- a finished dot is grey, never the priority colour ---
 const doneDot = await run(function () {

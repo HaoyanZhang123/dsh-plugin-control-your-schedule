@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import base64
 import json
-import re
 import sys
 from pathlib import Path
 
@@ -19,6 +18,8 @@ SRC = ROOT / "src" / "client.src.js"
 PAGE = ROOT / "assets" / "paper-os.html"
 OUT = ROOT / "client.js"
 ICON = ROOT / "icon.svg"
+SIDEBAR_ICON = ROOT / "sidebar-icon.svg"
+ICON_STROKE = "#8a8f98"
 PKG = ROOT / "package.json"
 
 
@@ -27,13 +28,19 @@ def fail(message: str) -> None:
     raise SystemExit(1)
 
 
-def extract_icon(page: str) -> str:
-    match = re.search(r"sticky:\s*'((?:<svg).*?</svg>)'", page, re.S)
-    if not match:
-        fail("could not find the sticky app icon in assets/paper-os.html")
-    svg = match.group(1)
-    svg = re.sub(r"<svg\b[^>]*>", '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">', svg, count=1)
+def sidebar_icon() -> str:
+    """侧栏图标：单色线性图，stroke=currentColor，跟着宿主深浅色自动变。"""
+    if not SIDEBAR_ICON.is_file():
+        fail("sidebar-icon.svg is missing")
+    svg = SIDEBAR_ICON.read_text(encoding="utf-8").strip()
+    if 'stroke="currentColor"' not in svg:
+        fail("sidebar-icon.svg must use stroke=currentColor (the sidebar icon follows the host text colour)")
     return svg
+
+
+def package_icon(svg: str) -> str:
+    """包图标走 <img>，拿不到 currentColor，所以固定一个中性灰（深浅底都看得见）。"""
+    return svg.replace('stroke="currentColor"', 'stroke="%s"' % ICON_STROKE)
 
 
 def render() -> str:
@@ -48,7 +55,7 @@ def render() -> str:
     if "__PAGE_VERSION__" in page:
         fail("unresolved __PAGE_VERSION__ remains in paper-os.html")
     encoded = base64.b64encode(page.encode("utf-8")).decode("ascii")
-    icon = extract_icon(page)
+    icon = sidebar_icon()
     if "__PAGE_B64__" not in source:
         fail("client.src.js lost its __PAGE_B64__ placeholder")
     if "__STICKY_ICON_JSON__" not in source:
@@ -76,8 +83,7 @@ def main() -> int:
         print("OK: client.js is up to date")
         return 0
     OUT.write_text(output, encoding="utf-8")
-    page = PAGE.read_text(encoding="utf-8")
-    ICON.write_text(extract_icon(page) + "\n", encoding="utf-8")
+    ICON.write_text(package_icon(sidebar_icon()) + "\n", encoding="utf-8")
     print("OK: wrote %s (%d bytes) and %s" % (OUT, len(output.encode("utf-8")), ICON))
     return 0
 

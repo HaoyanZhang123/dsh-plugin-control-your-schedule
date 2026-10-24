@@ -1,5 +1,106 @@
 # Changelog
 
+## [0.4.0] - 2026-10-24
+
+五条用户反馈落地：状态排版、深色可读性、命令面板并入设置、应用坞可排序、配色与 DSH 对齐。
+
+### 1. 待办「状态」不再竖排
+根因是 .priority-option 的 grid-template-columns: 10px auto —— 那个 10px 首列是给
+「紧急程度」的色点 .task-pip 留的；「状态」两项没有色点，标签直接落进 10px 列，
+中文单字宽度大于列宽，于是逐字换行。新增 .priority-list--repeat 覆写为
+minmax(112px, max-content) 1fr，标签在左、说明在右，窄于 560px 回落两行。
+文案同时把「每天 · 直到解决」改成「每天，直到解决」。
+
+### 2. 深色
+- 命令面板的白边来自 box-shadow: 0 2px 0 rgba(255,255,255,0.6) inset（合成 #aaa9a8，6.18:1），
+  尖角来自 border-radius: 3px；面板整体删除后消失，其余承载面的白内高光在深色下一律压到 4%。
+- 文字令牌换成 DSH 的 label 值：ink #f9fafb / soft #cfd3d6 / faint #adb2b8 / ghost #81858c。
+  改前被当正文用的 ghost 只有 3.16:1，改后 faint 在 raised 上是 6.53:1。
+- 38 处「正文却用 ghost」改指 faint，并把这条写成门禁：ghost stays a decoration token。
+- 层次：桌面 #1b1b1c、纸面 #232324、浮层 #2c2c2e、凹槽 #151517（DSH 原值），
+  桌面与窗口的分离从 1.01:1 变成 1.45:1；同时把此前 0 引用的 --paper-sink、--paper-edge 真正用起来。
+
+### 3. 命令面板并入设置
+删除浮层 DOM/CSS/JS（约 340 行 JS + 215 行 CSS）与顶栏放大镜按钮；设置左栏新增第一分区
+「命令与应用」（搜索 + 应用/操作/最近纸页 + 上下键 Enter Esc），Ctrl/Cmd+K 直接落到该分区。
+命令的清单与执行留在 shell，挂成 P.commands（单一事实源），设置只负责渲染 ——
+避免重演「跨闭包调用不到 quickNewNote」那类事故。
+执行后只有落点不是设置时才把设置收起；「打开设置 · 工作区」这类切分区的命令留在原地。
+设置图标从陶土圆印章换成齿轮（坞图标 + 顶栏按钮 + 命令行三处同源）。
+
+### 4. 应用坞可拖拽排序
+prefs.dockOrder 为唯一事实源，五处读写同步（createEmptyState / setPrefs / hydrate /
+sanitizePrefs / createSeed）。6px 阈值区分点击与拖拽；拖动时抬起 + 插入位竖线；
+未知 id 丢弃、重复去重、缺失的应用按注册顺序补到末尾；Alt + 左右箭头 是键盘等价物；
+设置 → 外观里「恢复默认」。
+
+### 5. 与 DSH 对齐
+大色块全部换成 DSH 的原始值（浅色 #ffffff / #f9fafb / #f1f3f5，深色 #232324 / #1b1b1c /
+#2c2c2e / #151517），边框改用 border-l1/l2 口径；外壳里 356 处暖色声明按「同明度转中性」
+批量处理（两轮：227 处外壳 + 129 处应用内承载面）。
+身份资产原样保留：纸纹噪点、衬线标题、便签五色、胶带、印章、clay 强调色。
+新增「宿主令牌桥」：iframe 不继承父文档的 CSS 变量，所以运行时读 parent.document.body 的
+--dsw-alias-* 写回本页，并用 MutationObserver 盯住宿主 data-ds-dark-theme ——
+原来只监听 prefers-color-scheme，在 DSH 里点深色要刷新才生效。
+「纸张颜色」三档下线，换成「纸纹」开关。
+
+### 实机反馈后的三处修正（0.4.0 未发布前，同日）
+
+**1. 设置里「恢复默认」被挤成两行**
+根因不是文案：.paper-btn 没有 white-space: nowrap，也没有 flex: 0 0 auto；所在的 .setting-row 是
+justify-content: space-between，左侧说明很长，按钮被压到最窄就折行。
+修法：.paper-btn 全局加 flex: 0 0 auto; white-space: nowrap（同类挤压在 0.3.0 的「＋新建」上已发生过）。
+
+**2. 深色「像蒙了一层灰」**
+量出来的：窗口正文应为 #232324 (35,35,36)，实际渲染 (44,44,46)，+9；桌面应为 #1b1b1c (27,27,28)，
+实际 (40,40,40)，+13。根因三条：
+- 噪点纹理叠了两层（.window 一次、.app 一次），深色下 4% 灰噪点把整屏抬亮；
+- .window:not(.is-focused) .window__body { opacity: .945 } 让未聚焦窗口和深色桌面混色；
+- 便签纸深色版还是 0.3.x 暖炭时代的值，和冷中性外壳只差 1.1:1，看起来「脏」。
+修法：深色彻底关噪点（--paper-noise / --grain: none）；浅色只由 .window 铺一层、alpha 4% 降到 2.5%；
+删掉未聚焦窗口的正文透明度；便签深色纸提亮一档（保色相）；坞按钮深色底改为透明（只留 hover）。
+复测：窗口正文 (28,28,29)，桌面 (35,35,36) 正好是纸面色 —— 不再有那层纱。
+
+**3. 侧栏图标是彩色的，和官方画风不符**
+侧栏图标是本插件自己的内联 SVG（src/client.src.js 的 SidebarIcon），原图是黄纸+棕线+陶土圆点的彩色纸片；
+DSH 自己的侧栏是 16px、1.5px 描边的单色线性图标。
+修法：新增 sidebar-icon.svg（折角便签轮廓，stroke=currentColor），内联 SVG 因此自动跟随宿主文字色；
+包根 icon.svg 由构建从同一张图生成、描边固定 #8a8f98（它走 <img>，拿不到 currentColor）。
+build_page.py 不再从页面里抽便签插画当图标，改为读 sidebar-icon.svg；package.json 的 files 同步。
+
+门禁新增 dark mode is not veiled（深色必须无噪点、每扇窗只铺一层、未聚焦不变淡、长按钮不折行、
+侧栏图标必须用 currentColor 且构建确实读它）。反向审计：把噪点与未聚焦透明度塞回去 → exit 1，
+点名 dark has no noise overlay / dark has no grain overlay / inactive window does not dim its body；
+恢复后 PASS 101 / FAIL 0 / SKIP 2、PASS 90 / FAIL 0。
+
+**4. 深色下坞图标的悬停提示条看不清**
+dock__tip 的文字用 color: var(--ink)（深色下是近白），底色却仍是 rgba(249,249,249,.97) 的近白，
+而且从来没有深色覆盖 —— 于是白底白字，对比度约 1:1。
+量出来的旧值：白底 rgb(249,249,249) + 白字 rgb(249,250,251)；修后 rgb(53,53,56) 底 + rgb(249,250,251) 字，11.7:1。
+同一类问题顺手清了一批：icon-btn:hover / save-pill:hover / topbar__btn:hover / calendar-month__nav:hover /
+draw-tool-btn:hover / draw-nav(:hover) / setting-action__icon 与 select-wrap select 都补了深色落地。
+门禁新增 no light pills left uncovered in dark（凡是「浅底 + ink 文字」的选择器都必须有深色覆盖；
+文件柜与窗口三件套这两个已删功能的残留选择器在允许表里并注明原因），
+page_e2e 新增 dark dock tooltip stays readable（深色下实测提示条前景/背景对比度，要求 >= 4.5，实际 11.7）。
+反向审计：删掉 dock__tip 的深色覆盖 → exit 1，点名 dock__tip。
+### 门禁
+| 套件 | 结果 |
+|---|---|
+| smoke/run_all_checks.py | **PASS 98 / FAIL 0 / SKIP 2** |
+| smoke/page_e2e.mjs（无头 Edge，82 项） | **PASS 82 / FAIL 0** |
+
+新增：深色对比度门禁（直接从令牌块算 WCAG）、深色明度阶梯、ghost 只做装饰、命令分区唯一入口、
+命令面板必须完全消失、坞顺序持久化 + 拖拽 + 点击不误判、状态整行化。
+
+**反向审计**（注入已知坏输入，确认门禁真的会红并点名）：
+| 注入 | 结果 |
+|---|---|
+| 把 --ink-faint 改回 #7d7566 | FAIL dark text contrast floor，点名 3.06 / 3.45 两处不达 4.5 |
+| 把 --desk-a 改成与纸面同色 | FAIL dark elevation ladder，点名 Y 相等 |
+| 删掉导航里的「命令与应用」并让一条正文回退 ghost | FAIL 3 条：命令分区按钮缺失、构建陈旧、ghost 用量 16 大于 15 |
+
+恢复后复跑：**PASS 99 / FAIL 0 / SKIP 2**、**PASS 89 / FAIL 0**。
+
 ## [0.3.1] - 2026-10-22
 
 修掉 0.3.0 里「提示词编辑器只能粘贴、不能打字」的回归。
@@ -226,3 +327,14 @@ page_e2e 新增 6 条走**真实输入路径**（CDP `Input.insertText`，不是
 - 6 步新手导览，重点说明「收好桌面」；首次打开自动播放，可在设置中重播。
 - 数据落盘到 $DSH_HOME/control-your-schedule/workspace.json，并保留浏览器缓存。
 - 导出 / 导入工作区 JSON；页面契约与构建逐字节门禁。
+
+### 独立复核后补的（同日）
+- 触屏：`.dock`/`.dock__btn` 加 `touch-action: none`；`pointercancel` 从「提交顺序」拆成「只清理」。
+  之前手势被系统收走（触屏滚动/来电）也会把拖到一半的顺序写进 prefs。
+- 读屏：命令输入框补 `role="combobox"` + `aria-controls` + `aria-activedescendant`，每条选项给稳定 id；
+  应用坞加 `aria-live`，拖动或 `Alt+←/→` 后播报「已移到第 N 位，共 M 位」。
+- 深色下前景窗口与普通窗口阴影原本完全相同，叠放时看不出层级；给 `.window.is-focused` 单列一档。
+- ghost 门禁从「计数 <= 15」改成**选择器白名单**，避免重排 CSS 造成假红/假绿；顺手把面包屑 hover 从 ghost 提到 faint。
+- 拖拽后的点击静默期从全局收窄到「只对这一枚图标」；`theme-color` 从旧纸色改成 `#f9fafb`。
+- 新增「宿主令牌桥」的父子页夹具验证：跟随 DSH 时读宿主值、宿主切深色 iframe 实时变、强制浅色时宿主令牌让位。
+  最后一条是修 bug：原实现无条件吃宿主令牌，强制浅色 + 宿主深色会反色。
