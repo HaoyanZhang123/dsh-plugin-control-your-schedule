@@ -24,6 +24,7 @@
     "assets",
     "tools/build_page.py",
     "README.md",
+    "README.en.md",
     "CHANGELOG.md",
     "LICENSE",
     "!**/__pycache__",

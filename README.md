@@ -7,8 +7,10 @@
 
 [![ci](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/actions/workflows/ci.yml/badge.svg)](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/HaoyanZhang123/dsh-plugin-control-your-schedule)](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/releases)
+[![npm](https://img.shields.io/npm/v/dsh-plugin-control-your-schedule)](https://www.npmjs.com/package/dsh-plugin-control-your-schedule)
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-当前版本 **0.4.0** · 开发依据 DSH **0.2.1-rc.2** · Windows 实测，macOS / Linux 由 CI 构建与静态门禁覆盖
+当前版本 **0.4.0** · 开发依据 DSH **0.2.1-rc.2** · Windows 实测，macOS / Linux 由 CI 构建与静态门禁覆盖 | 语言：[English](README.en.md)
 
 <img width="1400" alt="纸屿：一张纸面桌面" src="assets/screenshot-home.webp">
 

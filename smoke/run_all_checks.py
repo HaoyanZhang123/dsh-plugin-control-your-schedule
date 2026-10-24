@@ -153,10 +153,14 @@ def main() -> int:
     # --- the README keeps its top banner, and every local image it points at exists ---
     # Twice now a README rewrite silently dropped the hero image (56aa9f8 removed the
     # file, a later sync removed the line). Both are cheap to assert, so assert them.
-    readme_path = PLUGIN / "README.md"
-    if not readme_path.is_file():
-        bad("README keeps its top banner", "README.md missing at %s" % readme_path)
-    else:
+    # 中英两份 README 过同一条契约：顶部横幅在标题下方，且引用的本地图片真实存在。
+    readme_paths = [PLUGIN / "README.md", PLUGIN / "README.en.md"]
+    readme_counts = []
+    readme_problems = []
+    for readme_path in readme_paths:
+        if not readme_path.is_file():
+            readme_problems.append("%s missing" % readme_path.name)
+            continue
         readme = readme_path.read_text(encoding="utf-8")
         imgs = re.findall(r'<img[^>]*src="([^"]+)"', readme)
         lines = readme.split("\n")
@@ -168,11 +172,15 @@ def main() -> int:
         missing = [src for src in local if not (PLUGIN / src).is_file()]
         remote = [src for src in imgs if src.startswith(("http://", "https://"))]
         if not has_banner:
-            bad("README keeps its top banner", "no <img> within 4 lines after the title")
+            readme_problems.append("%s: no <img> within 4 lines after the title" % readme_path.name)
         elif missing:
-            bad("README keeps its top banner", "missing image files: " + ", ".join(missing))
+            readme_problems.append("%s: missing image files: %s" % (readme_path.name, ", ".join(missing)))
         else:
-            ok("README keeps its top banner", "%d images, %d local files, %d remote" % (len(imgs), len(local), len(remote)))
+            readme_counts.append("%s %d/%d/%d" % (readme_path.name, len(imgs), len(local), len(remote)))
+    if readme_problems:
+        bad("README keeps its top banner", "; ".join(readme_problems))
+    else:
+        ok("README keeps its top banner", "images/local/remote: " + ", ".join(readme_counts))
 
     # --- every dock app must have its OWN icon ---
     # appIcon(id) silently falls back to the notes icon, so a missing or renamed key
