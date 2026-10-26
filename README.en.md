@@ -76,7 +76,7 @@ DSH → Plugins → Add plugin, then enter:
 dsh-plugin-control-your-schedule
 ```
 
-A version can be pinned too: `dsh-plugin-control-your-schedule@0.4.0`.
+A version can be pinned too: `dsh-plugin-control-your-schedule@0.4.1`.
 
 ### GitHub (alternative, without npm)
 

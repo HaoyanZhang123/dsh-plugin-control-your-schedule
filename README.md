@@ -70,7 +70,7 @@ DSH → Plugins → Add plugin，填：
 dsh-plugin-control-your-schedule
 ```
 
-也可以带版本：`dsh-plugin-control-your-schedule@0.4.0`。
+也可以带版本：`dsh-plugin-control-your-schedule@0.4.1`。
 
 ### GitHub（备选，不需要 npm 时）
 
