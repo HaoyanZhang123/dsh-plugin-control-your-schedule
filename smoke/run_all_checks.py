@@ -44,18 +44,26 @@ def bad(name: str, detail: str) -> None:
     print("FAIL | %s | %s" % (name, detail))
 
 
-def run(name: str, cmd: list[str], cwd: Path | None = None) -> None:
+def run(name: str, cmd: list[str], cwd: Path | None = None) -> int:
     try:
         proc = subprocess.run(cmd, cwd=str(cwd or ROOT), capture_output=True, text=True,
-                              encoding="utf-8", errors="replace", timeout=120)
+                              encoding="utf-8", errors="replace", timeout=180)
     except Exception as error:  # noqa: BLE001
         bad(name, "runner error: %r" % (error,))
-        return
+        return -1
     out = (proc.stdout or "") + (proc.stderr or "")
     if proc.returncode == 0:
         ok(name, out.strip().splitlines()[-1][:160] if out.strip() else "")
+    elif proc.returncode == 3:
+        # Convention across the suites: exit 3 = explicitly skipped (missing
+        # token/browser/input). A skip is never a pass; it is counted and named.
+        skipped.append(name)
+        print("SKIP | %s | 原因：%s" % (name, (out.strip().splitlines()[-1] if out.strip() else "exit=3")[:160]))
     else:
-        bad(name, "exit=%s %s" % (proc.returncode, out.strip()[:500]))
+        text = out.strip()
+        detail = text if len(text) <= 900 else (text[:400] + " … " + text[-500:])
+        bad(name, "exit=%s %s" % (proc.returncode, detail))
+    return proc.returncode
 
 
 def main() -> int:
@@ -150,37 +158,17 @@ def main() -> int:
     else:
         bad("app registry", "found: %r" % (app_ids,))
 
-    # --- the README keeps its top banner, and every local image it points at exists ---
-    # Twice now a README rewrite silently dropped the hero image (56aa9f8 removed the
-    # file, a later sync removed the line). Both are cheap to assert, so assert them.
-    # 中英两份 README 过同一条契约：顶部横幅在标题下方，且引用的本地图片真实存在。
-    readme_paths = [PLUGIN / "README.md", PLUGIN / "README.en.md"]
-    readme_counts = []
-    readme_problems = []
-    for readme_path in readme_paths:
-        if not readme_path.is_file():
-            readme_problems.append("%s missing" % readme_path.name)
-            continue
-        readme = readme_path.read_text(encoding="utf-8")
-        imgs = re.findall(r'<img[^>]*src="([^"]+)"', readme)
-        lines = readme.split("\n")
-        h1 = next((i for i, line in enumerate(lines) if line.startswith("# ")), None)
-        # the banner must live directly under the title, not just "somewhere above ##"
-        banner_zone = lines[h1 + 1:h1 + 5] if h1 is not None else []
-        has_banner = any("<img" in line for line in banner_zone)
-        local = [src for src in imgs if not src.startswith(("http://", "https://"))]
-        missing = [src for src in local if not (PLUGIN / src).is_file()]
-        remote = [src for src in imgs if src.startswith(("http://", "https://"))]
-        if not has_banner:
-            readme_problems.append("%s: no <img> within 4 lines after the title" % readme_path.name)
-        elif missing:
-            readme_problems.append("%s: missing image files: %s" % (readme_path.name, ", ".join(missing)))
-        else:
-            readme_counts.append("%s %d/%d/%d" % (readme_path.name, len(imgs), len(local), len(remote)))
-    if readme_problems:
-        bad("README keeps its top banner", "; ".join(readme_problems))
+    # --- README structure ---
+    # Owned by smoke/readme_lint.py since 0.4.1: a standalone <img> line without a
+    # blank line after it starts a GFM HTML block that swallows every following
+    # Markdown line until the next blank line (GitHub rendered literal "- **…**"
+    # that way). The linter keeps the older banner / local-image contracts too and
+    # has its own --self-test, so this file only calls it.
+    readme_lint = ROOT / "smoke" / "readme_lint.py"
+    if readme_lint.is_file():
+        run("README structure", [sys.executable, str(readme_lint)])
     else:
-        ok("README keeps its top banner", "images/local/remote: " + ", ".join(readme_counts))
+        bad("README structure", "smoke/readme_lint.py missing")
 
     # --- every dock app must have its OWN icon ---
     # appIcon(id) silently falls back to the notes icon, so a missing or renamed key
@@ -260,15 +248,21 @@ def main() -> int:
     else:
         ok("toast policy: single, short-lived", "one slot, replace-in-place, capped dwell")
 
-    # macOS fullscreen guard: the frame must subtract the top clearance from its
-    # height. Pushing it down while keeping height:100% overflowed the panel by
-    # 48px and the clip ate the bottom of the desk's dock.
+    # macOS top strip: the frame is inset:0 and DSH's --dsh-frame-top-clearance
+    # travels into the page as --cys-top-clearance, which the page's own top bar
+    # paints. The old "subtract it from the frame height" path must stay gone: it
+    # pushed the frame down while still asking for height:100% and the clip ate
+    # the bottom of the desk's dock.
     client_src = PLUGIN / "src" / "client.src.js"
     src_text = client_src.read_text(encoding="utf-8") if client_src.is_file() else ""
     if "calc(100% - var(--dsh-frame-top-clearance,48px))" in src_text:
-        ok("macOS frame height accounts for top clearance")
+        bad("macOS top strip is painted by the page", "old frame-offset path is back")
+    elif "--cys-top-clearance" not in src_text:
+        bad("macOS top strip is painted by the page", "client does not publish --cys-top-clearance")
+    elif "--cys-top-clearance" not in page:
+        bad("macOS top strip is painted by the page", "page does not consume --cys-top-clearance")
     else:
-        bad("macOS frame height accounts for top clearance", "frame height does not subtract --dsh-frame-top-clearance")
+        ok("macOS top strip is painted by the page", "frame inset:0 + page top bar covers the clearance")
 
     # Structural regression guard: the window layer must live inside #stage.
     # A stray closing tag once moved it to page top, hiding every titlebar.
@@ -383,6 +377,44 @@ def main() -> int:
     # (reverse audit 2026-10-21: deleting the prompt body cap went unnoticed).
     run("build reproducibility", [sys.executable, str(PLUGIN / "tools" / "build_page.py"), "--check"])
 
+    # --- shell theme + bilingual page contracts (each ships its own --self-test) ---
+    # The shell may not paint plugin colours (it used to flash a warm paper band
+    # before the iframe landed); the page owns the frame and the macOS strip.
+    shell_test = ROOT / "smoke" / "shell_theme_test.mjs"
+    if NODE and shell_test.is_file():
+        run("shell theme contract", [NODE, str(shell_test)])
+        run("shell theme mutation self-test", [NODE, str(shell_test), "--self-test"])
+    elif not shell_test.is_file():
+        bad("shell theme contract", "smoke/shell_theme_test.mjs missing")
+    else:
+        bad("shell theme contract", "node not found")
+
+    # Host language resolution: prefs.lang wins, host locale is the fallback, the
+    # shell chrome follows the resolved language (not the host-bound t()).
+    host_lang_test = ROOT / "smoke" / "host_lang_test.mjs"
+    if NODE and host_lang_test.is_file():
+        run("host language selection", [NODE, str(host_lang_test)])
+        run("host language mutation self-test", [NODE, str(host_lang_test), "--self-test"])
+    elif not host_lang_test.is_file():
+        bad("host language selection", "smoke/host_lang_test.mjs missing")
+    else:
+        bad("host language selection", "node not found")
+
+    # Both page variants must be embedded, and the English one may not ship
+    # untranslated Chinese outside the decorative seal glyph.
+    if CLIENT.is_file():
+        client_text = CLIENT.read_text(encoding="utf-8")
+        if "__PAGE_B64_EN__" not in client_text and "var PAGE_B64_EN = '" in client_text:
+            ok("client embeds zh + en page variants")
+        else:
+            bad("client embeds zh + en page variants", "PAGE_B64_EN placeholder/embedded page missing")
+    i18n_check = ROOT / "smoke" / "i18n_check.py"
+    if i18n_check.is_file():
+        run("i18n page coverage", [sys.executable, str(i18n_check)])
+        run("i18n checker mutation self-test", [sys.executable, str(i18n_check), "--self-test"])
+    else:
+        bad("i18n page coverage", "smoke/i18n_check.py missing")
+
     # --- migration gate ---
     if NODE:
         run("migration v1 -> v3 keeps every byte", [NODE, str(ROOT / "smoke" / "migrate_test.mjs")])
@@ -411,10 +443,8 @@ def main() -> int:
             skipped.append("composer entry on a real DSH (composer_e2e.mjs)")
             print("SKIP | composer entry on a real DSH | 原因：未加 --cdp（需要真机 DSH 与 token；不加不算通过）")
         elif NODE:
-            rc = run("composer entry on a real DSH", [NODE, str(composer_script)])
-            if rc == 3:
-                skipped.append("composer entry on a real DSH (no token)")
-                print("SKIP | composer entry on a real DSH | 原因：缺 DSH_BASE / DSH_WEB_TOKEN")
+            # run() maps exit 3 to an explicit SKIP (missing DSH_BASE / DSH_WEB_TOKEN).
+            run("composer entry on a real DSH", [NODE, str(composer_script)])
         else:
             bad("composer entry on a real DSH", "node not found")
 

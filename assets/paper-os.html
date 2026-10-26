@@ -74,6 +74,9 @@
   --dock-height: 96px;
   --dock-gap: 22px;
   --topbar-height: 56px;
+  /* 顶部让位：外壳（macOS 红绿灯）在 iframe 顶上留的高度。页面只消费这个变量，
+     具体像素由宿主（embed 时按平台写入）决定，页面里不写死任何数值。 */
+  --cys-top-clearance: 0px;
   --radius-win: 18px;
   --radius-paper: 3px;
   --radius-sheet: 10px;
@@ -1190,12 +1193,14 @@ body.os-ready .os {
   position: relative;
   z-index: 500;
   display: flex;
-  height: var(--topbar-height);
-  flex: 0 0 var(--topbar-height);
+  /* 让位由页面自己画：顶栏向上多长 --cys-top-clearance，内容行仍从 y=clearance 开始，
+     所以 macOS 上那一带是纸面顶栏的底色，而不是外壳的底色。 */
+  height: calc(var(--topbar-height) + var(--cys-top-clearance));
+  flex: 0 0 calc(var(--topbar-height) + var(--cys-top-clearance));
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  padding: 0 20px 0 18px;
+  padding: var(--cys-top-clearance) 20px 0 18px;
   border-bottom: 1px solid rgba(75, 75, 75, 0.12);
   background:
     linear-gradient(180deg, rgba(249, 249, 249, 0.84), rgba(238, 238, 238, 0.78)),
@@ -1809,6 +1814,15 @@ body.os-ready .os {
   transform: rotate(7deg);
 }
 
+/* 英文印章是一个短词，不是两个汉字：字距与字号收一点，才装得进 43px 的圆。 */
+html[lang="en"] .day-card__seal {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+}
+
 /* ---------------- first run tip ---------------- */
 
 .first-run {
@@ -2372,6 +2386,13 @@ html[data-theme="dark"] .desk-notice__mark {
   color: var(--clay-deep);
 }
 
+.prompt-item__top {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
 .prompt-item__col {
   display: flex;
   min-width: 0;
@@ -2380,7 +2401,10 @@ html[data-theme="dark"] .desk-notice__mark {
 }
 
 .prompt-item__name {
+  display: block;
+  flex: 1 1 auto;
   overflow: hidden;
+  min-width: 0;
   color: var(--ink);
   font-family: var(--font-serif);
   font-size: 14.5px;
@@ -2965,7 +2989,8 @@ html[data-theme="dark"] .desk-notice__mark {
 
 @media (max-width: 820px) {
   .topbar {
-    padding: 0 12px 0 13px;
+    /* 简写会把 padding-top 打回 0，让位变量必须一起带上。 */
+    padding: var(--cys-top-clearance) 12px 0 13px;
     gap: 10px;
   }
 
@@ -3455,6 +3480,11 @@ html[data-theme="dark"] .desk-notice__mark {
   margin-left: 6px;
   color: var(--ink-ghost);
   content: "·";
+}
+
+/* 只留 KICKER 时，分隔点也要一起去掉，否则标题栏会以「·」结尾。 */
+.window__heading.is-single .window__app-name::after {
+  content: none;
 }
 
 .window__title {
@@ -7946,6 +7976,19 @@ html[data-theme="dark"] .sticky__del {
   color: rgba(236, 228, 212, 0.7);
 }
 
+/* 便签右下角的日期：浅色是深棕 36%，放在深色便签底（#4a432a 一类）上等于同色，
+   实测看不出来。这里跟正文同一套亮度阶梯，五个便签底色上对比度都在 3.3~3.8:1。 */
+html[data-theme="dark"] .sticky__foot {
+  color: rgba(236, 228, 212, 0.52);
+}
+
+/* 便签 foot 里的「示例」小标签在深色下实测 1.54:1（深棕压深便签底）。
+   换成陶土亮档，边框同步；深色各便签底色上 >= 4:1。 */
+html[data-theme="dark"] .sticky__foot .sample-tag {
+  border-color: rgba(221, 161, 132, 0.55);
+  color: rgba(221, 161, 132, 0.92);
+}
+
 html[data-theme="dark"] .sticky__tape {
   background: rgba(210, 196, 168, 0.22);
 }
@@ -8294,6 +8337,57 @@ html[data-theme="dark"] .priority-popover__item.is-active {
   P.version = '__PAGE_VERSION__';
   P.schemaVersion = 3;
 
+  /* ---------------- 语言与带参句子 ----------------
+     页面源只有中文（唯一 UI 事实源）。构建把 window.__PAPER_LANG__ 注入 <head>，
+     英文页由构建产出：静态句子走词典替换，带数字/变量的句子走 F()，
+     英文模板在 window.__PAPER_TEMPLATES__（构建注入 en.templates.json）。
+     模板里的 {n} 是占位符；英文值可以是字符串，也可以是 { one, other }。 */
+  P.lang = window.__PAPER_LANG__ === 'en' ? 'en' : 'zh';
+  var EN_TEMPLATES = window.__PAPER_TEMPLATES__ && typeof window.__PAPER_TEMPLATES__ === 'object' ? window.__PAPER_TEMPLATES__ : null;
+  var EN_PLURALS = P.lang === 'en' && typeof Intl === 'object' && typeof Intl.PluralRules === 'function' ? new Intl.PluralRules('en') : null;
+
+  /* 复数用哪个数字定 one/other：数字简写 > { n } > 唯一的数字参数；都不明确就 other。 */
+  function templateCount(params) {
+    if (typeof params === 'number') return params;
+    if (!params || typeof params !== 'object') return null;
+    if (typeof params.n === 'number') return params.n;
+    var only = null;
+    Object.keys(params).forEach(function (key) {
+      if (typeof params[key] !== 'number') return;
+      if (only !== null) { only = false; return; }
+      only = params[key];
+    });
+    return typeof only === 'number' ? only : null;
+  }
+
+  function templateText(source, params) {
+    if (!EN_TEMPLATES || !Object.prototype.hasOwnProperty.call(EN_TEMPLATES, source)) return source;
+    var entry = EN_TEMPLATES[source];
+    if (typeof entry === 'string') return entry;
+    if (!entry || typeof entry !== 'object') return source;
+    var count = templateCount(params);
+    var form = typeof count === 'number' ? (EN_PLURALS ? EN_PLURALS.select(count) : (count === 1 ? 'one' : 'other')) : 'other';
+    if (form !== 'one' && form !== 'other') form = 'other';
+    if (typeof entry[form] === 'string') return entry[form];
+    if (typeof entry.other === 'string') return entry.other;
+    return source;
+  }
+
+  /* F('今天还有 {n} 件事没做。', 3) / F('共 {n} 件 · 完成 {m} 件', { n: 3, m: 1 })
+     zh 页原样替换占位符；en 页查模板。构建按 F('…') 跳过静态替换，模板中文不会留在英文页。 */
+  function F(source, params) {
+    var text = String(templateText(String(source), params));
+    if (typeof params === 'number') return text.replace(/\{n\}/g, String(params));
+    if (!params || typeof params !== 'object') return text;
+    return text.replace(/\{([a-zA-Z0-9_]+)\}/g, function (match, key) {
+      return Object.prototype.hasOwnProperty.call(params, key) ? String(params[key]) : match;
+    });
+  }
+
+  P.F = F;
+  /* 各段是独立 IIFE，跨段只认 F('…') 这一种写法 —— 构建也按这个形态跳过模板。 */
+  window.F = F;
+
   /* 待办的紧急程度：顺序即强弱（数字越小越急），颜色沿用便签色板。
      存语义 id 而不是 q1..q4，重排表项不会改写既有数据的含义。 */
   P.TASK_PRIORITIES = [
@@ -8516,11 +8610,20 @@ html[data-theme="dark"] .priority-popover__item.is-active {
   }
 
   function formatDateCN(date) {
+    if (P.lang === 'en') return date.getFullYear() + '/' + pad2(date.getMonth() + 1) + '/' + pad2(date.getDate());
     return date.getFullYear() + '年' + (date.getMonth() + 1) + '月' + date.getDate() + '日';
   }
 
   function formatShortDate(ts) {
     var d = new Date(ts || Date.now());
+    if (P.lang === 'en') return pad2(d.getMonth() + 1) + '/' + pad2(d.getDate());
+    return (d.getMonth() + 1) + '月' + d.getDate() + '日';
+  }
+
+  /* 月/日（不带年份）：日历与手持卡共用。英文走 10/17，不留零宽字符。 */
+  function formatMonthDay(date) {
+    var d = date || new Date();
+    if (P.lang === 'en') return pad2(d.getMonth() + 1) + '/' + pad2(d.getDate());
     return (d.getMonth() + 1) + '月' + d.getDate() + '日';
   }
 
@@ -8536,12 +8639,12 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     var diff = Math.max(0, Date.now() - ts);
     var min = Math.floor(diff / 60000);
     if (min < 1) return '刚刚';
-    if (min < 60) return min + ' 分钟前';
+    if (min < 60) return F('{n} 分钟前', min);
     var hr = Math.floor(min / 60);
-    if (hr < 24) return hr + ' 小时前';
+    if (hr < 24) return F('{n} 小时前', hr);
     var day = Math.floor(hr / 24);
     if (day === 1) return '昨天';
-    if (day < 7) return day + ' 天前';
+    if (day < 7) return F('{n} 天前', day);
     return formatShortDate(ts);
   }
 
@@ -8599,6 +8702,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     formatShortDate: formatShortDate,
     formatListDate: formatListDate,
     formatDateCN: formatDateCN,
+    formatMonthDay: formatMonthDay,
     weekdayName: weekdayName,
     weekdaysShort: weekdaysShort,
     monthNamesCN: monthNamesCN,
@@ -9137,6 +9241,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         motion: 'system',
         theme: 'system',
         handFont: 'kai',
+        /* 界面语言：system 跟随 DSH，zh / en 固定。只影响界面，不改 schema。 */
+        lang: 'system',
         welcomeDismissed: false,
         dockOrder: []
       },
@@ -9630,24 +9736,40 @@ html[data-theme="dark"] .priority-popover__item.is-active {
   P.PROMPT_BODY_MAX = 20000;
   P.PROMPT_LIMIT = 300;
 
+  /* 标题只存用户写的东西（或正文第一行）：没有就存空串。
+     语言相关的"未命名提示词"是 UI 占位文案，绝不写进数据 —— 否则中文快照在英文界面里会露出中文。 */
   function cleanPromptTitle(value, fallback) {
     var title = String(value === undefined || value === null ? '' : value)
       .replace(/[\r\n\t]+/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
     if (title.length > P.PROMPT_TITLE_MAX) title = title.slice(0, P.PROMPT_TITLE_MAX);
-    if (!title) title = fallback;
+    if (!title) title = String(fallback === undefined || fallback === null ? '' : fallback);
     return title;
   }
 
   function promptTitleFromBody(body) {
     var first = String(body || '').split('\n').map(function (line) { return line.trim(); }).filter(function (line) { return line !== ''; })[0] || '';
     if (first.length > P.PROMPT_TITLE_MAX) first = first.slice(0, P.PROMPT_TITLE_MAX);
-    return first || '未命名提示词';
+    return first;
+  }
+
+  /* 旧版本把「未命名提示词」当标题写进过数据，英文构建还写出过「Untitled prompt」。
+     这两个是**历史数据值**，不是 UI 文案：中文字面量用码位拼出来，
+     免得 i18n 构建把它当文案翻译掉，旧的中文快照就再也认不出来。 */
+  var LEGACY_UNTITLED_TITLES = [
+    String.fromCharCode(26410, 21629, 21517, 25552, 31034, 35789),
+    'Untitled prompt'
+  ];
+
+  function isLegacyUntitledTitle(value) {
+    var text = String(value === undefined || value === null ? '' : value).trim();
+    return !!text && LEGACY_UNTITLED_TITLES.indexOf(text) !== -1;
   }
 
   P.cleanPromptTitle = cleanPromptTitle;
   P.promptTitleFromBody = promptTitleFromBody;
+  P.isLegacyUntitledTitle = isLegacyUntitledTitle;
 
   function promptSort(a, b) {
     if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
@@ -9735,7 +9857,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     var now = Date.now();
     var copy = {
       id: U.uid('prompt'),
-      title: cleanPromptTitle(source.title + ' 副本', promptTitleFromBody(source.body)),
+      title: source.title ? cleanPromptTitle(source.title + ' 副本', '') : '',
       body: source.body,
       pinned: false,
       sample: false,
@@ -10027,6 +10149,10 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       state.prefs.handFont = changes.handFont;
       changed = true;
     }
+    if (Object.prototype.hasOwnProperty.call(changes, 'lang') && ['system', 'zh', 'en'].indexOf(changes.lang) !== -1 && state.prefs.lang !== changes.lang) {
+      state.prefs.lang = changes.lang;
+      changed = true;
+    }
     if (Object.prototype.hasOwnProperty.call(changes, 'welcomeDismissed') && state.prefs.welcomeDismissed !== !!changes.welcomeDismissed) {
       state.prefs.welcomeDismissed = !!changes.welcomeDismissed;
       changed = true;
@@ -10061,6 +10187,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       if (['system', 'reduce'].indexOf(incoming.prefs.motion) !== -1) next.prefs.motion = incoming.prefs.motion;
       if (['system', 'light', 'dark'].indexOf(incoming.prefs.theme) !== -1) next.prefs.theme = incoming.prefs.theme;
       if (['kai', 'xing', 'serif'].indexOf(incoming.prefs.handFont) !== -1) next.prefs.handFont = incoming.prefs.handFont;
+      if (['system', 'zh', 'en'].indexOf(incoming.prefs.lang) !== -1) next.prefs.lang = incoming.prefs.lang;
       next.prefs.welcomeDismissed = !!incoming.prefs.welcomeDismissed;
     }
     if (incoming.meta && typeof incoming.meta === 'object') {
@@ -10499,6 +10626,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         motion: 'system',
         theme: 'system',
         handFont: 'kai',
+        lang: 'system',
         welcomeDismissed: false,
         dockOrder: []
       },
@@ -10687,6 +10815,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       motion: 'system',
       theme: 'system',
       handFont: 'kai',
+      lang: 'system',
       welcomeDismissed: false,
       dockOrder: []
     };
@@ -10700,6 +10829,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     if (['system', 'reduce'].indexOf(raw.motion) !== -1) prefs.motion = raw.motion;
     if (['system', 'light', 'dark'].indexOf(raw.theme) !== -1) prefs.theme = raw.theme;
     if (['kai', 'xing', 'serif'].indexOf(raw.handFont) !== -1) prefs.handFont = raw.handFont;
+    if (['system', 'zh', 'en'].indexOf(raw.lang) !== -1) prefs.lang = raw.lang;
     prefs.welcomeDismissed = !!raw.welcomeDismissed;
     return prefs;
   }
@@ -10725,9 +10855,12 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       if (item.body !== undefined && item.body !== null && typeof item.body !== 'string') return null;
       var body = typeof item.body === 'string' ? item.body : '';
       if (body.length > P.PROMPT_BODY_MAX) return null;
+      /* 旧快照里的语言哨兵不搬进新数据：归一成空标题，界面按自己的语言显示占位。 */
+      var cleanTitle = P.cleanPromptTitle(item.title, P.promptTitleFromBody(body));
+      if (P.isLegacyUntitledTitle(cleanTitle)) cleanTitle = '';
       out.push({
         id: item.id,
-        title: P.cleanPromptTitle(item.title, P.promptTitleFromBody(body)),
+        title: cleanTitle,
         body: body,
         pinned: !!item.pinned,
         sample: !!item.sample,
@@ -11643,10 +11776,33 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     if (P.shell && typeof P.shell.syncChrome === 'function') P.shell.syncChrome();
   }
 
+  /* 标题栏是「KICKER · 标题」。英文页里 KICKER 和标题常常是同一个词
+     （"STICKY NOTES · Sticky notes"），读起来像复读。忽略大小写/空格后相同就只留 KICKER，
+     中英文同一套规则，不做语言分支。 */
+  function sameHeading(left, right) {
+    var norm = function (value) {
+      return String(value === undefined || value === null ? '' : value).toLowerCase().replace(/\s+/g, '');
+    };
+    var a = norm(left);
+    return !!a && a === norm(right);
+  }
+
+  function syncWindowHeading(win) {
+    if (!win || !win.el) return;
+    var heading = win.el.querySelector('.window__heading');
+    var appName = win.el.querySelector('.window__app-name');
+    var titleEl = win.titleEl || win.el.querySelector('.window__title');
+    if (!heading || !appName || !titleEl) return;
+    var single = sameHeading(appName.textContent, titleEl.textContent);
+    heading.classList.toggle('is-single', single);
+    titleEl.hidden = single;
+  }
+
   function updateTitle(win, title) {
     var clean = String(title === undefined || title === null ? '' : title).replace(/\s+/g, ' ').trim();
     win.title = clean || (getApp(win.appId) ? getApp(win.appId).name : '纸屿');
     if (win.titleEl) win.titleEl.textContent = win.title;
+    syncWindowHeading(win);
     if (win.el) win.el.setAttribute('aria-label', win.title);
     updateFocusStatus();
   }
@@ -12136,6 +12292,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     win.el = el;
     win.titleEl = el.querySelector('.window__title');
     win.bodyEl = el.querySelector('.window__body');
+    /* 初始标题就是 app 名：英文页里它可能和 KICKER 同词，先按规则收一次。 */
+    syncWindowHeading(win);
     el.style.zIndex = String(++zTop);
     win.z = zTop;
 
@@ -12846,7 +13004,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     if (refs.dayMonth) refs.dayMonth.textContent = U.monthNamesCN()[now.getMonth()];
     if (refs.dayWeek) refs.dayWeek.textContent = U.weekdayName(now);
     if (refs.dayYear) refs.dayYear.textContent = String(now.getFullYear());
-    if (refs.handheldDate) refs.handheldDate.textContent = (now.getMonth() + 1) + '月' + now.getDate() + '日 · ' + U.weekdayName(now);
+    if (refs.handheldDate) refs.handheldDate.textContent = U.formatMonthDay(now) + ' · ' + U.weekdayName(now);
     paintSeal(now);
     updateDayTasks();
   }
@@ -12857,18 +13015,31 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     '宜远眺', '宜发呆', '宜留白', '宜独处', '宜慢做', '宜睡觉'
   ];
 
-  function almanacFor(date) {
+  /* 英文印章：与 ALMANAC 一一对应的短词（<=6 字母）。英文下不切中文的 slice(1)，
+     也就不会切出半个英文单词。完整英文（Good for writing）走 title。 */
+  var ALMANAC_EN = ['Write', 'Read', 'Walk', 'Sleep', 'Home', 'Tidy', 'Note', 'Gaze', 'Idle', 'Blank', 'Alone', 'Slow', 'Rest'];
+
+  function almanacIndex(date) {
     var key = U.dateKey(date || new Date());
     var seed = 0;
     for (var i = 0; i < key.length; i += 1) seed = (seed * 31 + key.charCodeAt(i)) % 100000;
-    return ALMANAC[seed % ALMANAC.length];
+    return seed % ALMANAC.length;
+  }
+
+  function almanacFor(date) {
+    return ALMANAC[almanacIndex(date)];
   }
 
   function paintSeal(date) {
     var seal = document.getElementById('day-seal');
     if (!seal) return;
+    if (P.lang === 'en') {
+      seal.textContent = ALMANAC_EN[almanacIndex(date)];
+      seal.setAttribute('title', almanacFor(date));
+      return;
+    }
     var text = almanacFor(date).slice(1);
-    seal.innerHTML = '宜<br>' + U.escapeHTML(text);
+    seal.innerHTML = U.escapeHTML('宜') + '<br>' + U.escapeHTML(text);
     seal.setAttribute('title', '宜' + text);
   }
 
@@ -12876,8 +13047,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     var list = P.data.projectTasks(U.todayKey());
     var done = list.filter(function (task) { return task.done || task.resolved; }).length;
     if (!list.length) return '今天还没有待办。';
-    if (done >= list.length) return '今天的 ' + list.length + ' 件事都完成了。';
-    return '今天还有 ' + (list.length - done) + ' 件事没做。';
+    if (done >= list.length) return F('今天的 {n} 件事都完成了。', list.length);
+    return F('今天还有 {n} 件事没做。', list.length - done);
   }
 
   function updateDayTasks() {
@@ -12952,7 +13123,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     if (!live) return;
     var app = P.apps.get(appId);
     var name = app ? app.name : appId;
-    live.textContent = name + ' 已移到第 ' + (ids.indexOf(appId) + 1) + ' 位，共 ' + ids.length + ' 位';
+    live.textContent = F('{name} 已移到第 {pos} 位，共 {total} 位', { name: name, pos: ids.indexOf(appId) + 1, total: ids.length });
   }
 
   var dockDrag = null;
@@ -13145,7 +13316,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         }
         focusEl.textContent = label;
       } else if (all.length) {
-        focusEl.textContent = all.length + ' 张纸收在应用坞里';
+        focusEl.textContent = F('{n} 张纸收在应用坞里', all.length);
       } else {
         /* 没有窗口时不写任何提示文字，保持顶栏安静。 */
         focusEl.textContent = '';
@@ -14302,8 +14473,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         var total = P.data.listPrompts('').length;
         if (refs.count) {
           refs.count.textContent = query.trim()
-            ? '找到 ' + list.length + ' / ' + total + ' 条'
-            : (total ? total + ' 条提示词' : '还没有提示词');
+            ? F('找到 {found} / {total} 条', { found: list.length, total: total })
+            : (total ? F('{n} 条提示词', total) : '还没有提示词');
         }
         refs.list.innerHTML = '';
         if (!list.length) {
@@ -14334,7 +14505,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           top.className = 'prompt-item__top';
           var name = document.createElement('span');
           name.className = 'prompt-item__name';
-          name.textContent = item.title;
+          name.textContent = item.title || '未命名提示词';
           top.appendChild(name);
           if (item.sample) {
             var badge = document.createElement('span');
@@ -14359,7 +14530,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           var foot = document.createElement('span');
           foot.className = 'prompt-item__foot';
           var count = document.createElement('span');
-          count.textContent = charCount(item.body) + ' 字';
+          count.textContent = F('{n} 字', charCount(item.body));
           foot.appendChild(count);
           var dash = document.createElement('span');
           dash.className = 'prompt-item__dash';
@@ -14390,7 +14561,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         }
         refs.editor.hidden = false;
         if (refs.emptyBox) refs.emptyBox.hidden = true;
-        if (refs.barTitle) refs.barTitle.textContent = item.title;
+        if (refs.barTitle) refs.barTitle.textContent = item.title || '未命名提示词';
         if (refs.actions) refs.actions.hidden = false;
 
         var body = document.createElement('div');
@@ -14405,9 +14576,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         var titleInput = document.createElement('input');
         titleInput.type = 'text';
         titleInput.className = 'prompts-title-input';
-        /* 还没起名的提示词：标题栏空着显示 placeholder，而不是塞一句"未命名提示词"让用户先删。 */
-        var untitled = item.title === '未命名提示词' && !String(item.body || '').trim();
-        titleInput.value = untitled ? '' : item.title;
+        /* 没标题就是空串（数据里没有哨兵），标题栏显示 placeholder 让用户直接写。 */
+        titleInput.value = item.title || '';
         titleInput.placeholder = '未命名提示词';
         titleInput.maxLength = 120;
         titleInput.setAttribute('data-testid', 'prompt-title');
@@ -14427,7 +14597,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         bodyLabel.appendChild(document.createTextNode('正文 · 原样填入'));
         var counter = document.createElement('span');
         counter.setAttribute('data-testid', 'prompt-count');
-        counter.textContent = charCount(item.body) + ' / 20000 字';
+        counter.textContent = F('{n} / 20000 字', charCount(item.body));
         bodyLabel.appendChild(counter);
         bodyField.appendChild(bodyLabel);
         var textarea = document.createElement('textarea');
@@ -14436,7 +14606,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         textarea.placeholder = '把要反复使用的那段话写在这里。可以多行。';
         textarea.setAttribute('data-testid', 'prompt-body');
         textarea.addEventListener('input', function () {
-          counter.textContent = charCount(textarea.value) + ' / 20000 字';
+          counter.textContent = F('{n} / 20000 字', charCount(textarea.value));
           P.data.updatePrompt(currentId, { body: textarea.value });
         });
         bodyField.appendChild(textarea);
@@ -14451,8 +14621,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
 
       /* 只更新"会变但不需要重建"的部分：栏头标题、字数、置顶态。 */
       function updateEditorMeta(item) {
-        if (refs.barTitle) refs.barTitle.textContent = item.title;
-        if (refs.counter) refs.counter.textContent = charCount(item.body) + ' / 20000 字';
+        if (refs.barTitle) refs.barTitle.textContent = item.title || '未命名提示词';
+        if (refs.counter) refs.counter.textContent = F('{n} / 20000 字', charCount(item.body));
         updatePinLabel(item);
       }
 
@@ -14527,7 +14697,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         P.ui.confirm({
           kicker: 'PROMPTS · 删除',
           title: '删掉「' + item.title + '」？',
-          message: '提示词删除后不能恢复。正文 ' + charCount(item.body) + ' 字。',
+          message: F('提示词删除后不能恢复。正文 {n} 字。', charCount(item.body)),
           confirmLabel: '删除',
           danger: true
         }).then(function (confirmed) {
@@ -14757,9 +14927,9 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         if (!refs.count) return;
         var total = P.data.listNotes().length;
         if (refs.searchInput && refs.searchInput.value.trim()) {
-          refs.count.textContent = '找到 ' + list.length + ' / ' + total + ' 张';
+          refs.count.textContent = F('找到 {found} / {total} 张', { found: list.length, total: total });
         } else {
-          refs.count.textContent = total + ' 张纸页';
+          refs.count.textContent = F('{n} 张纸页', total);
         }
       }
 
@@ -14817,7 +14987,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
 
       function wordLabel(content) {
         var chars = String(content || '').replace(/\s/g, '').length;
-        return chars ? chars + ' 个字' : '空白纸页';
+        return chars ? F('{n} 个字', chars) : '空白纸页';
       }
 
       function updateEditorChrome(doc, options) {
@@ -15285,23 +15455,23 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       function updateSelectedLabel() {
         var d = selectedDate();
         if (refs.selectedDate) {
-          refs.selectedDate.textContent = (d.getMonth() + 1) + '月' + d.getDate() + '日 · ' + U.weekdayName(d);
+          refs.selectedDate.textContent = U.formatMonthDay(d) + ' · ' + U.weekdayName(d);
         }
         var tasks = P.data.projectTasks(selectedKey);
         if (refs.taskCount) refs.taskCount.textContent = String(tasks.length);
         if (refs.taskInput) {
-          refs.taskInput.placeholder = '在 ' + (d.getMonth() + 1) + '月' + d.getDate() + '日 留一件事…';
+          refs.taskInput.placeholder = F('在 {date} 留一件事…', { date: U.formatMonthDay(d) });
         }
         if (refs.taskFoot) {
           var done = tasks.filter(function (t) { return t.done; }).length;
-          refs.taskFoot.textContent = tasks.length ? '共 ' + tasks.length + ' 件 · 完成 ' + done + ' 件' : '空白的一天也值得被记下';
+          refs.taskFoot.textContent = tasks.length ? F('共 {n} 件 · 完成 {m} 件', { n: tasks.length, m: done }) : '空白的一天也值得被记下';
         }
         if (refs.monthCount) {
           var monthly = P.data.monthTaskCount(viewYear + '-' + U.pad2(viewMonth + 1));
           monthCount = monthly.total;
-          refs.monthCount.textContent = monthCount + ' 件本月';
+          refs.monthCount.textContent = F('{n} 件本月', monthCount);
           refs.monthCount.setAttribute('title', monthly.recurring
-            ? '其中 ' + monthly.recurring + ' 件是每天出现的持久待办，只算 1 件'
+            ? F('其中 {n} 件是每天出现的持久待办，只算 1 件', monthly.recurring)
             : '本月的待办条目');
         }
       }
@@ -15351,11 +15521,11 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           /* 没有信息就不占位：未完成且非持久待办不再显示任何状态文字。 */
           var statusText = '';
           if (task.resolved) {
-            statusText = '已解决 · ' + U.dateKey(new Date(task.resolvedAt)) + ' · 打卡 ' + task.checkins + ' 天';
+            statusText = F('已解决 · {date} · 打卡 {n} 天', { date: U.dateKey(new Date(task.resolvedAt)), n: task.checkins });
           } else if (task.repeat === 'daily') {
             statusText = task.done
-              ? '今天做完了 · 打卡 ' + task.checkins + ' 天'
-              : '打卡 ' + task.checkins + ' 天';
+              ? F('今天做完了 · 打卡 {n} 天', task.checkins)
+              : F('打卡 {n} 天', task.checkins);
           } else if (task.done) {
             statusText = '已完成 · ' + U.formatTime(task.updatedAt);
           }
@@ -15516,7 +15686,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         }).then(function (ok) {
           if (!ok) return;
           P.data.resolveTask(task.id);
-          P.ui.toast('这件事收起来了，打卡 ' + task.checkins + ' 天。', { kind: 'info' });
+          P.ui.toast(F('这件事收起来了，打卡 {n} 天。', task.checkins), { kind: 'info' });
         });
       }
 
@@ -15525,7 +15695,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         if (tasks.length) {
           var urgent = tasks.filter(function (t) { return t.priority === 'urgent-important' && !t.done; }).length;
           label += '，' + tasks.length + ' 件待办';
-          if (urgent) label += '，其中 ' + urgent + ' 件重要且紧急';
+          if (urgent) label += F('，其中 {n} 件重要且紧急', urgent);
         }
         return label;
       }
@@ -15786,7 +15956,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
 
             var info = mk('p', 'dialog-note', '');
             if (task.repeat === 'daily' || task.repeat === 'once') {
-              info.textContent = '首次出现在 ' + task.date + ' · 已打卡 ' + task.checkins + ' 天';
+              info.textContent = F('首次出现在 {date} · 已打卡 {n} 天', { date: task.date, n: task.checkins });
             }
             body.appendChild(info);
           }
@@ -15837,6 +16007,16 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         return true;
       }
 
+      /* 星期表头：中文取「星期一…星期日」的第二个字，英文用 M/T/W/T/F/S/S。
+         单字「日」与日期后缀撞键（英文里是零宽），所以表头不写死在 HTML 里。 */
+      function weekdayInitials() {
+        if (P.lang === 'en') return ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+        var out = [];
+        /* 2024-01-01 是星期一，按它取一周，避免再写一份单字表。 */
+        for (var i = 0; i < 7; i += 1) out.push(U.weekdayName(new Date(2024, 0, 1 + i)).slice(1));
+        return out;
+      }
+
       function mount(container, params) {
         var root = document.createElement('div');
         root.className = 'app calendar-app';
@@ -15848,7 +16028,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           '<button class="calendar-month__today" type="button" data-today>今天</button>' +
           '<button class="calendar-month__nav" type="button" data-next aria-label="下一个月"></button>' +
           '</div>' +
-          '<div class="calendar-weekdays" aria-hidden="true"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>' +
+          '<div class="calendar-weekdays" aria-hidden="true" data-weekdays></div>' +
           '<div class="calendar-grid" role="grid" aria-label="日期" data-grid></div>' +
           '</section>' +
           '<aside class="calendar-tasks" aria-label="这一天的待办">' +
@@ -15861,6 +16041,12 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           '<div class="calendar-tasks__foot" data-task-foot></div>' +
           '</aside></div>';
         ctx.body.appendChild(root);
+        refs.weekdays = root.querySelector('[data-weekdays]');
+        if (refs.weekdays) {
+          refs.weekdays.innerHTML = weekdayInitials().map(function (one) {
+            return '<span>' + U.escapeHTML(one) + '</span>';
+          }).join('');
+        }
         refs.grid = root.querySelector('[data-grid]');
         refs.monthTitle = root.querySelector('[data-month-title]');
         refs.monthYear = root.querySelector('[data-month-year]');
@@ -16091,7 +16277,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         var doc = currentDoc();
         if (refs.docTitle) refs.docTitle.textContent = doc ? doc.name : '画纸';
         if (refs.historyHint) {
-          refs.historyHint.textContent = doc ? (strokes.length + ' 笔') : '还没有一张画纸';
+          refs.historyHint.textContent = doc ? F('{n} 笔', strokes.length) : '还没有一张画纸';
         }
         if (refs.location) {
           if (doc) {
@@ -16454,7 +16640,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           button.className = 'draw-color';
           button.setAttribute('data-color', entry.hex);
           button.style.setProperty('--color', entry.hex);
-          button.setAttribute('aria-label', '用' + entry.label + '画');
+          button.setAttribute('aria-label', F('用{color}画', { color: entry.label }));
           button.setAttribute('aria-pressed', 'false');
           button.addEventListener('click', function () { setColor(entry.hex); });
           refs.colorRow.appendChild(button);
@@ -16479,7 +16665,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           button.type = 'button';
           button.className = 'draw-size';
           button.setAttribute('data-size', String(size.value));
-          button.setAttribute('aria-label', '笔尖' + size.label + '，' + size.value + '像素');
+          button.setAttribute('aria-label', F('笔尖{label}，{px} 像素', { label: size.label, px: size.value }));
           button.setAttribute('aria-pressed', 'false');
           var dot = document.createElement('span');
           dot.style.setProperty('--dot', size.dot + 'px');
@@ -16863,6 +17049,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           refs.gridToggle.setAttribute('aria-pressed', prefs.showGrid ? 'true' : 'false');
         }
         if (refs.motionSelect) refs.motionSelect.value = prefs.motion;
+        if (refs.langSelect) refs.langSelect.value = prefs.lang;
         if (refs.themeSelect) refs.themeSelect.value = prefs.theme;
         if (refs.handSelect) refs.handSelect.value = prefs.handFont;
       }
@@ -16912,7 +17099,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           if (node) node.textContent = String(values[key]);
         });
         var examples = stats.examples.nodes + stats.examples.stickies + stats.examples.tasks;
-        if (refs.examplesCount) refs.examplesCount.textContent = examples ? '还有 ' + examples + ' 件示例内容' : '示例内容已经清理干净';
+        if (refs.examplesCount) refs.examplesCount.textContent = examples ? F('还有 {n} 件示例内容', examples) : '示例内容已经清理干净';
         if (refs.examplesAction) refs.examplesAction.disabled = examples === 0;
       }
 
@@ -17026,7 +17213,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
               updateStats();
               P.ui.toast('示例已经收好，桌面上只剩下你的纸。', { kind: 'info' });
               var totalRemoved = removed.nodes.length + removed.stickies.length + removed.tasks.length;
-              if (totalRemoved) P.ui.toast('一共收走了 ' + totalRemoved + ' 件示例内容。', { kind: 'info' });
+              if (totalRemoved) P.ui.toast(F('一共收走了 {n} 件示例内容。', totalRemoved), { kind: 'info' });
             });
           });
         }
@@ -17073,6 +17260,14 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       function buildAppearance() {
         return '<h2 class="settings-section__title">外观</h2>' +
           '<p class="settings-section__intro">配色与 DSH 保持一致；这里再调纸纹、便签字形、桌面网格和动效。设置会自动保存。</p>' +
+          /* 这一行的文案在 F() 里：它们是页面新增的静态字（语言 / 界面语言 / 中文 / 说明），
+             走 en.templates.json（页面 owner）而不是 en.json（由页面抽取生成），
+             构建按 F('…') 跳过静态替换，所以这些字不会在英文页里被二次翻译。 */
+          '<div class="setting-row"><div class="setting-row__copy"><span class="setting-row__label">' + F('语言', {}) + '</span>' +
+          '<p class="setting-row__desc">' + F('跟随 DSH 时用宿主界面语言；也可以固定中文或 English。改完会重新铺一次纸张。', {}) + '</p></div>' +
+          '<div class="select-wrap"><select data-lang-select aria-label="' + F('界面语言', {}) + '">' +
+          '<option value="system">跟随 DSH</option><option value="zh">' + F('中文', {}) + '</option><option value="en">English</option>' +
+          '</select></div></div>' +
           '<div class="setting-row"><div class="setting-row__copy"><span class="setting-row__label">配色</span>' +
           '<p class="setting-row__desc">跟随 DSH 时会跟着宿主的浅色／深色一起变。</p></div>' +
           '<div class="select-wrap"><select data-theme-select aria-label="配色方案">' +
@@ -17191,6 +17386,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         refs.textureToggle = root.querySelector('[data-texture-toggle]');
         refs.gridToggle = root.querySelector('[data-grid-toggle]');
         refs.motionSelect = root.querySelector('[data-motion-select]');
+          refs.langSelect = root.querySelector('[data-lang-select]');
         refs.themeSelect = root.querySelector('[data-theme-select]');
         refs.handSelect = root.querySelector('[data-hand-select]');
         refs.storageLine = root.querySelector('[data-storage-line]');
@@ -17251,6 +17447,27 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           P.data.setPrefs({ motion: refs.motionSelect.value });
           P.shell.applyPrefs();
           updateToneButtons();
+        });
+        refs.langSelect.addEventListener('change', function () {
+          P.data.setPrefs({ lang: refs.langSelect.value });
+          P.shell.applyPrefs();
+          updateToneButtons();
+          /* 语言要换的是整页（页面变体），不是当前文档里的字符串：
+             先落盘，再把快照交给宿主重铺 iframe。没有宿主时就不动，只记住偏好。 */
+          var restart = window.__SCHEDULE_RESTART__;
+          if (typeof restart !== 'function') return;
+          var go = function () {
+            var snap = null;
+            try { snap = P.storage.capture ? P.storage.capture() : null; } catch (err) { snap = null; }
+            restart({ snapshot: snap });
+          };
+          if (P.storage && typeof P.storage.flush === 'function') {
+            var pending = P.storage.flush();
+            if (pending && typeof pending.then === 'function') pending.then(go, go);
+            else go();
+          } else {
+            go();
+          }
         });
         refs.themeSelect.addEventListener('change', function () {
           P.data.setPrefs({ theme: refs.themeSelect.value });
@@ -17345,27 +17562,27 @@ html[data-theme="dark"] .priority-popover__item.is-active {
   var steps = [
     {
       title: '所有应用都在底部',
-      body: '便签、纸页笔记、日历和画纸都从<b>底部应用坞</b>打开。再点一次已打开的图标，窗口会最小化。',
+      body: F('便签、纸页笔记、日历和画纸都从<b>底部应用坞</b>打开。再点一次已打开的图标，窗口会最小化。', {}),
       target: function () { return document.getElementById('dock'); },
       placement: 'top'
     },
     {
       title: '窗口怎么操作',
-      body: '拖<b>标题栏</b>移动窗口，拖右下角缩放。没有缩小/放大/关闭按钮：点底部应用坞图标可最小化或恢复，房子按钮一次收好全部窗口，按 Esc 关闭当前窗口。',
+      body: F('拖<b>标题栏</b>移动窗口，拖右下角缩放。没有缩小/放大/关闭按钮：点底部应用坞图标可最小化或恢复，房子按钮一次收好全部窗口，按 Esc 关闭当前窗口。', {}),
       target: function () { var win = findWindow(); return win ? win.querySelector('.window__titlebar') : null; },
       placement: 'bottom',
       before: function () { openStickies(); }
     },
     {
       title: '便签只从把手拖动',
-      body: '按住便签顶部左侧的<b>把手</b>再拖动；正文区域只负责输入，不会误拖。',
+      body: F('按住便签顶部左侧的<b>把手</b>再拖动；正文区域只负责输入，不会误拖。', {}),
       target: function () { return document.querySelector('.sticky__drag'); },
       placement: 'bottom',
       fallbackTarget: function () { var win = findWindow(); return win ? win.querySelector('.window__titlebar') : null; }
     },
     {
       title: '一键收好桌面',
-      body: '不想一个个关窗口？点最右边的<b>房子按钮</b>，或直接点窗口外的空白桌面，所有窗口会收进应用坞。再点应用坞里的图标就能恢复。',
+      body: F('不想一个个关窗口？点最右边的<b>房子按钮</b>，或直接点窗口外的空白桌面，所有窗口会收进应用坞。再点应用坞里的图标就能恢复。', {}),
       target: function () { return document.querySelector('[data-testid="dock-home"]'); },
       placement: 'top'
     },

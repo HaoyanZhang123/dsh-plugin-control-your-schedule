@@ -59,12 +59,25 @@ const normalized = model.normalizePrompts({
 });
 if (normalized.length === 3 && normalized[0].id === 'b' && normalized[1].id === 'c' && normalized[2].id === 'a') ok('normalizePrompts keeps valid rows and sorts pinned first', JSON.stringify(normalized.map((p) => p.id)));
 else bad('normalizePrompts keeps valid rows and sorts pinned first', JSON.stringify(normalized));
-if (normalized[0].title === '未命名提示词') ok('a missing title gets the placeholder', normalized[0].title);
-else bad('a missing title gets the placeholder', JSON.stringify(normalized[0] && normalized[0].title));
+/* 数据里不再写语言哨兵：缺标题就是空串，UI 自己按语言画占位文案。 */
+if (normalized[0].title === '') ok('a missing title normalizes to an empty string', JSON.stringify(normalized[0] && normalized[0].title));
+else bad('a missing title normalizes to an empty string', JSON.stringify(normalized[0] && normalized[0].title));
+if (normalized[0] && normalized[0].untitled === true) ok('an empty title is flagged untitled', String(normalized[0].untitled));
+else bad('an empty title is flagged untitled', JSON.stringify(normalized[0] && normalized[0].untitled));
+if (normalized[2] && normalized[2].title === '旧' && normalized[2].untitled === false) ok('a real title is kept and not flagged untitled', normalized[2].title);
+else bad('a real title is kept and not flagged untitled', JSON.stringify(normalized[2]));
 if (model.normalizePrompts(null).length === 0) ok('a snapshot without prompts normalizes to an empty list');
 else bad('a snapshot without prompts normalizes to an empty list');
 if (model.normalizePrompts({ prompts: 'nope' }).length === 0) ok('a malformed prompts field normalizes to an empty list');
 else bad('a malformed prompts field normalizes to an empty list');
+/* 0.4.0 wrote a language-specific title sentinel into the data; the composer must
+   fold both known values to '' even before the page's normalising save lands. */
+const legacyTitles = model.normalizePrompts({ prompts: [
+  { id: 'x', title: '未命名提示词', body: '' },
+  { id: 'y', title: 'Untitled prompt', body: '' },
+]});
+if (legacyTitles.length === 2 && legacyTitles.every((p) => p.title === '' && p.untitled === true)) ok('legacy sentinel titles normalize to empty in the composer', JSON.stringify(legacyTitles.map((p) => p.title)));
+else bad('legacy sentinel titles normalize to empty in the composer', JSON.stringify(legacyTitles));
 
 // --- applyPrompt -----------------------------------------------------------
 const calls = [];

@@ -1,0 +1,94 @@
+{
+ "{n} 分钟前": {
+  "one": "{n} minute ago",
+  "other": "{n} minutes ago"
+ },
+ "{n} 小时前": {
+  "one": "{n} hour ago",
+  "other": "{n} hours ago"
+ },
+ "{n} 天前": {
+  "one": "{n} day ago",
+  "other": "{n} days ago"
+ },
+ "今天的 {n} 件事都完成了。": {
+  "one": "The {n} to-do for today is done.",
+  "other": "All {n} to-dos for today are done."
+ },
+ "今天还有 {n} 件事没做。": {
+  "one": "{n} to-do left for today.",
+  "other": "{n} to-dos left for today."
+ },
+ "{name} 已移到第 {pos} 位，共 {total} 位": "{name} moved to position {pos} of {total}",
+ "{n} 张纸收在应用坞里": {
+  "one": "{n} sheet tucked in the dock",
+  "other": "{n} sheets tucked in the dock"
+ },
+ "找到 {found} / {total} 条": "Found {found} / {total}",
+ "{n} 条提示词": {
+  "one": "{n} prompt",
+  "other": "{n} prompts"
+ },
+ "找到 {found} / {total} 张": "Found {found} / {total}",
+ "{n} 张纸页": {
+  "one": "{n} page",
+  "other": "{n} pages"
+ },
+ "{n} 个字": {
+  "one": "{n} char",
+  "other": "{n} chars"
+ },
+ "{n} 字": {
+  "one": "{n} char",
+  "other": "{n} chars"
+ },
+ "{n} / 20000 字": "{n} / 20000 chars",
+ "提示词删除后不能恢复。正文 {n} 字。": "Deleting a prompt cannot be undone. Body: {n} chars.",
+ "共 {n} 件 · 完成 {m} 件": "{n} items · {m} done",
+ "{n} 件本月": "{n} items this month",
+ "其中 {n} 件是每天出现的持久待办，只算 1 件": "of which {n} are daily recurring to-dos, counted once",
+ "已解决 · {date} · 打卡 {n} 天": {
+  "one": "Resolved · {date} · checked in {n} day",
+  "other": "Resolved · {date} · checked in {n} days"
+ },
+ "今天做完了 · 打卡 {n} 天": {
+  "one": "Done today · checked in {n} day",
+  "other": "Done today · checked in {n} days"
+ },
+ "打卡 {n} 天": {
+  "one": "checked in {n} day",
+  "other": "checked in {n} days"
+ },
+ "这件事收起来了，打卡 {n} 天。": {
+  "one": "This task is tucked away; checked in {n} day.",
+  "other": "This task is tucked away; checked in {n} days."
+ },
+ "首次出现在 {date} · 已打卡 {n} 天": {
+  "one": "First appeared on {date} · checked in {n} day",
+  "other": "First appeared on {date} · checked in {n} days"
+ },
+ "，其中 {n} 件重要且紧急": ", of which {n} are urgent and important",
+ "还有 {n} 件示例内容": {
+  "one": "There is {n} sample item",
+  "other": "There are {n} sample items"
+ },
+ "一共收走了 {n} 件示例内容。": {
+  "one": "Removed {n} sample item.",
+  "other": "Removed {n} sample items in all."
+ },
+ "{n} 笔": {
+  "one": "{n} stroke",
+  "other": "{n} strokes"
+ },
+ "在 {date} 留一件事…": "Leave something for {date}…",
+ "用{color}画": "Draw with {color}",
+ "笔尖{label}，{px} 像素": "Brush tip {label}, {px} px",
+ "便签、纸页笔记、日历和画纸都从<b>底部应用坞</b>打开。再点一次已打开的图标，窗口会最小化。": "Sticky notes, pages, the calendar, and drawing sheets all open from the <b>bottom dock</b>. Click an open icon again and its window minimizes.",
+ "拖<b>标题栏</b>移动窗口，拖右下角缩放。没有缩小/放大/关闭按钮：点底部应用坞图标可最小化或恢复，房子按钮一次收好全部窗口，按 Esc 关闭当前窗口。": "Drag the <b>title bar</b> to move a window and the bottom-right corner to resize. There is no shrink/enlarge/close button: tap a dock icon to minimize or restore, the house button tucks all windows away at once, and Esc closes the current window.",
+ "按住便签顶部左侧的<b>把手</b>再拖动；正文区域只负责输入，不会误拖。": "Hold the <b>handle</b> at the top left of a sticky to drag it; the body area is only for typing, so you will not drag it by accident.",
+ "不想一个个关窗口？点最右边的<b>房子按钮</b>，或直接点窗口外的空白桌面，所有窗口会收进应用坞。再点应用坞里的图标就能恢复。": "Do not want to close windows one by one? Click the <b>house button</b> on the far right, or click the empty desk outside the windows, and every window goes back into the dock. Click a dock icon to bring one back.",
+ "语言": "Language",
+ "界面语言": "Interface language",
+ "中文": "Chinese",
+ "跟随 DSH 时用宿主界面语言；也可以固定中文或 English。改完会重新铺一次纸张。": "When set to follow DSH it uses the host's interface language; you can also pin Chinese or English. The desk is laid out again after the change."
+}

@@ -28,7 +28,9 @@ const CANDIDATES = [
   'C:/Program Files/Google/Chrome/Application/chrome.exe',
 ];
 const BROWSER = CANDIDATES.find((p) => existsSync(p));
-if (!BROWSER) { console.log('SKIP | no headless browser found'); process.exit(0); }
+/* SKIP is not a pass: exit 3 is the project convention for "could not run here"
+   (run_all_checks.py maps it to an explicit SKIP instead of a silent PASS). */
+if (!BROWSER) { console.log('SKIP | no headless browser found'); process.exit(3); }
 if (!existsSync(CLIENT)) { console.log('FAIL | client.js missing'); process.exit(1); }
 mkdirSync(OUT, { recursive: true });
 
@@ -41,6 +43,10 @@ if (!match) { console.log('FAIL | PAGE_B64 not found in client.js'); process.exi
 const PROFILE = join(OUT, 'profile-page-e2e-' + process.pid + '-' + Date.now());
 const PAGE = join(OUT, 'page.published.html');
 writeFileSync(PAGE, Buffer.from(match[1], 'base64').toString('utf8'));
+// The build ships two page variants; the English one must exist or the gate is meaningless.
+const enMatch = /var PAGE_B64_EN = '([A-Za-z0-9+/=]+)'/.exec(client);
+const PAGE_EN = join(OUT, 'page.published.en.html');
+if (enMatch) writeFileSync(PAGE_EN, Buffer.from(enMatch[1], 'base64').toString('utf8'));
 
 const checks = [];
 const ok = (n, d) => { checks.push([true, n]); console.log('PASS | ' + n + (d ? ' | ' + d : '')); };
@@ -118,6 +124,11 @@ if (version && version !== '__PAGE_VERSION__') ok('page version injected by the 
 else bad('page version injected by the build', String(version));
 const schema = await ev('window.PaperOS.schemaVersion');
 if (schema === 3) ok('schema is v3'); else bad('schema is v3', String(schema));
+
+// The Chinese page is the source of truth: it runs with the zh runtime and F() keeps the wording.
+const zhRuntime = await ev('({ lang: (window.PaperOS && window.PaperOS.lang) || "", sample: window.PaperOS ? window.PaperOS.F("{n} 张纸页", 2) : "" })');
+if (zhRuntime && zhRuntime.lang === 'zh' && zhRuntime.sample === '2 张纸页') ok('the Chinese page runs with P.lang=zh', JSON.stringify(zhRuntime));
+else bad('the Chinese page runs with P.lang=zh', JSON.stringify(zhRuntime));
 
 const seededPrompts = await run(function () {
   var P = window.PaperOS;
@@ -339,26 +350,178 @@ else bad('drawing shelf has paging + delete', JSON.stringify(drawing));
 if (drawing && drawing.before - drawing.after === 1 && drawing.before > 0) ok('a drawing can be deleted', drawing.before + ' -> ' + drawing.after);
 else bad('a drawing can be deleted', JSON.stringify(drawing));
 
+// --- window titlebar: kicker + title, but never the same word twice ---
+const zhHeading = await run(function () {
+  var P = window.PaperOS;
+  P.wm.open('prompts');
+  var win = document.querySelector('.window[data-app=prompts]');
+  if (!win) return { error: 'no prompts window' };
+  var heading = win.querySelector('.window__heading');
+  var titleEl = win.querySelector('.window__title');
+  return {
+    kicker: (win.querySelector('.window__app-name') || {}).textContent || '',
+    title: (titleEl || {}).textContent || '',
+    single: !!(heading && heading.classList.contains('is-single')),
+    titleHidden: !!(titleEl && titleEl.hidden)
+  };
+});
+if (zhHeading && !zhHeading.single && !zhHeading.titleHidden && zhHeading.kicker === 'PROMPTS' && zhHeading.title === '提示词') ok('different kicker and title both stay visible', JSON.stringify(zhHeading));
+else bad('different kicker and title both stay visible', JSON.stringify(zhHeading));
+
 // --- theme ---
+// 便签右下角日期的可读性：深色下曾经是深棕压在深色便签上（同色），
+// 这里按 WCAG 相对亮度实测「日期色（含透明度叠到便签底）对便签底色」的对比度。
+const runWith = (fn, args) => ev('(' + fn.toString() + ')(' + args.map(function (one) { return JSON.stringify(one); }).join(',') + ')');
+const stickyContrast = (selector) => runWith(function (sel) {
+  var P = window.PaperOS;
+  P.wm.open('stickies');
+  if (!P.data.listStickies().length) P.data.createSticky({ text: '对比度', color: 'butter', x: 30, y: 30 });
+  var card = document.querySelector('.sticky');
+  if (!card) return { error: 'no sticky card' };
+  var target = card.querySelector(sel);
+  if (!target) return { error: 'no node for ' + sel };
+  function parse(value) {
+    var m = /rgba?\(([^)]+)\)/.exec(value || '');
+    if (!m) return null;
+    var parts = m[1].split(',').map(function (one) { return parseFloat(one); });
+    return { r: parts[0], g: parts[1], b: parts[2], a: parts.length > 3 ? parts[3] : 1 };
+  }
+  function lum(c) {
+    function ch(v) { v = v / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
+    return 0.2126 * ch(c.r) + 0.7152 * ch(c.g) + 0.0722 * ch(c.b);
+  }
+  var fgRaw = getComputedStyle(target).color;
+  var bgRaw = getComputedStyle(card).backgroundColor;
+  var fg = parse(fgRaw);
+  var bg = parse(bgRaw);
+  if (!fg || !bg) return { error: 'unparsable colors', fg: fgRaw, bg: bgRaw };
+  var mixed = { r: fg.r * fg.a + bg.r * (1 - fg.a), g: fg.g * fg.a + bg.g * (1 - fg.a), b: fg.b * fg.a + bg.b * (1 - fg.a) };
+  var hi = Math.max(lum(mixed), lum(bg));
+  var lo = Math.min(lum(mixed), lum(bg));
+  return {
+    selector: sel,
+    ratio: Math.round(((hi + 0.05) / (lo + 0.05)) * 100) / 100,
+    color: fgRaw,
+    background: bgRaw,
+    text: String(target.textContent || '').trim()
+  };
+}, [selector]);
+/* 截图前先关导览：导览层带 0.46 遮罩，会把整页压暗，不能当验收图。 */
+const closeTour = async () => {
+  await ev('try { window.PaperOS.tour.close(); } catch (err) {}');
+  await sleep(280);
+};
 await ev('window.PaperOS.data.setPrefs({ theme: "dark" }); window.PaperOS.shell.applyPrefs();');
 await sleep(350);
 const darkAttr = await ev('document.documentElement.getAttribute("data-theme")');
 const darkBg = await ev('getComputedStyle(document.body).backgroundColor');
+await closeTour();
 await shot('page-dark');
+const darkStickyDate = await stickyContrast('.sticky__date');
+const darkStickyTag = await stickyContrast('.sticky__foot .sample-tag');
+/* 中文深色便签页：把便签窗口提到最前，单独留一张可读性截图。 */
+await run(function () {
+  var P = window.PaperOS;
+  P.wm.open('stickies');
+  var wins = P.wm.getWindows().filter(function (w) { return w.appId === 'stickies'; });
+  if (wins.length) P.wm.focus(wins[0].id);
+});
+await closeTour();
+await shot('page-dark-sticky');
 await ev('window.PaperOS.data.setPrefs({ theme: "light" }); window.PaperOS.shell.applyPrefs();');
 await sleep(350);
 const lightAttr = await ev('document.documentElement.getAttribute("data-theme")');
 const lightBg = await ev('getComputedStyle(document.body).backgroundColor');
+await closeTour();
 await shot('page-light');
+const lightStickyDate = await stickyContrast('.sticky__date');
 if (darkAttr === 'dark' && lightAttr === 'light') ok('theme switches light/dark', darkAttr + ' / ' + lightAttr);
 else bad('theme switches light/dark', darkAttr + ' / ' + lightAttr);
 if (darkBg !== lightBg) ok('dark and light paint differently', darkBg + ' vs ' + lightBg);
 else bad('dark and light paint differently', 'both ' + darkBg);
+if (darkStickyDate && darkStickyDate.ratio >= 3) ok('the sticky date stays readable in dark', JSON.stringify(darkStickyDate));
+else bad('the sticky date stays readable in dark', JSON.stringify(darkStickyDate));
+/* 「示例」小标签也是元信息：深色下曾经 1.54:1。中英文页面同一套配色，同一口径。 */
+if (darkStickyTag && darkStickyTag.ratio >= 3) ok('the sample tag stays readable on a dark sticky', JSON.stringify(darkStickyTag));
+else bad('the sample tag stays readable on a dark sticky', JSON.stringify(darkStickyTag));
+if (lightStickyDate && lightStickyDate.ratio >= 1.8) ok('the sticky date stays meta-quiet in light but does not vanish', JSON.stringify(lightStickyDate));
+else bad('the sticky date stays meta-quiet in light but does not vanish', JSON.stringify(lightStickyDate));
 await ev('window.PaperOS.data.setPrefs({ theme: "system" }); window.PaperOS.shell.applyPrefs();');
 const prefAttr = await ev('document.documentElement.getAttribute("data-theme-pref")');
 const resolvedAttr = await ev('document.documentElement.getAttribute("data-theme")');
 if (prefAttr === 'system' && (resolvedAttr === 'light' || resolvedAttr === 'dark')) ok('system mode resolves to a real theme', prefAttr + ' -> ' + resolvedAttr);
 else bad('system mode resolves to a real theme', prefAttr + ' / ' + resolvedAttr);
+
+// --- macOS top clearance: the page paints the inset band itself ---
+// The shell now keeps the frame at inset 0 on macOS and hands the clearance in
+// through --cys-top-clearance, so the page's own top bar has to grow upwards by
+// exactly that much: the band ends up painted by the paper top bar instead of the
+// shell colour. Nothing below may assume 48px - a second, arbitrary value proves
+// the CSS consumes the variable instead of hard-coding the macOS number.
+const clearance = await run(function () {
+  var P = window.PaperOS;
+  if (P.tour && P.tour.close) P.tour.close();
+  var rootEl = document.documentElement;
+  var topbar = document.querySelector('.topbar');
+  var stage = document.getElementById('stage');
+  var os = document.getElementById('os');
+  var row = document.querySelector('.topbar__left');
+  if (!topbar || !stage || !os || !row) return { error: 'shell parts missing' };
+  var probe = function (value) {
+    rootEl.style.setProperty('--cys-top-clearance', value);
+    var tb = topbar.getBoundingClientRect();
+    var st = stage.getBoundingClientRect();
+    var ob = os.getBoundingClientRect();
+    var rb = row.getBoundingClientRect();
+    var cs = getComputedStyle(topbar);
+    var hit = document.elementFromPoint(Math.round(tb.left + tb.width / 2), 24);
+    return {
+      height: Math.round(tb.height),
+      top: Math.round(tb.top),
+      width: Math.round(tb.width),
+      padTop: Math.round(parseFloat(cs.paddingTop) || 0),
+      rowTop: Math.round(rb.top),
+      stageTop: Math.round(st.top),
+      stageHeight: Math.round(st.height),
+      osHeight: Math.round(ob.height),
+      overflowX: Math.round(rootEl.scrollWidth - rootEl.clientWidth),
+      bandHit: !!(hit && hit.closest && hit.closest('.topbar')),
+      painted: cs.backgroundImage !== 'none',
+      tourOpen: !!document.querySelector('.tour.is-open')
+    };
+  };
+  var base = probe('0px');
+  var mac = probe('48px');
+  var other = probe('37px');
+  var back = probe('');
+  return { base: base, mac: mac, other: other, back: back, viewport: window.innerHeight };
+});
+const ctBase = (clearance && clearance.base) || {};
+const ctMac = (clearance && clearance.mac) || {};
+const ctOther = (clearance && clearance.other) || {};
+const ctBack = (clearance && clearance.back) || {};
+const ctViewport = clearance && clearance.viewport;
+if (!clearance || clearance.error) bad('top clearance probe runs', JSON.stringify(clearance));
+else if (ctBase.height === 56 && ctBase.padTop === 0 && ctBase.top === 0) ok('top bar sits flush at the top when there is no clearance', JSON.stringify(ctBase));
+else bad('top bar sits flush at the top when there is no clearance', JSON.stringify(ctBase));
+if (!clearance || clearance.error) bad('the 48px band is painted by the page top bar', 'probe failed');
+else if (ctMac.top === 0 && ctMac.height === 104 && ctMac.bandHit && ctMac.painted && !ctMac.tourOpen) ok('the 48px band is painted by the page top bar', JSON.stringify(ctMac));
+else bad('the 48px band is painted by the page top bar', JSON.stringify(ctMac));
+if (!clearance || clearance.error) bad('top bar content keeps its row, shifted by exactly the clearance', 'probe failed');
+else if (ctMac.padTop === 48 && ctMac.rowTop - ctBase.rowTop === 48) ok('top bar content keeps its row, shifted by exactly the clearance', 'padTop=' + ctMac.padTop + ' rowTop ' + ctBase.rowTop + ' -> ' + ctMac.rowTop);
+else bad('top bar content keeps its row, shifted by exactly the clearance', 'padTop=' + ctMac.padTop + ' rowTop ' + ctBase.rowTop + ' -> ' + ctMac.rowTop);
+if (!clearance || clearance.error) bad('the stage gives up the clearance and the desk keeps 100dvh', 'probe failed');
+else if (ctMac.stageTop === 104 && ctMac.stageHeight === ctBase.stageHeight - 48 && ctMac.osHeight === ctViewport) ok('the stage gives up the clearance and the desk keeps 100dvh', 'stage ' + ctBase.stageHeight + ' -> ' + ctMac.stageHeight + ', desk=' + ctMac.osHeight);
+else bad('the stage gives up the clearance and the desk keeps 100dvh', JSON.stringify(ctMac));
+if (!clearance || clearance.error) bad('the clearance band causes no horizontal overflow', 'probe failed');
+else if (ctMac.overflowX === 0 && ctMac.width === ctBase.width) ok('the clearance band causes no horizontal overflow', 'overflowX=' + ctMac.overflowX + ' width=' + ctMac.width);
+else bad('the clearance band causes no horizontal overflow', 'overflowX=' + ctMac.overflowX + ' width=' + ctMac.width);
+if (!clearance || clearance.error) bad('the band is driven by the variable, not a hard-coded 48px', 'probe failed');
+else if (ctOther.height === 93 && ctOther.padTop === 37 && ctOther.stageHeight === ctBase.stageHeight - 37 && ctOther.bandHit) ok('the band is driven by the variable, not a hard-coded 48px', JSON.stringify(ctOther));
+else bad('the band is driven by the variable, not a hard-coded 48px', JSON.stringify(ctOther));
+if (!clearance || clearance.error) bad('clearing the variable restores the 56px top bar', 'probe failed');
+else if (ctBack.height === 56 && ctBack.padTop === 0 && ctBack.rowTop === ctBase.rowTop && ctBack.stageHeight === ctBase.stageHeight && ctBack.overflowX === 0) ok('clearing the variable restores the 56px top bar', JSON.stringify(ctBack));
+else bad('clearing the variable restores the 56px top bar', JSON.stringify(ctBack));
 
 // --- the empty placeholder copy is gone ---
 const noPlaceholder = await run(function () {
@@ -1339,6 +1502,59 @@ else bad('data survives a reload', JSON.stringify(survived && survived.titles));
 if (survived && survived.windows.indexOf('calendar') !== -1) ok('open windows survive a reload', JSON.stringify(survived.windows));
 else bad('open windows survive a reload', JSON.stringify(survived && survived.windows));
 
+// --- the clearance survives the narrow (side-panel) breakpoint ---
+// The panel is a sidebar, so the <=820px rules are the ones macOS really hits.
+// There .topbar sets padding with a shorthand: if that shorthand drops the
+// variable, padding-top collapses and the strip is left unpainted.
+await send('Emulation.setDeviceMetricsOverride', { width: 800, height: 900, deviceScaleFactor: 1, mobile: false });
+await sleep(320);
+const narrow = await run(function () {
+  var P = window.PaperOS;
+  if (P.tour && P.tour.close) P.tour.close();
+  var rootEl = document.documentElement;
+  var topbar = document.querySelector('.topbar');
+  var row = document.querySelector('.topbar__left');
+  if (!topbar || !row) return { error: 'shell parts missing' };
+  var probe = function (value) {
+    rootEl.style.setProperty('--cys-top-clearance', value);
+    var tb = topbar.getBoundingClientRect();
+    var rb = row.getBoundingClientRect();
+    var cs = getComputedStyle(topbar);
+    return {
+      width: Math.round(tb.width),
+      height: Math.round(tb.height),
+      padTop: Math.round(parseFloat(cs.paddingTop) || 0),
+      rowTop: Math.round(rb.top),
+      overflowX: Math.round(rootEl.scrollWidth - rootEl.clientWidth)
+    };
+  };
+  var base = probe('0px');
+  var mac = probe('48px');
+  var back = probe('');
+  return { base: base, mac: mac, back: back, viewportW: window.innerWidth };
+});
+await send('Emulation.setDeviceMetricsOverride', { width: 1400, height: 900, deviceScaleFactor: 1, mobile: false });
+await sleep(320);
+// The resize above schedules a layout save (180ms debounce, 420ms flush). Settle it
+// here: an unload journal left dirty would be preferred over the host snapshot on the
+// next boot, which is correct product behaviour and would wrongly break the
+// newer-version check below.
+await sleep(260);
+await ev('window.PaperOS.storage.flush()');
+await sleep(140);
+const settledPhase = await ev('window.PaperOS.storage.getStatus().phase');
+if (settledPhase === 'saved') ok('the resize settles its pending layout save', 'phase=' + settledPhase);
+else bad('the resize settles its pending layout save', 'phase=' + settledPhase);
+const nwBase = (narrow && narrow.base) || {};
+const nwMac = (narrow && narrow.mac) || {};
+const nwBack = (narrow && narrow.back) || {};
+if (!narrow || narrow.error) bad('the clearance band works at the narrow panel breakpoint', JSON.stringify(narrow));
+else if (narrow.viewportW === 800 && nwBase.height === 50 && nwMac.padTop === 48 && nwMac.height === 98 && nwMac.rowTop - nwBase.rowTop === 48) ok('the clearance band works at the narrow panel breakpoint', JSON.stringify(narrow));
+else bad('the clearance band works at the narrow panel breakpoint', JSON.stringify(narrow));
+if (!narrow || narrow.error) bad('the narrow top bar stays free of horizontal overflow and collapses back', 'probe failed');
+else if (nwMac.overflowX === 0 && nwMac.width === nwBase.width && nwBack.height === 50 && nwBack.padTop === 0 && nwBack.rowTop === nwBase.rowTop) ok('the narrow top bar stays free of horizontal overflow and collapses back', JSON.stringify(narrow));
+else bad('the narrow top bar stays free of horizontal overflow and collapses back', JSON.stringify(narrow));
+
 // --- a workspace from a NEWER version must not hang the desk ---
 // Regression: v2.3's boot called a helper it could not see (different IIFE),
 // threw ReferenceError before setting READY, and the host stayed on the
@@ -1389,6 +1605,289 @@ else bad('no page exceptions on a newer-version workspace', pageErrors.slice(0, 
 
 if (!pageErrors.length) ok('no page exceptions');
 else bad('no page exceptions', pageErrors.slice(0, 3).join(' | '));
+
+// --- the English variant: generated page, dictionary + F() templates ---
+if (!enMatch) {
+  bad('the build ships an English page variant', 'PAGE_B64_EN missing from client.js');
+} else {
+  pageErrors.length = 0;
+  await send('Page.navigate', { url: pathToFileURL(PAGE_EN).href });
+  let enReady = await waitReady();
+  if (enReady) {
+    // file:// storage is shared between the two variants here; the zh run left a saved
+    // desk behind. User data is never translated, so the English pass starts clean.
+    await ev('window.PaperOS.storage.clearAll()');
+    await ev('try { window.localStorage.clear(); } catch (err) {}');
+    await send('Page.reload', { ignoreCache: true });
+    enReady = await waitReady();
+    pageErrors.length = 0;
+  }
+  if (enReady) ok('the English page boots');
+  else bad('the English page boots', 'READY never became true');
+
+  const enShape = await ev('({ lang: document.documentElement.lang, paperLang: (window.PaperOS && window.PaperOS.lang) || "", templates: !!window.__PAPER_TEMPLATES__, version: (window.PaperOS && window.PaperOS.version) || "" })');
+  if (enShape && enShape.lang === 'en' && enShape.paperLang === 'en') ok('the English page declares lang=en and runs with P.lang=en', JSON.stringify(enShape));
+  else bad('the English page declares lang=en and runs with P.lang=en', JSON.stringify(enShape));
+  if (enShape && enShape.templates) ok('the English page carries its F() templates');
+  else bad('the English page carries its F() templates', JSON.stringify(enShape));
+
+  // F(): plural selection in the real browser runtime
+  const enTemplates = await run(function () {
+    var F = window.PaperOS.F;
+    return {
+      one: F('{n} 张纸页', 1),
+      many: F('{n} 张纸页', 3),
+      mins: F('{n} 分钟前', 5),
+      pair: F('共 {n} 件 · 完成 {m} 件', { n: 3, m: 1 }),
+      left: F('今天还有 {n} 件事没做。', 1),
+      plain: F('用{color}画', { color: 'Sage' })
+    };
+  });
+  if (enTemplates && enTemplates.one === '1 page' && enTemplates.many === '3 pages' && enTemplates.mins === '5 minutes ago') ok('F() picks the English plural form', JSON.stringify(enTemplates));
+  else bad('F() picks the English plural form', JSON.stringify(enTemplates));
+  if (enTemplates && enTemplates.pair === '3 items · 1 done' && enTemplates.left === '1 to-do left for today.' && enTemplates.plain === 'Draw with Sage') ok('F() fills named placeholders in English', JSON.stringify(enTemplates));
+  else bad('F() fills named placeholders in English', JSON.stringify(enTemplates));
+
+  // no CJK anywhere the user can read it (whitelist: the 屿 seal mark).
+  // Scanned twice: right after boot, and again once every app is mounted - most
+  // aria-label / placeholder values only exist in the DOM while their window is open.
+  const scanCjk = () => run(function () {
+    var test = /[\u4e00-\u9fff]/;
+    var out = { text: [], attrs: [], count: 0, chars: [] };
+    function scan(value, bucket) {
+      if (!value) return;
+      var left = String(value).split('屿').join('');
+      if (!test.test(left)) return;
+      out.count += 1;
+      var hits = left.match(/[\u4e00-\u9fff]/g) || [];
+      hits.forEach(function (one) { if (out.chars.indexOf(one) === -1) out.chars.push(one); });
+      if (bucket.length < 5) bucket.push(String(value).slice(0, 110));
+    }
+    scan(document.body.innerText, out.text);
+    var nodes = document.querySelectorAll('[aria-label],[title],[placeholder],[alt]');
+    for (var i = 0; i < nodes.length; i += 1) {
+      scan(nodes[i].getAttribute('aria-label'), out.attrs);
+      scan(nodes[i].getAttribute('title'), out.attrs);
+      scan(nodes[i].getAttribute('placeholder'), out.attrs);
+      scan(nodes[i].getAttribute('alt'), out.attrs);
+    }
+    return out;
+  });
+  const cjk = await scanCjk();
+  if (cjk && cjk.count === 0) ok('the English page shows no CJK text outside the 屿 seal');
+  else bad('the English page shows no CJK text outside the 屿 seal', JSON.stringify(cjk));
+
+  // the desk itself: top bar, dock, and every app still opens in English
+  const enUi = await run(function () {
+    var P = window.PaperOS;
+    var apps = ['stickies', 'prompts', 'notes', 'calendar', 'draw', 'settings'];
+    var opened = [];
+    apps.forEach(function (id) {
+      try { P.wm.open(id); } catch (err) { /* reported below */ }
+      var win = document.querySelector('.window[data-app=' + id + ']');
+      opened.push({ id: id, ok: !!win, title: win ? (win.querySelector('.window__title') || {}).textContent || '' : '' });
+    });
+    return {
+      opened: opened,
+      dockButtons: document.querySelectorAll('[data-dock-app]').length,
+      topbar: !!document.querySelector('.topbar'),
+      topbarBrand: (document.querySelector('.brand__en') || {}).textContent || ''
+    };
+  });
+  const enAllOpen = enUi && enUi.opened && enUi.opened.every(function (one) { return one.ok; });
+  if (enAllOpen && enUi.dockButtons === 5 && enUi.topbar) ok('every app opens on the English page', JSON.stringify(enUi.opened.map(function (o) { return o.id; })));
+  else bad('every app opens on the English page', JSON.stringify(enUi));
+  const enTitles = enUi && enUi.opened ? enUi.opened.filter(function (one) { return /[\u4e00-\u9fff]/.test(one.title.split('屿').join('')); }) : [];
+  if (enTitles.length === 0) ok('window titles are English');
+  else bad('window titles are English', JSON.stringify(enTitles));
+  const cjkOpen = await scanCjk();
+  if (cjkOpen && cjkOpen.count === 0) ok('every open app stays CJK-free in text and attributes');
+  else bad('every open app stays CJK-free in text and attributes', JSON.stringify(cjkOpen));
+
+  // seal + weekday header read as English, not as half a Chinese word
+  const enChrome = await run(function () {
+    var seal = document.getElementById('day-seal');
+    var cells = [];
+    var header = document.querySelector('.calendar-weekdays');
+    if (header) {
+      var spans = header.querySelectorAll('span');
+      for (var i = 0; i < spans.length; i += 1) cells.push(spans[i].textContent);
+    }
+    return {
+      seal: seal ? seal.textContent.trim() : '',
+      sealTitle: seal ? seal.getAttribute('title') : '',
+      weekdays: cells.join('')
+    };
+  });
+  const sealOk = enChrome && enChrome.seal && !/[\u4e00-\u9fff]/.test(enChrome.seal) && enChrome.seal.length <= 6;
+  if (sealOk && enChrome.sealTitle && !/[\u4e00-\u9fff]/.test(enChrome.sealTitle)) ok('the day seal shows an English word with its English title', JSON.stringify(enChrome));
+  else bad('the day seal shows an English word with its English title', JSON.stringify(enChrome));
+  if (enChrome && enChrome.weekdays === 'MTWTFSS') ok('the weekday header is M T W T F S S', enChrome.weekdays);
+  else bad('the weekday header is M T W T F S S', JSON.stringify(enChrome && enChrome.weekdays));
+
+  // the guided tour carries inline <b>; its English comes from F() templates
+  const enTour = await run(function () {
+    var P = window.PaperOS;
+    P.tour.start();
+    var card = document.querySelector('.tour__card');
+    var bodies = [];
+    if (card) {
+      var next = card.querySelector('[data-tour-next]');
+      var body = card.querySelector('[data-tour-body]');
+      bodies.push(body ? body.textContent : '');
+      for (var i = 0; i < 5; i += 1) {
+        if (!next || next.disabled) break;
+        next.click();
+        var again = card.querySelector('[data-tour-body]');
+        bodies.push(again ? again.textContent : '');
+      }
+    }
+    P.tour.close();
+    return { bodies: bodies, kicker: card ? (card.querySelector('[data-tour-kicker]') || {}).textContent : '' };
+  });
+  const tourBad = enTour ? enTour.bodies.filter(function (one) { return /[\u4e00-\u9fff]/.test(String(one).split('屿').join('')); }) : ['tour did not open'];
+  if (enTour && enTour.bodies.length >= 5 && tourBad.length === 0) ok('the guided tour reads as English', JSON.stringify(enTour.bodies.map(function (one) { return one.slice(0, 44); })));
+  else bad('the guided tour reads as English', JSON.stringify(tourBad.length ? tourBad : enTour));
+  if (enTour && enTour.bodies[0] && enTour.bodies[0].indexOf('bottom dock') !== -1) ok('the tour keeps its bold phrase and wording');
+  else bad('the tour keeps its bold phrase and wording', JSON.stringify(enTour && enTour.bodies[0]));
+
+  // settings -> appearance: the language row reflects prefs.lang and writes it back
+  const langPref = await run(function () {
+    var P = window.PaperOS;
+    var select = document.querySelector('[data-lang-select]');
+    if (!select) return { error: 'no language select' };
+    var before = select.value;
+    var prefsBefore = P.data.getPrefs().lang;
+    select.value = 'en';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    var after = P.data.getPrefs().lang;
+    select.value = 'system';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    return { before: before, prefsBefore: prefsBefore, after: after, restored: P.data.getPrefs().lang, options: select.options.length };
+  });
+  if (langPref && langPref.before === 'system' && langPref.prefsBefore === 'system' && langPref.after === 'en' && langPref.restored === 'system' && langPref.options === 3) ok('the language row reads and writes prefs.lang', JSON.stringify(langPref));
+  else bad('the language row reads and writes prefs.lang', JSON.stringify(langPref));
+
+  // same word twice? "STICKY NOTES · Sticky notes" collapses to the kicker only
+  const enHeading = await run(function () {
+    var P = window.PaperOS;
+    P.wm.open('prompts');
+    var win = document.querySelector('.window[data-app=prompts]');
+    if (!win) return { error: 'no prompts window' };
+    var heading = win.querySelector('.window__heading');
+    var titleEl = win.querySelector('.window__title');
+    return {
+      kicker: (win.querySelector('.window__app-name') || {}).textContent || '',
+      title: (titleEl || {}).textContent || '',
+      single: !!(heading && heading.classList.contains('is-single')),
+      titleHidden: !!(titleEl && titleEl.hidden),
+      barText: ((win.querySelector('.window__titlebar') || {}).textContent || '').replace(/\s+/g, ' ').trim()
+    };
+  });
+  if (enHeading && enHeading.single && enHeading.titleHidden && enHeading.barText.indexOf('·') === -1) ok('a window whose kicker repeats its title shows the kicker once', JSON.stringify(enHeading));
+  else bad('a window whose kicker repeats its title shows the kicker once', JSON.stringify(enHeading));
+
+  // both themes on the English page, for the review screenshots (tour closed: no shade)
+  await ev('window.PaperOS.data.setPrefs({ theme: "light" }); window.PaperOS.shell.applyPrefs();');
+  await sleep(320);
+  await closeTour();
+  await shot('page-en-light');
+  await ev('window.PaperOS.data.setPrefs({ theme: "dark" }); window.PaperOS.shell.applyPrefs();');
+  await sleep(320);
+  await closeTour();
+  await shot('page-en-dark');
+  /* 英文深色便签页，与中文那张对照。 */
+  await run(function () {
+    var P = window.PaperOS;
+    P.wm.open('stickies');
+    var wins = P.wm.getWindows().filter(function (w) { return w.appId === 'stickies'; });
+    if (wins.length) P.wm.focus(wins[0].id);
+  });
+  await closeTour();
+  await shot('page-en-dark-sticky');
+  await ev('window.PaperOS.data.setPrefs({ theme: "system" }); window.PaperOS.shell.applyPrefs();');
+  await sleep(160);
+
+  if (!pageErrors.length) ok('no page exceptions on the English page');
+  else bad('no page exceptions on the English page', pageErrors.slice(0, 3).join(' | '));
+}
+
+// --- cross-language data: a legacy sentinel title must not leak into the English UI ---
+// A workspace written by the old build carries the Chinese sentinel as a real title. The
+// page has to normalise it to an empty title on load and draw its own localized
+// placeholder; the stored data must be clean afterwards. Deliberately no clearAll here:
+// the point is that an old workspace loads and reads correctly in English.
+const crossPage = join(OUT, 'page.en.cross.html');
+/* Build the fixture from a snapshot the page itself produced, so the schema is valid by
+   construction; only the prompt titles are the old-build values under test. */
+const crossSnapshot = await ev('(function () { var P = window.PaperOS; var snap = P.data.snapshotData(); snap.prompts = [' +
+  '{ id: P.util.uid(\'prompt\'), title: \'未命名提示词\', body: \'\', pinned: false, createdAt: 1, updatedAt: 4102444800000 },' +
+  '{ id: P.util.uid(\'prompt\'), title: \'\', body: \'\', pinned: false, createdAt: 2, updatedAt: 4102444800000 }' +
+  ']; snap.format = \'paper-os/workspace\'; snap.version = P.schemaVersion;' +
+  ' snap.meta = Object.assign({}, snap.meta, { updatedAt: 4102444800000 }); snap.windows = []; return snap; })()');
+const crossScript = '<' + 'script>window.__SCHEDULE_HOST_MODE__=true;window.__SCHEDULE_HOST_SNAPSHOT__='
+  + JSON.stringify(crossSnapshot).replace(/</g, '\\u003c') + ';<' + '/script>';
+writeFileSync(crossPage, readFileSync(PAGE_EN, 'utf8').replace('<script>', crossScript + '<script>'));
+pageErrors.length = 0;
+await send('Page.navigate', { url: pathToFileURL(crossPage).href });
+await waitReady();
+/* The previous page instance wrote a recovery journal on unload (pagehide). That journal
+   is a legitimate preferred source and would mask the fixture under test - drop only that
+   one key (never clearAll) and reload so the injected host workspace is the one loaded. */
+await ev('try { window.localStorage.removeItem("paper-os.recovery.v1"); } catch (err) {}');
+await send('Page.reload', { ignoreCache: true });
+const crossReady = await waitReady();
+if (crossReady) ok('the English page boots on a workspace written by the old build');
+else bad('the English page boots on a workspace written by the old build', 'READY never became true');
+const cross = await run(function () {
+  var P = window.PaperOS;
+  P.wm.open('prompts');
+  var rows = document.querySelectorAll('[data-testid=prompt-item]');
+  var names = [];
+  for (var i = 0; i < rows.length; i += 1) {
+    var nameEl = rows[i].querySelector('.prompt-item__name');
+    names.push(nameEl ? nameEl.textContent : '');
+  }
+  var titles = P.data.listPrompts('').map(function (p) { return p.title; });
+  var win = document.querySelector('.window[data-app=prompts]');
+  var titleInput = document.querySelector('[data-testid=prompt-title]');
+  var windowText = win ? win.innerText : '';
+  var hits = windowText.split('屿').join('').match(/[\u4e00-\u9fff]/g) || [];
+  return {
+    rows: rows.length,
+    names: names,
+    titles: titles,
+    placeholder: titleInput ? titleInput.placeholder : '',
+    barTitle: (document.querySelector('[data-testid=prompt-heading]') || {}).textContent || '',
+    cjk: hits.length,
+    promptCount: P.data.listPrompts('').length,
+    hasSnapshot: !!window.__SCHEDULE_HOST_SNAPSHOT__,
+    hostMode: !!window.__SCHEDULE_HOST_MODE__,
+    blocked: !!(P.storage && P.storage.blocked),
+    bootError: window.__PAPER_OS_BOOT_ERROR__ || ''
+  };
+});
+/* The fixture itself must load, otherwise the assertions below would pass on a freshly
+   seeded desk and prove nothing. */
+if (cross && cross.promptCount === 2 && cross.hasSnapshot && cross.hostMode && !cross.blocked) {
+  ok('the cross-language fixture loads as a host workspace', JSON.stringify({ rows: cross.rows, promptCount: cross.promptCount }));
+} else {
+  bad('the cross-language fixture loads as a host workspace', JSON.stringify(cross && { promptCount: cross.promptCount, hasSnapshot: cross.hasSnapshot, hostMode: cross.hostMode, blocked: cross.blocked, bootError: cross.bootError }));
+}
+const crossTitlesClean = cross && Array.isArray(cross.titles) && cross.titles.length === 2
+  && cross.titles.every(function (one) { return one === ''; });
+if (crossTitlesClean) ok('a legacy sentinel title is normalised to an empty title in data', JSON.stringify(cross.titles));
+else bad('a legacy sentinel title is normalised to an empty title in data', JSON.stringify(cross && cross.titles));
+const crossPlaceholder = cross && cross.placeholder && !/[\u4e00-\u9fff]/.test(cross.placeholder);
+const crossNamesOk = cross && cross.rows === 2 && cross.names.length === 2
+  && cross.names.every(function (one) { return one === cross.placeholder; });
+if (crossPlaceholder && crossNamesOk) ok('both untitled prompts show the English placeholder', JSON.stringify(cross.names));
+else bad('both untitled prompts show the English placeholder', JSON.stringify(cross && { placeholder: cross.placeholder, names: cross.names, rows: cross.rows }));
+const crossClean = cross && cross.cjk === 0 && !/[\u4e00-\u9fff]/.test(cross.barTitle || '');
+if (crossClean) ok('an old workspace shows no CJK in the English prompt library', JSON.stringify({ cjk: cross.cjk, barTitle: cross.barTitle }));
+else bad('an old workspace shows no CJK in the English prompt library', JSON.stringify(cross && { cjk: cross.cjk, barTitle: cross.barTitle }));
+if (!pageErrors.length) ok('no page exceptions on the cross-language workspace');
+else bad('no page exceptions on the cross-language workspace', pageErrors.slice(0, 3).join(' | '));
 
 await shot('page-final');
 const failed = checks.filter((c) => !c[0]);

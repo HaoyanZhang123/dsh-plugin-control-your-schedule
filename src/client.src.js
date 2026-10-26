@@ -15,44 +15,251 @@ window.__ModuleLoader__.load({
     var PREFIX = 'dsh-plugin-control-your-schedule:';
     var VERSION = '__VERSION__';
     var PAGE_B64 = '__PAGE_B64__';
+    /* The English desk is a build-time variant of the same source page (see
+       output/_probe/i18n/CONTRACT.md). build_page.py injects its base64; nothing
+       here translates the page at runtime. */
+    var PAGE_B64_EN = '__PAGE_B64_EN__';
     var ICON_SVG = __STICKY_ICON_JSON__;
 
-    var pageHtml = null;
-    function basePage() {
-      if (pageHtml) return pageHtml;
-      var bytes = Uint8Array.from(atob(PAGE_B64), function (ch) { return ch.charCodeAt(0); });
-      pageHtml = new TextDecoder('utf-8').decode(bytes);
-      return pageHtml;
+    var pageHtml = { zh: null, en: null };
+    function basePage(lang) {
+      var key = lang === 'en' ? 'en' : 'zh';
+      if (pageHtml[key]) return pageHtml[key];
+      var code = key === 'en' ? PAGE_B64_EN : PAGE_B64;
+      var bytes;
+      try {
+        bytes = Uint8Array.from(atob(code), function (ch) { return ch.charCodeAt(0); });
+      } catch (err) {
+        /* A missing variant has to break loudly: quietly serving the Chinese
+           page to an English host would look like a half-finished translation. */
+        throw new Error('paper page variant "' + key + '" is missing; rebuild with tools/build_page.py');
+      }
+      pageHtml[key] = new TextDecoder('utf-8').decode(bytes);
+      return pageHtml[key];
+    }
+
+    /* @shell-theme-begin */
+    /* Host language, shared with the panel and the composer entry. The desk page
+       is built per language; this only decides which variant gets loaded. */
+    var localeHost = 'zh';
+
+    function normalizeLang(value) {
+      var text = String(value == null ? '' : value).trim().toLowerCase();
+      if (!text) return null;
+      if (text === 'zh' || text.indexOf('zh-') === 0 || text.indexOf('zh_') === 0) return 'zh';
+      if (text === 'en' || text.indexOf('en-') === 0 || text.indexOf('en_') === 0) return 'en';
+      return null;
+    }
+
+    /* prefs.lang wins (the user picked a language inside the desk); otherwise the
+       host decides. An unrecognised host language stays on Chinese. */
+    function resolveLang(snapshot) {
+      var prefs = snapshot && snapshot.prefs;
+      return normalizeLang(prefs && prefs.lang) || localeHost;
+    }
+
+    /* First-frame theme. The page hides its own content until body.os-ready
+       (.os stays at opacity 0), so the only thing that can flash is the page's
+       own background before boot. If <html data-theme> is already right when the
+       srcdoc lands, there is nothing to flash.
+       Order: snapshot prefs light/dark -> host body[data-ds-dark-theme] -> light. */
+    function hostPrefersDark() {
+      try {
+        return !!(document.body && document.body.hasAttribute('data-ds-dark-theme'));
+      } catch (err) {
+        return false;
+      }
+    }
+
+    function firstFrameTheme(snapshot) {
+      var prefs = snapshot && snapshot.prefs;
+      var wanted = prefs && prefs.theme;
+      if (wanted === 'light' || wanted === 'dark') return wanted;
+      return hostPrefersDark() ? 'dark' : 'light';
+    }
+
+    /* macOS puts the window traffic lights above the panel: DSH publishes the
+       reserved height as --dsh-frame-top-clearance on html[data-platform=darwin].
+       The frame is inset:0 now, so the value travels into the page as
+       --cys-top-clearance and the page's own top bar paints that strip. */
+    function hostIsDarwin() {
+      try {
+        return document.documentElement.getAttribute('data-platform') === 'darwin';
+      } catch (err) {
+        return false;
+      }
+    }
+
+    function hostTopClearance() {
+      if (!hostIsDarwin()) return '';
+      try {
+        var raw = getComputedStyle(document.documentElement).getPropertyValue('--dsh-frame-top-clearance');
+        var value = String(raw || '').trim();
+        return /^\d+(?:\.\d+)?px$/.test(value) ? value : '';
+      } catch (err) {
+        return '';
+      }
     }
 
     function escapeInline(value) {
       return JSON.stringify(value).replace(/</g, '\\u003c');
     }
 
+    function firstFramePage(page, theme, clearance) {
+      return page.replace(/<html\b([^>]*)>/i, function (match, attrs) {
+        var next = String(attrs).replace(/\sdata-theme="[^"]*"/i, '').replace(/\sstyle="[^"]*"/i, '');
+        var style = clearance ? ' style="--cys-top-clearance:' + clearance + '"' : '';
+        return '<html' + next + ' data-theme="' + theme + '"' + style + '>';
+      });
+    }
+
     function embed(snapshot, hostMode) {
+      var lang = resolveLang(snapshot);
+      /* The language goes last so the host mode/snapshot payload keeps its place
+         at the front of the document (the page reads it on first script run). */
       var boot = '<script>window.__SCHEDULE_HOST_MODE__=' + (hostMode ? 'true' : 'false')
         + ';window.__SCHEDULE_HOST_SNAPSHOT__=' + (snapshot ? escapeInline(snapshot) : 'null')
+        + ';window.__SCHEDULE_LANG__=' + escapeInline(lang)
         + ';</' + 'script>';
-      return basePage().replace('<script>', boot + '<script>');
+      var page = firstFramePage(basePage(lang), firstFrameTheme(snapshot), hostTopClearance());
+      return page.replace('<script>', boot + '<script>');
+    }
+    /* @shell-theme-end */
+
+    /* ---------- language: one dictionary, one resolved language ---------- */
+
+    /* Every user-visible string of the shell lives here exactly once. The
+       composer entry and the panel render through textFor(uiLang, ...), and the
+       host locale service is handed this same object for its own lookups. */
+    /* @dictionary-begin */
+    var DICTIONARY = {
+      zh: {
+        panel: '便签',
+        'panel.frameTitle': '便签',
+        'panel.opening': '正在打开纸屿…',
+        'panel.autosave': '内容会自动保存',
+        'panel.hostNote': '本地缓存 · 同步失败',
+        'prompt.title': '提示词',
+        'prompt.buttonTitle': '把常用提示词填进输入框',
+        'prompt.listLabel': '提示词列表',
+        'prompt.count': '提示词 · {n} 条',
+        'prompt.keys': '↑↓ 选择 · Enter 填入 · Esc 关闭',
+        'prompt.loading': '正在读取提示词…',
+        'prompt.error': '读取提示词失败，',
+        'prompt.retry': '重试',
+        'prompt.empty': '还没有提示词。先在便签的「提示词」里写几条。',
+        'prompt.untitled': '未命名提示词',
+        'prompt.pinnedLabel': '已置顶',
+        'prompt.pin': '置顶',
+        'prompt.draftOnly': '只填入草稿，不会发送',
+        'prompt.manage': '在便签里管理 ↗',
+        'prompt.emptyBody': '这条提示词还没有正文。',
+        'prompt.notReady': '输入框还没准备好，稍后再试。',
+        'prompt.busy': '输入框正在发送，稍后再试。',
+      },
+      en: {
+        panel: 'Sticky',
+        'panel.frameTitle': 'Sticky notes',
+        'panel.opening': 'Opening Paper Isle…',
+        'panel.autosave': 'Your work saves automatically',
+        'panel.hostNote': 'Local copy · sync failed',
+        'prompt.title': 'Prompts',
+        'prompt.buttonTitle': 'Insert a saved prompt into the composer',
+        'prompt.listLabel': 'Prompt list',
+        'prompt.count': 'Prompts · {n}',
+        'prompt.keys': '↑↓ to choose · Enter to insert · Esc to close',
+        'prompt.loading': 'Reading prompts…',
+        'prompt.error': 'Could not read prompts. ',
+        'prompt.retry': 'Retry',
+        'prompt.empty': 'No prompts yet. Add a few in the desk under Prompts.',
+        'prompt.untitled': 'Untitled prompt',
+        'prompt.pinnedLabel': 'Pinned',
+        'prompt.pin': 'Pinned',
+        'prompt.draftOnly': 'Fills the draft only. It is not sent.',
+        'prompt.manage': 'Manage in the desk ↗',
+        'prompt.emptyBody': 'This prompt has no text yet.',
+        'prompt.notReady': 'The composer is not ready yet. Try again in a moment.',
+        'prompt.busy': 'The composer is sending. Try again in a moment.',
+      },
+    };
+
+    /* Same {name} interpolation the host t() uses, but keyed by an explicit
+       language: the shell follows the plugin's resolved language, which can
+       differ from the host locale (host English, desk pinned to Chinese). */
+    function textFor(lang, key, params) {
+      var table = DICTIONARY[lang === 'en' ? 'en' : 'zh'];
+      var template = Object.prototype.hasOwnProperty.call(table, key) ? table[key] : key;
+      if (!params) return template;
+      return String(template).replace(/\{(\w+)\}/g, function (match, name) {
+        return Object.prototype.hasOwnProperty.call(params, name) ? String(params[name]) : match;
+      });
+    }
+    /* @dictionary-end */
+
+    /* uiLang is what the shell's own chrome renders in: prefs.lang once the user
+       pinned one inside the desk, otherwise the host locale. latestSnapshot is
+       the newest workspace state any surface has seen; before it arrives the
+       host locale decides, which is the boundary the composer entry lives with. */
+    var uiLang = 'zh';
+    var latestSnapshot = null;
+    var uiLangListeners = [];
+
+    function onUiLang(listener) {
+      uiLangListeners.push(listener);
+      return function () {
+        var index = uiLangListeners.indexOf(listener);
+        if (index !== -1) uiLangListeners.splice(index, 1);
+      };
+    }
+
+    function refreshUiLang() {
+      var next = resolveLang(latestSnapshot);
+      if (next === uiLang) return;
+      uiLang = next;
+      uiLangListeners.slice().forEach(function (listener) {
+        try { listener(next); } catch (err) { /* one listener must not starve the rest */ }
+      });
+    }
+
+    /* One entry point for "a newer workspace snapshot arrived". */
+    function publishSnapshot(snapshot) {
+      latestSnapshot = snapshot || null;
+      refreshUiLang();
+    }
+
+    function publishHostLang(next) {
+      if (!next || next === localeHost) return;
+      localeHost = next;
+      refreshUiLang();
+    }
+
+    function readHostLang(ctx) {
+      try {
+        var api = ctx && ctx.locale;
+        if (!api || typeof api.getLocale !== 'function') return null;
+        return normalizeLang(api.getLocale().active);
+      } catch (err) {
+        return null;
+      }
     }
 
     var CSS = [
-      '.cys-panel{position:relative;flex:1 1 auto;min-width:0;min-height:0;height:100%;overflow:hidden;background:#f1e7d4;}',
-      // One sizing path: absolute + explicit width/height. The macOS top
-      // clearance must be *subtracted* from the height. Previously the frame
-      // was pushed down 48px while still asking for height:100%, so it ran
-      // past the panel by 48px and the overflow clip cut the page's dock.
-      '.cys-frame{position:absolute;inset:0;display:block;width:100%;height:100%;border:0;background:#f2ead9;}',
-      'html[data-platform="darwin"] .cys-frame{top:var(--dsh-frame-top-clearance,48px);height:calc(100% - var(--dsh-frame-top-clearance,48px));}',
-      '.cys-loading{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#5f6157;background:#f4ecdd;font-family:"PingFang SC","Microsoft YaHei",sans-serif;font-size:14px;}',
-      '.cys-loading__mark{display:grid;width:42px;height:42px;place-items:center;border:1px solid rgba(155,83,58,.45);border-radius:50%;color:#9b533a;font-family:serif;font-size:17px;}',
-      '.cys-loading__sub{color:#8b816d;font-size:12px;}',
-      '.cys-error{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;color:#5f6157;background:#f4ecdd;font-family:"PingFang SC","Microsoft YaHei",sans-serif;font-size:14px;text-align:center;}',
-      '.cys-btn{min-height:34px;padding:6px 16px;border:1px solid rgba(155,83,58,.45);border-radius:3px;color:#9b533a;background:#fbf4e6;font:inherit;cursor:pointer;}',
-      '.cys-btn:hover{background:#fffaf1;}',
+      '.cys-panel{position:relative;flex:1 1 auto;min-width:0;min-height:0;height:100%;overflow:hidden;background:transparent;}',
+      // One sizing path: the frame always fills the panel. The macOS 48px window
+      // clearance is no longer subtracted from the frame (pushing it down while it
+      // still asked for height:100% overflowed the panel and the clip ate the dock).
+      // It travels into the page as --cys-top-clearance instead, so the page's own
+      // top bar paints that strip and the shell never shows a bare warm band.
+      '.cys-frame{position:absolute;inset:0;display:block;width:100%;height:100%;border:0;background:transparent;}',
+      '.cys-loading{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--dsw-alias-label-secondary,#61666b);background:var(--dsw-alias-bg-base,transparent);font-family:"PingFang SC","Microsoft YaHei",sans-serif;font-size:14px;}',
+      '.cys-loading__mark{display:grid;width:42px;height:42px;place-items:center;border:1px solid var(--dsw-alias-border-l3,rgba(120,120,120,.36));border-radius:50%;color:var(--dsw-alias-label-tertiary,#8a8f98);font-family:serif;font-size:17px;}',
+      '.cys-loading__sub{color:var(--dsw-alias-label-tertiary,#8a8f98);font-size:12px;}',
+      '.cys-error{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;color:var(--dsw-alias-label-secondary,#61666b);background:var(--dsw-alias-bg-base,transparent);font-family:"PingFang SC","Microsoft YaHei",sans-serif;font-size:14px;text-align:center;}',
+      '.cys-btn{min-height:34px;padding:6px 16px;border:1px solid var(--dsw-alias-border-l3,rgba(120,120,120,.36));border-radius:3px;color:var(--dsw-alias-label-primary,#222);background:var(--dsw-alias-bg-layer-2,transparent);font:inherit;cursor:pointer;}',
+      '.cys-btn:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(120,120,120,.12));}',
       '.cys-sidebar-icon{display:inline-flex;align-items:center;justify-content:center;width:100%;height:100%;}',
       '.cys-sidebar-icon svg{display:block;width:100%;height:100%;overflow:visible;}',
-      '.cys-host-note{position:absolute;right:10px;bottom:10px;z-index:4;padding:3px 8px;border:1px solid rgba(155,83,58,.3);border-radius:999px;color:#8b5a44;background:rgba(251,244,230,.9);font:11px/1.4 "PingFang SC","Microsoft YaHei",sans-serif;pointer-events:none;}',
+      '.cys-host-note{position:absolute;right:10px;bottom:10px;z-index:4;padding:3px 8px;border:1px solid var(--dsw-alias-border-l2,rgba(120,120,120,.24));border-radius:999px;color:var(--dsw-alias-label-tertiary,#8a8f98);background:var(--dsw-specific-menu,var(--dsw-alias-bg-layer-2,rgba(120,120,120,.08)));font:11px/1.4 "PingFang SC","Microsoft YaHei",sans-serif;pointer-events:none;}',
       // Composer entry: a compact chip that matches the host tool row, plus a
       // fixed-position panel (same pattern the host uses for its own popovers,
       // so the composer card's ancestors cannot clip it).
@@ -103,10 +310,42 @@ window.__ModuleLoader__.load({
       });
     }
 
+    /* ---------- host workspace: one read, shared ---------- */
+
+    /* The desk page is the only writer. This half only reads, and it reads
+       through one cache: the plugin prefetches on start-up (see apply), so the
+       composer entry and the panel both get that same response and opening the
+       panel does not pay a second round trip before it can paint. Every write
+       that lands invalidates the cache, so a later read is never served stale. */
+    var workspaceCache = { data: null, promise: null };
+
+    function loadWorkspace(options) {
+      var force = !!(options && options.force);
+      if (!force && workspaceCache.data) return Promise.resolve(workspaceCache.data);
+      if (workspaceCache.promise) return workspaceCache.promise;
+      workspaceCache.promise = hostFetch('GET').then(function (response) {
+        if (!response.ok) throw new Error('workspace ' + response.status);
+        return response.json();
+      }).then(function (data) {
+        if (!data || data.ok !== true) throw new Error('workspace unavailable');
+        workspaceCache.data = data;
+        /* First read fills the shared snapshot (the composer entry resolves its
+           language from it); a later read never overwrites a newer live state. */
+        if (!latestSnapshot) publishSnapshot(data.snapshot || null);
+        return data;
+      }).finally(function () {
+        workspaceCache.promise = null;
+      });
+      return workspaceCache.promise;
+    }
+
+    function invalidateWorkspace() {
+      workspaceCache.data = null;
+    }
+
     /* ---------- prompt library: data + composer entry ---------- */
 
-    /* One in-memory copy per page. The desk page is the only writer; this half
-       only reads the snapshot, so there is no second source of truth. */
+    /* Composer-side view of the prompt list, derived from the cached workspace. */
     var promptCache = { items: null, savedAt: 0, inflight: null };
 
     /* @prompt-model-begin */
@@ -115,9 +354,17 @@ window.__ModuleLoader__.load({
       return snapshot.prompts.filter(function (item) {
         return item && typeof item.id === 'string' && typeof item.body === 'string';
       }).map(function (item) {
+        var title = typeof item.title === 'string' ? item.title : '';
+        /* Old versions stored a language-specific title sentinel in the data. The page
+           normalizes it on load, but the composer can read a legacy snapshot before
+           that save lands, so fold the two known legacy values here as well. */
+        if (title === '未命名提示词' || title === 'Untitled prompt') title = '';
         return {
           id: item.id,
-          title: typeof item.title === 'string' && item.title ? item.title : '未命名提示词',
+          /* An empty title stays empty: the data must never carry a language-specific
+             sentinel. untitled is the flag the UI uses to draw a localized placeholder. */
+          title: title,
+          untitled: !title,
           body: item.body,
           pinned: !!item.pinned,
           updatedAt: Number(item.updatedAt) || 0,
@@ -158,13 +405,9 @@ window.__ModuleLoader__.load({
     }
     /* @prompt-model-end */
 
-    function loadPrompts() {
+    function loadPrompts(options) {
       if (promptCache.inflight) return promptCache.inflight;
-      promptCache.inflight = hostFetch('GET').then(function (response) {
-        if (!response.ok) throw new Error('workspace ' + response.status);
-        return response.json();
-      }).then(function (data) {
-        if (!data || data.ok !== true) throw new Error('workspace unavailable');
+      promptCache.inflight = loadWorkspace(options).then(function (data) {
         promptCache.items = normalizePrompts(data.snapshot);
         promptCache.savedAt = Number(data.savedAt) || 0;
         return promptCache.items;
@@ -188,10 +431,20 @@ window.__ModuleLoader__.load({
       var panelRef = React.useRef(null);
       var listRef = React.useRef(null);
       var returnFocusRef = React.useRef(null);
+      var [, setLangTick] = React.useState(0);
 
-      var refresh = React.useCallback(function () {
+      /* A host language switch does not remount this component, and the template
+         function is live, so one render pass is all the translated text needs. */
+      React.useEffect(function () {
+        return onUiLang(function () { setLangTick(function (value) { return value + 1; }); });
+      }, []);
+
+      /* The composer popup always asks for a fresh copy (the desk page may have
+         edited a prompt since the cache was filled); the mount-time call rides
+         the cache so a plugin start-up prefetch is not wasted. */
+      var refresh = React.useCallback(function (force) {
         setStatus(function (prev) { return promptCache.items ? prev : 'loading'; });
-        loadPrompts().then(function (next) {
+        loadPrompts({ force: !!force }).then(function (next) {
           setItems(next);
           setStatus('ready');
           setActive(0);
@@ -238,7 +491,7 @@ window.__ModuleLoader__.load({
         returnFocusRef.current = document.activeElement;
         setOpen(true);
         setNotice('');
-        refresh();
+        refresh(true);
         window.requestAnimationFrame(function () {
           place();
           if (listRef.current) listRef.current.focus();
@@ -276,14 +529,14 @@ window.__ModuleLoader__.load({
         if (!inputActions || !item) return;
         var body = item.body;
         if (!body.trim()) {
-          setNotice('这条提示词还没有正文。');
+          setNotice(textFor(uiLang, 'prompt.emptyBody'));
           return;
         }
         var result = applyPrompt(inputActions, body);
         if (!result.ok) {
           setNotice(result.reason === 'empty'
-            ? '这条提示词还没有正文。'
-            : (result.reason === 'unavailable' ? '输入框还没准备好，稍后再试。' : '输入框正在发送，稍后再试。'));
+            ? textFor(uiLang, 'prompt.emptyBody')
+            : (result.reason === 'unavailable' ? textFor(uiLang, 'prompt.notReady') : textFor(uiLang, 'prompt.busy')));
           return;
         }
         close();
@@ -309,28 +562,28 @@ window.__ModuleLoader__.load({
         }
       }, [items, active, insert]);
 
-      var label = '提示词';
+      var label = textFor(uiLang, 'prompt.title');
       var body = null;
       if (status === 'loading') {
-        body = React.createElement('div', { className: 'cys-prompt-pop__hint' }, '正在读取提示词…');
+        body = React.createElement('div', { className: 'cys-prompt-pop__hint' }, textFor(uiLang, 'prompt.loading'));
       } else if (status === 'error') {
         body = React.createElement('div', { className: 'cys-prompt-pop__hint' },
-          '读取提示词失败，',
+          textFor(uiLang, 'prompt.error'),
           React.createElement('button', {
             type: 'button',
             className: 'cys-prompt-pop__link',
             onClick: function () { refresh(); },
-          }, '重试'));
+          }, textFor(uiLang, 'prompt.retry')));
       } else if (!items.length) {
         body = React.createElement('div', { className: 'cys-prompt-pop__hint' },
-          '还没有提示词。先在便签的「提示词」里写几条。');
+          textFor(uiLang, 'prompt.empty'));
       } else {
         body = React.createElement('ul', {
           className: 'cys-prompt-pop__list',
           ref: listRef,
           role: 'listbox',
           tabIndex: -1,
-          'aria-label': '提示词列表',
+          'aria-label': textFor(uiLang, 'prompt.listLabel'),
           onKeyDown: onListKeyDown,
         }, items.slice(0, 8).map(function (item, index) {
           return React.createElement('li', { key: item.id, role: 'none' },
@@ -345,8 +598,8 @@ window.__ModuleLoader__.load({
               onClick: function () { insert(item); },
             },
               React.createElement('span', { className: 'cys-prompt-pop__title' },
-                item.title,
-                item.pinned ? React.createElement('span', { className: 'cys-prompt-pop__pin', 'aria-label': '已置顶' }, '置顶') : null),
+                item.untitled ? textFor(uiLang, 'prompt.untitled') : item.title,
+                item.pinned ? React.createElement('span', { className: 'cys-prompt-pop__pin', 'aria-label': textFor(uiLang, 'prompt.pinnedLabel') }, textFor(uiLang, 'prompt.pin')) : null),
               React.createElement('span', { className: 'cys-prompt-pop__body' }, item.body)));
         }));
       }
@@ -355,22 +608,22 @@ window.__ModuleLoader__.load({
         className: 'cys-prompt-pop',
         ref: panelRef,
         role: 'dialog',
-        'aria-label': '提示词',
+        'aria-label': textFor(uiLang, 'prompt.title'),
         style: pos || { visibility: 'hidden' },
         onMouseDown: function (event) { event.preventDefault(); },
       },
         React.createElement('div', { className: 'cys-prompt-pop__head' },
-          React.createElement('span', null, items.length ? '提示词 · ' + items.length + ' 条' : '提示词'),
-          React.createElement('span', null, '↑↓ 选择 · Enter 填入 · Esc 关闭')),
+          React.createElement('span', null, items.length ? textFor(uiLang, 'prompt.count', { n: items.length }) : textFor(uiLang, 'prompt.title')),
+          React.createElement('span', null, textFor(uiLang, 'prompt.keys'))),
         notice ? React.createElement('div', { className: 'cys-prompt-pop__hint' }, notice) : null,
         body,
         React.createElement('div', { className: 'cys-prompt-pop__foot' },
-          React.createElement('span', { style: { color: 'var(--dsw-alias-label-tertiary)', fontSize: '12px' } }, '只填入草稿，不会发送'),
+          React.createElement('span', { style: { color: 'var(--dsw-alias-label-tertiary)', fontSize: '12px' } }, textFor(uiLang, 'prompt.draftOnly')),
           React.createElement('button', {
             type: 'button',
             className: 'cys-prompt-pop__link',
             onClick: function () { close(); openDesk('prompts'); },
-          }, '在便签里管理 ↗'))) : null;
+          }, textFor(uiLang, 'prompt.manage')))) : null;
 
       return React.createElement('span', { className: 'cys-prompt-root', ref: rootRef },
         React.createElement('button', {
@@ -378,7 +631,7 @@ window.__ModuleLoader__.load({
           className: 'cys-prompt-btn',
           'aria-haspopup': 'dialog',
           'aria-expanded': open ? 'true' : 'false',
-          title: '把常用提示词填进输入框',
+          title: textFor(uiLang, 'prompt.buttonTitle'),
           onClick: openPanel,
           onMouseDown: function (event) { event.preventDefault(); },
           dangerouslySetInnerHTML: { __html: PROMPT_ICON + '<span>' + label + '</span>' },
@@ -417,7 +670,9 @@ window.__ModuleLoader__.load({
       var statusRef = React.useRef('loading');
       var stateRef = React.useRef(null);
       var [status, setStatus] = React.useState('loading');
+      var [maskVisible, setMaskVisible] = React.useState(false);
       var [hostError, setHostError] = React.useState(false);
+      var [, setLangTick] = React.useState(0);
 
       React.useEffect(function () {
         var bridge = {
@@ -429,6 +684,8 @@ window.__ModuleLoader__.load({
           pending: null,
           lastBody: '',
           attempts: 0,
+          maskTimer: 0,
+          lang: '',
           onMessage: null,
         };
         stateRef.current = bridge;
@@ -439,8 +696,38 @@ window.__ModuleLoader__.load({
         var host = hostRef.current;
         if (!host) return;
 
+        /* The mask is an apology for a slow paint, not a splash screen. The frame
+           is created only after the snapshot arrives and it paints the real page,
+           so covering that window from the first frame is what painted a band of
+           shell colour on every entry. Show it only when loading really drags. */
+        bridge.maskTimer = setTimeout(function () {
+          bridge.maskTimer = 0;
+          if (bridge.disposed || statusRef.current !== 'loading') return;
+          setMaskVisible(true);
+        }, 300);
+
+        /* The resolved language changed: swap the desk page variant (or just the
+           chrome text when prefs.lang pinned the desk to its current language).
+           Ask the page for a final snapshot first: the frame and its document are
+           thrown away, so whatever sits inside the page's save debounce goes with
+           it. */
+        var stopLang = onUiLang(function () {
+          setLangTick(function (value) { return value + 1; });
+          if (!bridge.iframe) return;
+          if (uiLang === bridge.lang) return;
+          requestFinalSnapshot(200).then(function () {
+            if (bridge.disposed) return;
+            createFrame(latestSnapshot);
+          });
+        });
+
         function setPhase(next) {
           statusRef.current = next;
+          if (next !== 'loading' && bridge.maskTimer) {
+            clearTimeout(bridge.maskTimer);
+            bridge.maskTimer = 0;
+            setMaskVisible(false);
+          }
           setStatus(next);
         }
 
@@ -464,6 +751,7 @@ window.__ModuleLoader__.load({
             if (!response.ok) throw new Error('workspace write failed: ' + response.status);
             bridge.attempts = 0;
             showHostError(false);
+            invalidateWorkspace();
           }).catch(function () {
             showHostError(true);
             bridge.attempts += 1;
@@ -474,13 +762,19 @@ window.__ModuleLoader__.load({
         }
 
         function queueSave(snapshot) {
-          if (!bridge.hostMode || !snapshot) return;
+          if (!snapshot) return;
+          /* Whatever the page last told us is the newest state any surface can
+             render from, the composer entry included. */
+          publishSnapshot(snapshot);
+          if (!bridge.hostMode) return;
           bridge.pending = snapshot;
           if (bridge.timer) return;
           bridge.timer = setTimeout(function () { flush(false); }, 180);
         }
 
         function createFrame(snapshot) {
+          bridge.lang = resolveLang(snapshot);
+          publishSnapshot(snapshot);
           if (bridge.iframe) {
             bridge.iframe.remove();
             bridge.iframe = null;
@@ -488,7 +782,7 @@ window.__ModuleLoader__.load({
           setPhase('loading');
           var iframe = document.createElement('iframe');
           iframe.className = 'cys-frame';
-          iframe.title = '便签';
+          iframe.title = textFor(uiLang, 'panel.frameTitle');
           iframe.setAttribute('allow', 'clipboard-read; clipboard-write');
           iframe.addEventListener('load', function () {
             setTimeout(function () {
@@ -509,11 +803,13 @@ window.__ModuleLoader__.load({
               bridge.lastBody = '';
               hostFetch('DELETE').then(function (response) {
                 if (!response.ok) showHostError(true);
+                else invalidateWorkspace();
               }).catch(function () { showHostError(true); });
             } else if (snapshot) {
               bridge.lastBody = JSON.stringify({ snapshot: snapshot });
               hostFetch('POST', { snapshot: snapshot }).then(function (response) {
                 if (!response.ok) showHostError(true);
+                else invalidateWorkspace();
               }).catch(function () { showHostError(true); });
             }
           }
@@ -528,6 +824,7 @@ window.__ModuleLoader__.load({
           var kind = data.type.slice(PREFIX.length);
           if (kind === 'ready') {
             setPhase('ready');
+            if (data.snapshot) publishSnapshot(data.snapshot);
             if (bridge.hostMode && !bridge.hadSnapshot && data.snapshot) queueSave(data.snapshot);
             /* A deep link may have been requested before this frame existed. */
             if (pendingApp) deliverPendingApp();
@@ -557,7 +854,9 @@ window.__ModuleLoader__.load({
         function requestFinalSnapshot(timeoutMs) {
           return new Promise(function (resolve) {
             var frame = bridge.iframe;
-            if (!bridge.hostMode || !frame || !frame.contentWindow) {
+            /* Even without a host (degraded mode) the page in the frame owns the newest
+               edits; a language switch rebuilds that frame, so ask it for a snapshot first. */
+            if (!frame || !frame.contentWindow) {
               resolve(false);
               return;
             }
@@ -593,11 +892,9 @@ window.__ModuleLoader__.load({
           createFrame(host.snapshot || null);
         }
 
-        hostFetch('GET').then(function (response) {
-          if (!response.ok) throw new Error('host workspace unavailable: ' + response.status);
-          return response.json();
-        }).then(function (data) {
-          if (!data || data.ok !== true) throw new Error('host workspace unavailable');
+        /* Served from the start-up prefetch when it is already here: that is what
+           lets the frame appear as soon as the panel paints. */
+        loadWorkspace().then(function (data) {
           finish({ ok: true, snapshot: data.snapshot || null });
         }).catch(function () {
           finish({ ok: false, snapshot: null });
@@ -605,7 +902,9 @@ window.__ModuleLoader__.load({
 
         return function () {
           bridge.disposed = true;
+          if (stopLang) stopLang();
           if (bridge.timer) clearTimeout(bridge.timer);
+          if (bridge.maskTimer) clearTimeout(bridge.maskTimer);
           window.removeEventListener('message', onMessage);
           /* 先请页面立刻存一次（最多等 200ms），再 flush，最后才拆 iframe。
              顺序不能反：iframe 一拆，页面里的防抖保存就再也没机会送出。 */
@@ -626,12 +925,12 @@ window.__ModuleLoader__.load({
       }, []);
 
       return React.createElement('div', { className: 'cys-panel', ref: hostRef },
-        status === 'loading' ? React.createElement('div', { className: 'cys-loading' },
+        status === 'loading' && maskVisible ? React.createElement('div', { className: 'cys-loading' },
           React.createElement('span', { className: 'cys-loading__mark', 'aria-hidden': 'true' }, '屿'),
-          React.createElement('span', null, '正在打开纸屿…'),
-          React.createElement('span', { className: 'cys-loading__sub' }, '内容会自动保存')
+          React.createElement('span', null, textFor(uiLang, 'panel.opening')),
+          React.createElement('span', { className: 'cys-loading__sub' }, textFor(uiLang, 'panel.autosave'))
         ) : null,
-        hostError ? React.createElement('span', { className: 'cys-host-note' }, '本地缓存 · 同步失败') : null
+        hostError ? React.createElement('span', { className: 'cys-host-note' }, textFor(uiLang, 'panel.hostNote')) : null
       );
     }
 
@@ -646,6 +945,22 @@ window.__ModuleLoader__.load({
       inject: ['slots', 'locale'],
       apply(ctx) {
         var t = ctx.locale.bind(NS);
+        /* The host locale is the fallback for every desk whose prefs.lang is
+           "system"; keep it current so a switch can rebuild the desk page with
+           the other variant instead of waiting for the next open. */
+        var initialLang = readHostLang(ctx);
+        if (initialLang) localeHost = initialLang;
+        refreshUiLang();
+        ctx.effect(function () {
+          if (!ctx.locale || typeof ctx.locale.subscribe !== 'function') return;
+          return ctx.locale.subscribe(function () { publishHostLang(readHostLang(ctx)); });
+        }, NS + ': host locale');
+        /* Prefetch the workspace once at start-up. The panel then paints from
+           the cache instead of waiting for its own round trip. A failure is
+           not fatal: the panel retries through loadWorkspace() when opened. */
+        ctx.effect(function () {
+          loadWorkspace().catch(function () { /* the panel asks again on open */ });
+        }, NS + ': workspace prefetch');
         ctx.inject(['layout'], function (scope) {
           var layout = scope.layout;
           if (layout && typeof layout.selectPanel === 'function') {
@@ -653,10 +968,7 @@ window.__ModuleLoader__.load({
           }
         });
         ctx.effect(function () {
-          return ctx.locale.register(NS, {
-            zh: { panel: '便签' },
-            en: { panel: 'Sticky' },
-          });
+          return ctx.locale.register(NS, DICTIONARY);
         }, NS + ': dictionaries');
         ctx.effect(function () {
           return ctx.slots.inject('sidebar.panellist', function () {

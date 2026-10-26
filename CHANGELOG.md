@@ -1,5 +1,70 @@
 # Changelog
 
+## [0.4.1] - 2026-10-26
+
+三处显示问题 + 中英双语（同一版本发布）。
+
+### 1. 进入便签先闪一下米黄
+根因：页面在 0.4.0 已换成中性色，但挂载页面的**外壳** CSS 还留着上一版的暖色
+（.cys-panel #f1e7d4 / .cys-frame #f2ead9 / .cys-loading #f4ecdd，按钮与失败提示同族）。
+面板一挂载就铺满这层色，直到页面 postMessage ready 才消失；iframe 还要等
+GET /api/control-your-schedule/workspace 回来才创建，闪屏窗口更长。
+修法：
+- 外壳不再画任何插件自己的颜色：面板与 iframe 透明，加载层/错误层/host-note/按钮
+  改用宿主 --dsw-alias-*；外壳里零暖色常量。
+- 加载遮罩延迟 300ms 才出现（快路径根本不闪），ready 到达即撤销。
+- 启动即预取工作区快照，面板挂载不再付第二次 GET；写入落地后缓存失效。
+- embed() 把首帧主题写进页面的 <html data-theme>（快照 prefs.theme 为浅/深时用它，
+  否则读宿主 body[data-ds-dark-theme]），深色用户也不会先看到一帧白。
+门禁：smoke/shell_theme_test.mjs —— 12 条断言 + 13 个内存变异自检（正反两侧）。
+
+### 2. macOS 顶部 48px 米黄带
+根因：iframe 为 macOS 红绿灯让出 48px（DSH 的 --dsh-frame-top-clearance），
+但让出的那一块没有任何东西绘制，露出外壳的 #f1e7d4。
+（0.3.x 修过的是另一个 bug：让位后高度没扣减，iframe 溢出把应用坞裁掉。）
+修法：
+- iframe 回到 inset:0 全幅，不再让位。
+- 宿主持有 --dsh-frame-top-clearance（仅 darwin，取计算值，不写死 48px），
+  以 --cys-top-clearance 写进页面自己的 <html>。
+- 页面顶栏向上多长同样高度、padding-top 让出同样高度：内容行位置不变，
+  顶部那一带与顶栏是同一块 CSS（渐变、纸纹、深色覆盖），没有接缝。
+门禁：page_e2e 增 10 条几何断言（0/37/48px、宽窄两档、elementFromPoint 命中顶栏、
+无横向溢出、清空变量回到 56px）。
+
+### 3. GitHub README 渲染错乱
+根因：独立的 <img ...> 行后面没有空行时，GitHub 把它当作 HTML block 起始，
+一直吞到下一个空行；期间的 `- **…**` 按原文输出（用 GitHub 实际渲染出的 HTML 证实，
+不是字体问题）。
+修法：中英两份 README 的每张截图前后补空行（只动空白，不改文案）；
+新增 smoke/readme_lint.py（独立 img 行前后空行 + 顶部横幅 + 本地图片存在，含正反两侧自检）。
+
+### 4. 中英双语
+- 语言来源：默认跟随 DSH「设置 → 通用 → 语言」；「纸屿设置 → 外观 → 语言」可单独覆盖
+  （跟随 DSH / 中文 / English），只在纸屿生效。
+- 页面仍只有一份中文源；构建期按 assets/i18n/en.json 生成英文页，client.js 同时内嵌
+  中英两页（构建产物，禁手改，--check 逐字节）。带参数/复数的句子走 F() + en.templates.json。
+- 不翻译用户数据：便签、纸页、待办、提示词正文原样保留；示例内容按首次创建时的语言生成。
+- 切换语言时先要一份即时快照再重建 iframe；窗口与每个应用正在看的内容都会恢复。
+- 标识保留：纸屿 / Paper Isle；红色印章「屿」作为装饰字保留。
+- 门禁：smoke/i18n_check.py（去掉注释后英文页零未翻译 CJK，白名单仅「屿」；
+  词典无空值/无多余键；--self-test 喂删键副本必须红）；page_e2e 中英两页都跑。
+
+### 5. 发布前审查与视觉验收修正
+- **未命名提示词不再写进数据**：旧版把「未命名提示词」当标题写进过快照，英文构建还写出过
+  「Untitled prompt」；现在无标题就是空串，显示用本地化占位，旧值读入时归一为空。
+  这样中文快照在英文界面里不会再露出中文。composer 侧同一口径（空标题 → 未命名）。
+- **跳过不算通过**：page_e2e 没有可用浏览器时改为 exit 3（SKIP），不再 exit 0 被记成 PASS。
+- **外壳暖色门禁升级**：从「8 个已知色值」改为解析全部 CSS 规则；background / border / color
+  只允许 transparent / var(--dsw-*) / inherit / currentColor / none / 0，hex/rgb(a)/命名色、
+  第二条规则、var() fallback 里的暖色都会红。
+- **词典死键**：i18n_check 改为真实 lookup 口径，死键判红；en.json 清掉 59 条 F() 化后的
+  拼接残留（767 → 708 键）。
+- **icon 纳入构建校验**：build_page.py --check 同时逐字节校验 icon.svg。
+- **英文文案与版式**：示例便签压到两行（不再裁掉末行）；待保存 → Unsaved；导览 Tap → Click；
+  Stickies → Sticky notes；窗口标题在 kicker 与标题同词时只显示一次（中英同一规则）。
+- **深色可读性**：便签「示例」小标签 1.58:1 → 4.39:1（中英同修，e2e 加 ≥3 断言）。
+- 验收截图改为先关闭新手导览再拍（0.46 遮罩会把深色页压暗），并补中文/英文深色便签页。
+
 ## [0.4.0] - 2026-10-24
 
 五条用户反馈落地：状态排版、深色可读性、命令面板并入设置、应用坞可排序、配色与 DSH 对齐。
