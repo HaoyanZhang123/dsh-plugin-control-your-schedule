@@ -5,16 +5,16 @@
 > Sticky notes, paper pages, calendar tasks, drawings and a reusable prompt library — all inside the DeepSeek Harness sidebar.
 > A paper-style personal desk: your data stays on this machine, nothing is uploaded.
 >
-> panel plugin v0.4.3
+> panel plugin v0.4.4
 
 [![ci](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/actions/workflows/ci.yml/badge.svg)](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/HaoyanZhang123/dsh-plugin-control-your-schedule)](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/releases)
 [![npm](https://img.shields.io/npm/v/dsh-plugin-control-your-schedule)](https://www.npmjs.com/package/dsh-plugin-control-your-schedule)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-Version **0.4.3** · Built against DSH **0.2.1-rc.2** · Tested on Windows; macOS / Linux are covered by the CI build and static gates | English / 中文 UI | 语言：[中文](README.md)
+Version **0.4.4** · Built against DSH **0.2.1-rc.2** · Tested on Windows; macOS / Linux are covered by the CI build and static gates | English / 中文 UI | 语言：[中文](README.md)
 
-<img width="1400" alt="纸屿：一张纸面桌面 | Paper Isle: a paper desk" src="assets/screenshot-home.webp">
+<img width="1400" alt="纸屿：一张纸面桌面 | Paper Isle: a paper desk" src="assets/screenshot-home-en.webp">
 
 ## Overview
 
@@ -26,35 +26,35 @@ It is deliberately quiet: no floating toasts, no empty status rows, and no netwo
 
 - **Sticky notes**: one-line memos that save as you type. **The whole card is draggable** (except the text area, scrollbar, colour dots and delete key), and the card you touched last always stays on top. The body uses the bundled **LXGW WenKai** handwriting face; you can switch to a system running script or a serif face in Settings.
 
-<img width="1400" alt="Sticky notes" src="assets/screenshot-stickies.webp">
+<img width="1400" alt="Sticky notes" src="assets/screenshot-stickies-en.webp">
 
 - **Trash for stickies**: deleting a note does not pop an undo toast; the card goes to the trash at the top of the sticky window and stays for **7 days**, ready to restore. Empty cards are discarded immediately.
 - **Paper pages**: long-form writing with a searchable list on the left and autosave. A new page keeps its title as a placeholder, so an untouched page never leaves a stray untitled line behind.
 
-<img width="1400" alt="Paper pages" src="assets/screenshot-notes.webp">
+<img width="1400" alt="Paper pages" src="assets/screenshot-notes-en.webp">
 
 - **Calendar & tasks**: every task carries one of **four urgency levels** (urgent and important / important not urgent / urgent not important / neither), switchable **right on the task row**: tap the dot for the four levels, tap the chip beside it to flip between “today only” and “every day”. The detail dialog is optional.
 - **Calendar dots**: unfinished tasks sit above the day number, coloured by level; **finished ones sink to the bottom of the cell and turn grey**, and never swap places.
 - **Repeating tasks**: choose “every day” and each day produces exactly one current instance from the anchor date; checking in today grows a fresh instance tomorrow. Only days actually checked in keep a grey dot — future days are never pre-filled. When the last instance is checked, “this task is done” appears; collapse it and no new instances grow, with the option to restore, showing “checked in N days”.
 
-<img width="1400" alt="Calendar and tasks" src="assets/screenshot-calendar.webp">
+<img width="1400" alt="Calendar and tasks" src="assets/screenshot-calendar-en.webp">
 
 - **Prompt library**: the fifth app on the dock. Search and pin on the left; write a title and a multi-line body on the right, saved automatically. Body limit 20 000 characters, up to 300 entries, with duplicate/pin/delete (delete asks first).
 - **Use prompts from the composer**: every conversation input has a small “Prompts” button on the left of its tool row. It opens a list above the composer — arrow keys to move, Enter to fill, Esc to close. **It only fills the draft**: an empty draft takes the whole prompt, a non-empty one gets it at the caret (undoable in one step); while the message is sending it asks you to wait. It never writes a system prompt and never sends anything. “Manage in Paper Isle ↗” jumps to the plugin with the prompt window open.
 
-<img width="1400" alt="Prompt library" src="assets/screenshot-prompts.webp">
+<img width="1400" alt="Prompt library" src="assets/screenshot-prompts-en.webp">
 
 - **A quiet interface**: no floating toasts; status rows with nothing to say do not take up space.
 - **Drawing paper**: pen and eraser, undo, export to PNG; the shelf pages left and right and can delete a whole sheet.
 
-<img width="1400" alt="Drawing paper" src="assets/screenshot-draw.webp">
+<img width="1400" alt="Drawing paper" src="assets/screenshot-draw-en.webp">
 
 - **Fixed right rail**: today's card always sits on the right; windows live in the work area and never cover it.
 - **Dock**: the single entry point for every app. Tap an icon to open or tuck away its window; **icons can be dragged into a new order** (`Alt + ←/→` moves the focused icon too, the order is remembered, and Settings → Appearance → “Reset” restores it). The house button on the right tucks every window away, and brings them back when tapped again.
 - **Tidy the desk**: tapping empty desk space also tucks every window into the dock (windows are kept, tap an icon to bring one back).
 - **Commands & Apps**: the first section in Settings, one keystroke away with `Ctrl/Cmd + K`. Search apps, pages or actions, `↑↓` to move, `Enter` to run; once something else opens, Settings tucks itself away.
 
-<img width="1400" alt="Commands and apps" src="assets/screenshot-commands-dark.webp">
+<img width="1400" alt="Commands and apps" src="assets/screenshot-commands-dark-en.webp">
 
 - **Plain windows**: no minimise/maximise/close buttons — drag the title bar to move and the bottom-right corner to resize. Close the current window with `Esc`, `Ctrl/Cmd + Alt + W`, or Settings → Commands & Apps → “Close current window”.
 - **First-run tour**: a six-step tour plays on first open; replay it from Settings → Shortcuts → “Play again”.
@@ -63,7 +63,7 @@ It is deliberately quiet: no floating toasts, no empty status rows, and no netwo
 - **Dark mode, reworked**: paper grain is removed in dark mode, and desk, windows and panels sit on a real brightness ladder; sticky cards keep their colours but a step lighter instead of turning muddy.
 - **Paper grain can be turned off**: Settings → Appearance → “Paper grain”. Off is a flat surface; on adds a very fine paper texture.
 
-<img width="1400" alt="Dark mode" src="assets/screenshot-calendar-dark.webp">
+<img width="1400" alt="Dark mode" src="assets/screenshot-calendar-dark-en.webp">
 
 - **Upgrades never lose data**: the workspace is versioned with a migration ladder, v1 → v2 → v3 (v3 only adds the prompt library). Before writing, the host saves the previous version as `workspace.v<old>.backup.json` and keeps `workspace.prev.json` for every write. A workspace that fails validation opens **read-only** with the original kept aside — an example desk never overwrites it.
 - **Switching away does not lose state**: come back from another DSH view and the windows, the selected page, the calendar day, the sticky scroll position, the open drawing and the Settings section are all where you left them.
@@ -78,7 +78,7 @@ DSH → Plugins → Add plugin, then enter:
 dsh-plugin-control-your-schedule
 ```
 
-A version can be pinned too: `dsh-plugin-control-your-schedule@0.4.3`.
+A version can be pinned too: `dsh-plugin-control-your-schedule@0.4.4`.
 
 ### GitHub (alternative, without npm)
 

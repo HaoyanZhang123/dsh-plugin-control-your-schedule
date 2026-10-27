@@ -1289,7 +1289,8 @@ await send('Runtime.evaluate', { expression: "document.querySelector('[data-test
 await send('Input.insertText', { text: '打字标题' });
 await sleep(500);
 await send('Input.insertText', { text: '续写' });
-await sleep(250);
+// 自动保存是 180ms 防抖：250ms 在慢机器上会读到还没 flush 的旧值（实测偶发）。
+await sleep(520);
 const typedTitle = await run(function () {
   var t = document.querySelector('[data-testid="prompt-title"]');
   var first = window.PaperOS.data.listPrompts('')[0];

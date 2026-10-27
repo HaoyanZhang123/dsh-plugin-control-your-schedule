@@ -5734,7 +5734,8 @@ html[data-theme="dark"] .cal-day__dot.cal-day__dot--done {
   place-items: center;
   border: 1px solid var(--ink);
   border-radius: 2px;
-  color: #f7f7f7;
+  /* 深色下 --ink 是浅色：图标必须跟着纸色走，否则白底白图标看不见。 */
+  color: var(--paper);
   background: var(--ink);
 }
 
