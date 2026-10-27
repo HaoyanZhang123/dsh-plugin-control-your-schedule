@@ -5,14 +5,14 @@
 > Sticky notes, paper pages, calendar tasks, drawings and a reusable prompt library — all inside the DeepSeek Harness sidebar.
 > A paper-style personal desk: your data stays on this machine, nothing is uploaded.
 >
-> panel plugin v0.4.2
+> panel plugin v0.4.3
 
 [![ci](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/actions/workflows/ci.yml/badge.svg)](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/HaoyanZhang123/dsh-plugin-control-your-schedule)](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/releases)
 [![npm](https://img.shields.io/npm/v/dsh-plugin-control-your-schedule)](https://www.npmjs.com/package/dsh-plugin-control-your-schedule)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-Version **0.4.2** · Built against DSH **0.2.1-rc.2** · Tested on Windows; macOS / Linux are covered by the CI build and static gates | English / 中文 UI | 语言：[中文](README.md)
+Version **0.4.3** · Built against DSH **0.2.1-rc.2** · Tested on Windows; macOS / Linux are covered by the CI build and static gates | English / 中文 UI | 语言：[中文](README.md)
 
 <img width="1400" alt="纸屿：一张纸面桌面 | Paper Isle: a paper desk" src="assets/screenshot-home.webp">
 
@@ -78,7 +78,7 @@ DSH → Plugins → Add plugin, then enter:
 dsh-plugin-control-your-schedule
 ```
 
-A version can be pinned too: `dsh-plugin-control-your-schedule@0.4.2`.
+A version can be pinned too: `dsh-plugin-control-your-schedule@0.4.3`.
 
 ### GitHub (alternative, without npm)
 

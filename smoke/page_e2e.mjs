@@ -1610,9 +1610,44 @@ else bad('787x627 prompt list keeps three full rows in two columns', JSON.string
 if (shape787 && shape787.overflowX === 0) ok('787x627 has no horizontal overflow', JSON.stringify(shape787));
 else bad('787x627 has no horizontal overflow', JSON.stringify(shape787));
 
-// --- 真窄视口仍然整屏：500x900 必须保持手机形态，且 bounds 不被拉伸 ---
-await send('Emulation.setDeviceMetricsOverride', { width: 500, height: 900, deviceScaleFactor: 3, mobile: false });
-await sleep(460);
+// --- 300% 缩放的真实面板（约 408x489）：鼠标下是普通窗口，且内容可滚不许被裁 ---
+await send('Emulation.setDeviceMetricsOverride', { width: 408, height: 489, deviceScaleFactor: 3, mobile: false });
+await sleep(460);await run(function () {
+  var P = window.PaperOS;
+  P.wm.open('notes');
+  return P.wm.getWindows().map(function (w) { return w.appId; });
+});
+await sleep(520);
+const tiny408 = await run(function () {
+  var root = document.documentElement;
+  var win = document.querySelector('.window.is-focused');
+  if (!win) return { error: 'no focused window' };
+  var rect = win.getBoundingClientRect();
+  var app = win.querySelector('.window__body > *');
+  var grip = win.querySelector('.win-resize--se');
+  return {
+    isSheet: window.PaperOS.wm.isSheet(),
+    width: Math.round(rect.width),
+    left: Math.round(rect.left),
+    fullBleed: Math.abs(rect.width - root.clientWidth) <= 1,
+    short: win.classList.contains('is-short'),
+    scrollable: app ? app.scrollHeight > app.clientHeight + 1 : null,
+    overflowY: app ? getComputedStyle(app).overflowY : null,
+    resize: grip ? getComputedStyle(grip).display : 'missing',
+    overflowX: Math.round(root.scrollWidth - root.clientWidth)
+  };
+});
+if (tiny408 && tiny408.isSheet === false && tiny408.fullBleed === false && tiny408.left >= 8) ok('408x489 with a mouse stays a real window', JSON.stringify(tiny408));
+else bad('408x489 with a mouse stays a real window', JSON.stringify(tiny408));
+if (tiny408 && tiny408.short === true && tiny408.scrollable === true && tiny408.overflowY === 'auto') ok('a short window can scroll instead of clipping', JSON.stringify(tiny408));
+else bad('a short window can scroll instead of clipping', JSON.stringify(tiny408));
+if (tiny408 && tiny408.resize === 'block' && tiny408.overflowX === 0) ok('the short window stays resizable without horizontal overflow', JSON.stringify(tiny408));
+else bad('the short window stays resizable without horizontal overflow', JSON.stringify(tiny408));
+
+// --- 真触屏仍然整屏：开触摸模拟把 pointer: coarse 翻真，500x900 必须保持手机形态 ---
+await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+await send('Emulation.setDeviceMetricsOverride', { width: 500, height: 900, deviceScaleFactor: 3, mobile: true });
+await sleep(560);
 const sheet500 = await run(function () {
   var P = window.PaperOS;
   var win = document.querySelector('.window.is-focused');
@@ -1627,13 +1662,16 @@ const sheet500 = await run(function () {
     bounds: open.length ? open[0].bounds : null
   };
 });
-if (sheet500 && sheet500.isSheet === true && sheet500.fullBleed === true) ok('500x900 stays the phone sheet', JSON.stringify(sheet500));
-else bad('500x900 stays the phone sheet', JSON.stringify(sheet500));
+if (sheet500 && sheet500.isSheet === true && sheet500.fullBleed === true) ok('500x900 on a touch pointer still uses the phone sheet', JSON.stringify(sheet500));
+else bad('500x900 on a touch pointer still uses the phone sheet', JSON.stringify(sheet500));
 if (sheet500 && sheet500.resize === 'none') ok('the phone sheet hides the resize handles', JSON.stringify(sheet500));
 else bad('the phone sheet hides the resize handles', JSON.stringify(sheet500));
 if (sheet500 && sheet500.bounds && sheet500.bounds.w <= 500) ok('window bounds stay honest inside the sheet', JSON.stringify(sheet500.bounds));
 else bad('window bounds stay honest inside the sheet', JSON.stringify(sheet500.bounds));
-
+await send('Emulation.setTouchEmulationEnabled', { enabled: false });
+await sleep(300);
+await ev('window.PaperOS.storage.flush()');
+await sleep(200);
 // 回到桌面视口，后续断言依赖 1400x900
 await send('Emulation.setDeviceMetricsOverride', { width: 1400, height: 900, deviceScaleFactor: 1, mobile: false });
 await sleep(460);

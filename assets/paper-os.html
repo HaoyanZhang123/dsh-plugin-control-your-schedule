@@ -3163,7 +3163,7 @@ html[data-theme="dark"] .desk-notice__mark {
   display: none;
 }
 
-@media (max-width: 600px), (pointer: coarse) and (max-width: 820px) {
+@media (pointer: coarse) {
   .handheld-card {
     position: absolute;
     z-index: 6;
@@ -3602,6 +3602,56 @@ html[data-theme="dark"] .desk-notice__mark {
   height: 100%;
 }
 
+/* 矮窗口（例如 300% 缩放下面板只有 ~490px 高）：整块应用可滚动，别把内容裁掉。
+   由 applyBounds 按窗口高度给 .window 挂 is-short。 */
+.window.is-short .window__body > * {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* 矮窗口下各应用的主面板给一个下限，让整块真的溢出、可以滚，而不是把编辑区压扁。
+   只在小高度生效，正常尺寸完全不受影响。 */
+.window.is-short .notes-editor {
+  min-height: 320px;
+}
+
+/* 矮窗口里先把「搜索/计数」这类非必需行收起来，把高度让给正文；列表内部滚动。 */
+.window.is-short .notes-rail__head {
+  padding: 9px 13px 7px;
+}
+
+.window.is-short .notes-rail__head .search-box,
+.window.is-short .notes-rail__status {
+  display: none;
+}
+
+.window.is-short .notes-list {
+  max-height: 104px;
+  overflow-y: auto;
+}
+
+.window.is-short .prompts-rail__head .search-box,
+.window.is-short .prompts-rail__status {
+  display: none;
+}
+
+.window.is-short .prompts-main {
+  overflow-y: auto;
+}
+
+.window.is-short .prompts-card {
+  min-height: 0;
+}
+
+.window.is-short .prompts-body-input {
+  min-height: 72px;
+}
+
+.window.is-short .prompts-main__foot {
+  display: none;
+}
+
+
 .window__load-error {
   display: flex;
   height: 100%;
@@ -3728,7 +3778,7 @@ body.is-window-resizing * {
 
 /* 整屏 sheet：只在真窄视口或触屏窄面板出现（判据与 JS 的 SHEET_QUERY 逐字一致） */
 
-@media (max-width: 600px), (pointer: coarse) and (max-width: 820px) {
+@media (pointer: coarse) {
   .window {
     top: 0 !important;
     left: 0 !important;
@@ -11638,7 +11688,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
   function layerEl() { return document.getElementById('windows-layer'); }
   /* 整屏 sheet 的判据：真窄视口，或触屏且不宽。
      这段字符串必须与 CSS 里两处 @media 逐字一致（门禁会数它在页面里出现 3 次）。 */
-  var SHEET_QUERY = '(max-width: 600px), (pointer: coarse) and (max-width: 820px)';
+  var SHEET_QUERY = '(pointer: coarse)';
   function isSheet() { return !!(window.matchMedia && window.matchMedia(SHEET_QUERY).matches); }
 
   function workArea() {
@@ -11710,6 +11760,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     win.el.style.top = bounds.y + 'px';
     win.el.style.width = bounds.w + 'px';
     win.el.style.height = bounds.h + 'px';
+    /* 窗口矮到装不下应用时改成可滚动，而不是把底部内容裁掉。 */
+    win.el.classList.toggle('is-short', bounds.h <= 420);
   }
 
   /* 每个应用第一次打开都铺满工作区：同一矩形、不再按各自尺寸错开。

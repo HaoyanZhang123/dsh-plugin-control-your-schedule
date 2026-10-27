@@ -166,13 +166,24 @@ def main() -> int:
     else:
         bad("app registry", "found: %r" % (app_ids,))
 
-    # --- 整屏判据只有一份，且 CSS 与 JS 逐字一致 ---
-    SHEET_QUERY = "(max-width: 600px), (pointer: coarse) and (max-width: 820px)"
-    sheet_count = page.count(SHEET_QUERY)
-    if sheet_count == 3:
-        ok("sheet query appears exactly three times", "1 JS + 2 CSS")
+    # --- 整屏判据只有一个：能力查询；鼠标永不整屏 ---
+    # 0.4.2 之前用 max-width 判断整屏，300% 缩放下的桌面面板会被当成手机。
+    # 现在只看 pointer: coarse；尺寸只影响组件内部排版（容器查询 / is-short）。
+    media_count = page.count("@media (pointer: coarse)")
+    if ("var SHEET_QUERY = '(pointer: coarse)';" in page
+            and media_count >= 2
+            and "max-width: 600px" not in page):
+        ok("sheet predicate is capability-only", "JS constant + %d CSS media" % media_count)
     else:
-        bad("sheet query appears exactly three times", "found %d (expected 3)" % sheet_count)
+        bad("sheet predicate is capability-only",
+            "constant/media mismatch (media=%d, size-rule=%s)"
+            % (media_count, "max-width: 600px" in page))
+
+    # --- 矮窗口的可滚动兜底（300% 下面板只有 ~340px 高） ---
+    if ".window.is-short .window__body > *" in page and "is-short', bounds.h <= 420" in page:
+        ok("short windows get a scroll fallback", "is-short class + CSS")
+    else:
+        bad("short windows get a scroll fallback", "class toggling or CSS missing")
     if "function isSheet()" in page and "function isMobile()" not in page:
         ok("the sheet predicate is named isSheet", "no isMobile left in the page")
     else:
