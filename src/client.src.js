@@ -585,7 +585,7 @@ window.__ModuleLoader__.load({
           tabIndex: -1,
           'aria-label': textFor(uiLang, 'prompt.listLabel'),
           onKeyDown: onListKeyDown,
-        }, items.slice(0, 8).map(function (item, index) {
+        }, items.map(function (item, index) {
           return React.createElement('li', { key: item.id, role: 'none' },
             React.createElement('button', {
               type: 'button',

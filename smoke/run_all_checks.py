@@ -89,7 +89,10 @@ def main() -> int:
         "notes rail saved label": "已保存到纸屿",
         "day card overflow copy": "件 · 翻开日历",
         "sticky delete undo toast": "便签已经揭下来了",
-        "settings header section list": "外观 · 数据 · 快捷键 · 关于",
+        "shortcut table": "P.shortcuts = [",
+        "shortcut grid css": ".shortcut-grid",
+        "shortcut keys css": ".shortcut-keys",
+        "legacy settings tab id": 'data-section="shortcuts"',
         "hardcoded page version": "P.version = '1.",
         "standalone command palette overlay": "palette-layer",
         "palette top-bar button": 'id="palette-btn"',
@@ -145,6 +148,11 @@ def main() -> int:
         "first open fills work area": "function defaultBounds(app)",
         "drawing paging": "function stepGallery(direction)",
         "drawing delete": "function confirmDeleteDrawing()",
+        "tutorial tab": 'data-section="tutorial"',
+        "tutorial panel": 'data-section-panel="tutorial"',
+        "prompt width sync": "function syncPromptBox()",
+        "prompt snug class": ".prompts-app.is-snug",
+        "prompt stacked class": ".prompts-app.is-stacked",
     }
     for label, needle in expected.items():
         if needle in page:
@@ -157,6 +165,25 @@ def main() -> int:
         ok("app registry has exactly 5 dock apps")
     else:
         bad("app registry", "found: %r" % (app_ids,))
+
+    # --- 整屏判据只有一份，且 CSS 与 JS 逐字一致 ---
+    SHEET_QUERY = "(max-width: 600px), (pointer: coarse) and (max-width: 820px)"
+    sheet_count = page.count(SHEET_QUERY)
+    if sheet_count == 3:
+        ok("sheet query appears exactly three times", "1 JS + 2 CSS")
+    else:
+        bad("sheet query appears exactly three times", "found %d (expected 3)" % sheet_count)
+    if "function isSheet()" in page and "function isMobile()" not in page:
+        ok("the sheet predicate is named isSheet", "no isMobile left in the page")
+    else:
+        bad("the sheet predicate is named isSheet", "isMobile still present or isSheet missing")
+
+    # --- 设置分区：五个 id 齐全且按序 ---
+    nav_ids = re.findall(r'data-section="([a-z]+)"', page)
+    if nav_ids == ["commands", "appearance", "workspace", "tutorial", "about"]:
+        ok("settings sections are the five expected ids", ", ".join(nav_ids))
+    else:
+        bad("settings sections are the five expected ids", repr(nav_ids))
 
     # --- README structure ---
     # Owned by smoke/readme_lint.py since 0.4.1: a standalone <img> line without a
@@ -349,6 +376,16 @@ def main() -> int:
         bad("composer prompt entry contract", "missing: " + ", ".join(missing_client))
     else:
         ok("composer prompt entry contract", "slot + public insertion API")
+
+    # --- 提示词弹层：不再截断 8 条，且高度策略未被改动（D9） ---
+    if "items.slice(0, 8)" in src_text:
+        bad("composer prompt list is not capped", "items.slice(0, 8) is back")
+    elif "items.map(function (item, index)" not in src_text:
+        bad("composer prompt list is not capped", "renderer no longer maps the whole list")
+    elif "Math.min(panel.offsetHeight || 320, 340)" not in src_text:
+        bad("composer prompt list is not capped", "the 340px placement cap was changed (D9)")
+    else:
+        ok("composer prompt list is not capped", "whole list rendered, 340px cap untouched")
 
     if "FONT_ROUTE" in (PLUGIN / "index.js").read_text(encoding="utf-8"):
         ok("host serves the bundled font")
@@ -610,7 +647,7 @@ def main() -> int:
             current_selector = stripped[:-1].strip()
         if "color: var(--ink-ghost);" in line:
             ghost_selectors.append(current_selector)
-    allowed = re.compile(r"(::placeholder|::before|::after|\bcrumb-sep\b|shortcut-keys|setting-action__arrow|desk-notice__close)")
+    allowed = re.compile(r"(::placeholder|::before|::after|\bcrumb-sep\b|setting-action__arrow|desk-notice__close)")
     offenders = [sel for sel in ghost_selectors if not allowed.search(sel)]
     if offenders:
         bad("ghost stays a decoration token", "used as text by: " + ", ".join(offenders[:6]))

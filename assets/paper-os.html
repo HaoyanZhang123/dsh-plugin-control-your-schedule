@@ -2683,40 +2683,63 @@ html[data-theme="dark"] .desk-notice__mark {
   letter-spacing: 0.12em;
 }
 
-@media (max-width: 860px) {
-  .prompts-app {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(150px, 38%) minmax(0, 1fr);
-  }
+/* 提示词排版只看「窗口自己多宽」，不看视口：窗口被拖窄时视口不变，媒体查询感知不到。
+   三个 class 由 prompts 应用在 mount 里按 ResizeObserver 挂上（见 create → mount 的
+   syncPromptBox），改档位必须同时改 JS 与本节。 */
 
-  .prompts-rail {
-    border-right: 0;
-    border-bottom: 1px dashed rgba(155, 120, 96, 0.42);
-  }
+.prompts-app.is-snug {
+  grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
+}
 
-  .prompts-rail__foot {
-    display: none;
-  }
+.prompts-app.is-snug .prompts-main {
+  padding: 12px 14px 12px;
+}
 
-  .prompts-main {
-    padding: 10px 12px 10px;
-  }
+.prompts-app.is-snug .prompts-card {
+  padding: 14px 16px 14px 22px;
+}
 
-  .prompts-card {
-    padding: 12px 14px 12px 20px;
-  }
+.prompts-app.is-snug .prompts-body-input {
+  min-height: 140px;
+}
 
-  .prompts-title-input {
-    font-size: 20px;
-  }
+.prompts-app.is-stacked {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 46%) minmax(0, 1fr);
+}
 
-  .prompts-main__actions .paper-btn {
-    padding: 2px 5px;
-  }
+.prompts-app.is-stacked .prompts-rail {
+  border-right: 0;
+  border-bottom: 1px dashed rgba(155, 120, 96, 0.42);
+}
 
-  .prompts-body-input {
-    min-height: 130px;
-  }
+.prompts-app.is-stacked .prompts-rail__foot {
+  display: none;
+}
+
+.prompts-app.is-stacked .prompts-main {
+  padding: 10px 12px 10px;
+}
+
+.prompts-app.is-stacked .prompts-card {
+  padding: 12px 14px 12px 20px;
+}
+
+.prompts-app.is-stacked .prompts-title-input {
+  font-size: 20px;
+}
+
+.prompts-app.is-stacked .prompts-main__actions .paper-btn {
+  padding: 2px 5px;
+}
+
+.prompts-app.is-stacked .prompts-body-input {
+  min-height: 130px;
+}
+
+/* 矮窗口：收起 rail 底部的两行说明，给列表多留一条完整行的高度。 */
+.prompts-app.is-short .prompts-rail__foot {
+  display: none;
 }
 
 /* ---------------- command sheet (inside settings) ---------------- */
@@ -3114,7 +3137,7 @@ html[data-theme="dark"] .desk-notice__mark {
   }
 }
 
-@media (max-height: 700px) and (min-width: 821px) {
+@media (max-height: 700px) and (min-width: 601px) {
   .desk-intro {
     top: 8%;
   }
@@ -3140,7 +3163,7 @@ html[data-theme="dark"] .desk-notice__mark {
   display: none;
 }
 
-@media (max-width: 820px) {
+@media (max-width: 600px), (pointer: coarse) and (max-width: 820px) {
   .handheld-card {
     position: absolute;
     z-index: 6;
@@ -3703,9 +3726,9 @@ body.is-window-resizing * {
   user-select: none !important;
 }
 
-/* mobile window sheets */
+/* 整屏 sheet：只在真窄视口或触屏窄面板出现（判据与 JS 的 SHEET_QUERY 逐字一致） */
 
-@media (max-width: 820px) {
+@media (max-width: 600px), (pointer: coarse) and (max-width: 820px) {
   .window {
     top: 0 !important;
     left: 0 !important;
@@ -6691,41 +6714,6 @@ html[data-theme="dark"] .cal-day__dot.cal-day__dot--done {
   background: var(--clay);
 }
 
-.shortcut-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 22px;
-  margin-top: 3px;
-}
-
-.shortcut-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 9px 0;
-  border-bottom: 1px dotted var(--line);
-}
-
-.shortcut-row span {
-  color: var(--ink-soft);
-  font-family: var(--font-serif);
-  font-size: 14.5px;
-}
-
-.shortcut-keys {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 3px;
-}
-
-.shortcut-keys i {
-  color: var(--ink-ghost);
-  font-style: normal;
-  font-size: 12px;
-}
-
 .about-sheet {
   position: relative;
   margin-top: 2px;
@@ -6848,10 +6836,6 @@ html[data-theme="dark"] .cal-day__dot.cal-day__dot--done {
   .setting-row {
     flex-direction: column;
     gap: 9px;
-  }
-
-  .shortcut-grid {
-    grid-template-columns: 1fr;
   }
 
   .stats-grid {
@@ -8403,7 +8387,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     return P.TASK_PRIORITIES[P.TASK_PRIORITIES.length - 1];
   };
   P.TASK_REPEATS = [
-    { id: 'once', label: '仅限今日', hint: '只在这一天出现。' },
+    { id: 'once', label: '今日', hint: '只在这一天出现。' },
     { id: 'daily', label: '每天，直到解决', hint: '从今天起每天出现一次，做完当天就灰掉。' }
   ];
 
@@ -9204,19 +9188,6 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     choice: choice
   };
 
-  var IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || '');
-  var MOD_LABEL = IS_MAC ? '⌘' : 'Ctrl';
-  var ALT_LABEL = IS_MAC ? '⌥' : 'Alt';
-  P.shortcuts = [
-    { label: '命令与应用', keys: [MOD_LABEL, 'K'] },
-    { label: '新建纸页', keys: [MOD_LABEL, ALT_LABEL, 'N'] },
-    { label: '新建便签', keys: [MOD_LABEL, ALT_LABEL, 'B'] },
-    { label: '新建一张画纸', keys: [MOD_LABEL, ALT_LABEL, 'D'] },
-    { label: '切换下一扇窗', keys: ['Alt', 'Tab'] },
-    { label: '最小化当前窗口', keys: [MOD_LABEL, ALT_LABEL, 'M'] },
-    { label: '收好所有窗口', keys: [MOD_LABEL, ALT_LABEL, 'H'] },
-    { label: '立即保存', keys: [MOD_LABEL, 'S'] }
-  ];
 })();
 
 /* ===== src/js/model.js ===== */
@@ -11665,7 +11636,10 @@ html[data-theme="dark"] .priority-popover__item.is-active {
 
   function stageEl() { return document.getElementById('stage'); }
   function layerEl() { return document.getElementById('windows-layer'); }
-  function isMobile() { return window.matchMedia && window.matchMedia('(max-width: 820px)').matches; }
+  /* 整屏 sheet 的判据：真窄视口，或触屏且不宽。
+     这段字符串必须与 CSS 里两处 @media 逐字一致（门禁会数它在页面里出现 3 次）。 */
+  var SHEET_QUERY = '(max-width: 600px), (pointer: coarse) and (max-width: 820px)';
+  function isSheet() { return !!(window.matchMedia && window.matchMedia(SHEET_QUERY).matches); }
 
   function workArea() {
     var stage = stageEl();
@@ -12087,7 +12061,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
   }
 
   function beginDrag(event, win) {
-    if (isMobile()) return;
+    if (isSheet()) return;
     if (win.minimized || win.closing) return;
     if (event.button !== 0 && event.pointerType === 'mouse') return;
     event.preventDefault();
@@ -12177,7 +12151,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
   }
 
   function beginResize(event, win, direction) {
-    if (isMobile() || win.maximized || win.closing || win.minimized) return;
+    if (isSheet() || win.maximized || win.closing || win.minimized) return;
     if (event.button !== 0 && event.pointerType === 'mouse') return;
     event.preventDefault();
     event.stopPropagation();
@@ -12448,7 +12422,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     win.el.style.zIndex = String(zTop);
     wins.forEach(function (w) {
       w.el.classList.toggle('is-focused', w.id === id);
-      if (isMobile() && w.id !== id) {
+      if (isSheet() && w.id !== id) {
         w.el.inert = true;
         w.el.setAttribute('aria-hidden', 'true');
       } else {
@@ -12457,7 +12431,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         else if (w.el) w.el.removeAttribute('aria-hidden');
       }
     });
-    if (isMobile()) {
+    if (isSheet()) {
       win.el.inert = false;
       win.el.removeAttribute('aria-hidden');
     }
@@ -12474,7 +12448,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
 
   function toggleMaximize(id) {
     var win = winMap.get(id);
-    if (!win || win.closing || win.minimized || isMobile()) return;
+    if (!win || win.closing || win.minimized || isSheet()) return;
     win.el.classList.add('is-layout-moving');
     if (win.maximized) {
       win.maximized = false;
@@ -12742,7 +12716,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     resizeFrame = requestAnimationFrame(function () {
       resizeFrame = null;
       refreshLayout();
-      if (isMobile()) {
+      if (isSheet()) {
         wins.forEach(function (w) {
           if (!w.closing) {
             var isFocus = w.id === focusedId;
@@ -12805,7 +12779,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     serializeDesktop: serializeDesktop,
     restoreDesktop: restoreDesktop,
     refreshLayout: refreshLayout,
-    isMobile: isMobile,
+    isSheet: isSheet,
     getWindows: function () { return sortedByZ().map(publicWindow); },
     getFocused: function () { return publicWindow(winMap.get(focusedId)); },
     getWindow: function (id) { return publicWindow(winMap.get(id)); },
@@ -13294,10 +13268,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     } else {
       var win = windows[0];
       if (win.minimized) P.wm.restore(win.id);
-      else if (win.focused) {
-        if (P.wm.isMobile()) P.wm.minimize(win.id);
-        else P.wm.minimize(win.id);
-      } else P.wm.focus(win.id);
+      else if (win.focused) P.wm.minimize(win.id);
+      else P.wm.focus(win.id);
     }
     syncChrome();
   }
@@ -14796,6 +14768,16 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         refs.pinBtn = root.querySelector('[data-testid="prompt-pin"]');
         refs.saveState = root.querySelector('[data-testid="prompt-save-state"]');
         ctx.setTitle('提示词');
+        /* 提示词排版跟着「窗口自己多宽」走（不看视口）：700 / 520 两档与 CSS 的
+           is-snug / is-stacked 一一对应；高度 ≤520 时收起 rail 底部说明（is-short）。 */
+        function syncPromptBox() {
+          var box = root.getBoundingClientRect();
+          root.classList.toggle('is-snug', box.width > 520 && box.width <= 700);
+          root.classList.toggle('is-stacked', box.width <= 520);
+          root.classList.toggle('is-short', box.height <= 520);
+        }
+        syncPromptBox();
+        ctx.observeResize(syncPromptBox, root);
 
         root.querySelector('[data-testid="new-prompt"]').addEventListener('click', newPrompt);
         root.querySelector('[data-testid="prompt-empty-new"]').addEventListener('click', newPrompt);
@@ -15476,7 +15458,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         }
       }
 
-      /* 待办行：勾选 + 标题 + 右侧两枚控件（色点 / 仅今日·每天）。
+      /* 待办行：勾选 + 标题 + 右侧两枚控件（色点 / 今日·每天）。
          色点点开是四色小浮层，胶囊点一下直接切换，都不进详情。 */
       function buildTaskList() {
         if (!refs.taskList) return;
@@ -15572,9 +15554,9 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           var repeatChip = document.createElement('button');
           repeatChip.type = 'button';
           repeatChip.className = 'task-repeat' + (task.repeat === 'daily' ? ' is-daily' : '');
-          repeatChip.textContent = task.repeat === 'daily' ? '每天' : '仅今日';
-          repeatChip.setAttribute('aria-label', '状态：' + (task.repeat === 'daily' ? '每天出现，直到解决' : '仅限今日') + '，点击切换');
-          repeatChip.setAttribute('title', task.repeat === 'daily' ? '每天出现，直到解决（点一下改成仅限今日）' : '只在这一天（点一下改成每天出现）');
+          repeatChip.textContent = task.repeat === 'daily' ? '每天' : '今日';
+          repeatChip.setAttribute('aria-label', '状态：' + (task.repeat === 'daily' ? '每天出现，直到解决' : '今日') + '，点击切换');
+          repeatChip.setAttribute('title', task.repeat === 'daily' ? '每天出现，直到解决（点一下改成今日）' : '只在这一天（点一下改成每天出现）');
           repeatChip.addEventListener('click', function (event) {
             event.stopPropagation();
             var next = task.repeat === 'daily' ? 'once' : 'daily';
@@ -15867,7 +15849,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         return made;
       }
 
-      /* 待办详情：标题 + 紧急程度栏 + 状态（仅限今日 / 每天）+ 那一天。 */
+      /* 待办详情：标题 + 紧急程度栏 + 状态（今日 / 每天）+ 那一天。 */
       function editTask(task) {
         var draft = {
           title: task.title,
@@ -16850,7 +16832,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
 
   var P = window.PaperOS;
   var U = P.util;
-  var SECTIONS = ['commands', 'appearance', 'workspace', 'shortcuts', 'about'];
+  var SECTIONS = ['commands', 'appearance', 'workspace', 'tutorial', 'about'];
   function isMac() {
     return /Mac|iPhone|iPad/.test(navigator.platform || '');
   }
@@ -16859,7 +16841,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     id: 'settings',
     name: '纸屿设置',
     english: 'PAPER SETTINGS',
-    description: '命令与应用、外观、数据备份、快捷键与关于',
+    description: '命令与应用、外观、数据备份、教程与关于',
     desktop: false,
     dock: false,
     defaultSize: { w: 700, h: 730 },
@@ -17318,16 +17300,9 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           '<input type="file" accept=".json,application/json" data-import-file hidden>';
       }
 
-      function buildShortcuts() {
-        return '<h2 class="settings-section__title">键盘与手势</h2>' +
-          '<p class="settings-section__intro">常用快捷键。窗口、纸页和按钮都可以用 Tab 键访问。</p>' +
-          '<div class="shortcut-grid">' + P.shortcuts.map(function (shortcut) {
-            var keys = shortcut.keys.map(function (key) {
-              return '<kbd>' + U.escapeHTML(key) + '</kbd>';
-            }).join('<i>+</i>');
-            return '<div class="shortcut-row"><span>' + U.escapeHTML(shortcut.label) + '</span><span class="shortcut-keys">' + keys + '</span></div>';
-          }).join('') + '</div>' +
-          '<div class="divider"></div>' +
+      function buildTutorial() {
+        return '<h2 class="settings-section__title">教程</h2>' +
+          '<p class="settings-section__intro">纸屿的上手说明。窗口、纸页和按钮都可以用 Tab 键访问。</p>' +
           '<div class="setting-row"><div class="setting-row__copy"><span class="setting-row__label">新手导览</span>' +
           '<p class="setting-row__desc">重新看一遍底部应用坞、窗口操作和收好桌面的说明。</p></div>' +
           '<button class="paper-btn paper-btn--tiny" type="button" data-replay-tour>重新播放</button></div>' +
@@ -17368,14 +17343,14 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           '<button type="button" role="tab" data-section="commands" aria-selected="true">命令与应用</button>' +
           '<button type="button" role="tab" data-section="appearance" aria-selected="false" tabindex="-1">外观</button>' +
           '<button type="button" role="tab" data-section="workspace" aria-selected="false" tabindex="-1">数据与备份</button>' +
-          '<button type="button" role="tab" data-section="shortcuts" aria-selected="false" tabindex="-1">快捷键</button>' +
+          '<button type="button" role="tab" data-section="tutorial" aria-selected="false" tabindex="-1">教程</button>' +
           '<button type="button" role="tab" data-section="about" aria-selected="false" tabindex="-1">关于</button>' +
           '</nav>' +
           '<div class="settings-content" data-content>' +
           '<section class="settings-section is-active" role="tabpanel" data-section-panel="commands">' + buildCommands() + '</section>' +
           '<section class="settings-section" role="tabpanel" data-section-panel="appearance" hidden>' + buildAppearance() + '</section>' +
           '<section class="settings-section" role="tabpanel" data-section-panel="workspace" hidden>' + buildWorkspace() + '</section>' +
-          '<section class="settings-section" role="tabpanel" data-section-panel="shortcuts" hidden>' + buildShortcuts() + '</section>' +
+          '<section class="settings-section" role="tabpanel" data-section-panel="tutorial" hidden>' + buildTutorial() + '</section>' +
           '<section class="settings-section" role="tabpanel" data-section-panel="about" hidden>' + buildAbout() + '</section>' +
           '</div></div>';
         ctx.body.appendChild(root);
@@ -17594,7 +17569,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     },
     {
       title: '可以开始了',
-      body: '从底部打开便签，写下第一句话。需要帮助时，随时在设置 → 快捷键里重新播放导览。',
+      body: '从底部打开便签，写下第一句话。需要帮助时，随时在设置 → 教程里重新播放导览。',
       target: null,
       placement: 'center'
     }

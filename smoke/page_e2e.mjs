@@ -632,7 +632,7 @@ const anchorAfter = anchorDay && anchorDay.taskId
       + 'return {stillThere:!!row,chip:row?row.querySelector(".task-repeat").textContent:null,'
       + 'projected:P.data.projectTasks(past).filter(function(t){return t.id===id;}).length};})()')
   : null;
-if (anchorDay && anchorDay.before === '仅今日' && anchorAfter && anchorAfter.stillThere && anchorAfter.chip === '每天' && anchorAfter.projected === 1) ok('switching to daily keeps the task on its anchor day', JSON.stringify(anchorAfter));
+if (anchorDay && anchorDay.before === '今日' && anchorAfter && anchorAfter.stillThere && anchorAfter.chip === '每天' && anchorAfter.projected === 1) ok('switching to daily keeps the task on its anchor day', JSON.stringify(anchorAfter));
 else bad('switching to daily keeps the task on its anchor day', JSON.stringify({ before: anchorDay, after: anchorAfter }));
 
 // --- task rows carry their own controls (dot + repeat chip) ---
@@ -703,7 +703,7 @@ const repeatRow = await run(function () {
   return out;
 });
 if (repeatRow && repeatRow.count === 2
-    && repeatRow.labels.join('|') === '仅限今日|每天，直到解决'
+    && repeatRow.labels.join('|') === '今日|每天，直到解决'
     && repeatRow.rows.every(function (row) { return row.h < 30 && row.w > 60; })) {
   ok('repeat status renders on one line each', JSON.stringify(repeatRow));
 } else {
@@ -1554,6 +1554,108 @@ else bad('the clearance band works at the narrow panel breakpoint', JSON.stringi
 if (!narrow || narrow.error) bad('the narrow top bar stays free of horizontal overflow and collapses back', 'probe failed');
 else if (nwMac.overflowX === 0 && nwMac.width === nwBase.width && nwBack.height === 50 && nwBack.padTop === 0 && nwBack.rowTop === nwBase.rowTop) ok('the narrow top bar stays free of horizontal overflow and collapses back', JSON.stringify(narrow));
 else bad('the narrow top bar stays free of horizontal overflow and collapses back', JSON.stringify(narrow));
+
+// --- issue #1：300% 缩放等效的 787x627 面板不得退化成整屏手机 ---
+// 判据来自 03-K1：整屏只允许出现在 (max-width:600px) 或触屏窄面板。
+await send('Emulation.setDeviceMetricsOverride', { width: 787, height: 627, deviceScaleFactor: 3, mobile: false });
+await sleep(420);
+const sheet787 = await run(function () {
+  var P = window.PaperOS;
+  if (P.tour && P.tour.close) P.tour.close();
+  P.wm.open('prompts');
+  return { isSheet: (typeof P.wm.isSheet === 'function') ? P.wm.isSheet() : null };
+});
+await sleep(520);
+const shape787 = await run(function () {
+  var root = document.documentElement;
+  var win = document.querySelector('.window.is-focused');
+  if (!win) return { error: 'no focused window' };
+  var rect = win.getBoundingClientRect();
+  var grip = win.querySelector('.win-resize--se');
+  var bar = win.querySelector('.window__titlebar');
+  var app = document.querySelector('.prompts-app');
+  var list = document.querySelector('.prompts-list');
+  var rows = 0;
+  var acc = 0;
+  if (list) {
+    var items = list.children;
+    for (var i = 0; i < items.length && i < 5; i += 1) {
+      acc += items[i].getBoundingClientRect().height;
+      if (acc <= list.clientHeight) rows += 1;
+    }
+  }
+  var cols = app ? getComputedStyle(app).gridTemplateColumns.split(' ').length : 0;
+  return {
+    viewportW: root.clientWidth,
+    width: Math.round(rect.width),
+    height: Math.round(rect.height),
+    left: Math.round(rect.left),
+    fullBleed: Math.abs(rect.width - root.clientWidth) <= 1,
+    resize: grip ? getComputedStyle(grip).display : 'missing',
+    cursor: bar ? getComputedStyle(bar).cursor : 'missing',
+    cols: cols,
+    listH: list ? list.clientHeight : 0,
+    rows: rows,
+    overflowX: Math.round(root.scrollWidth - root.clientWidth)
+  };
+});
+if (sheet787 && sheet787.isSheet === false) ok('787x627 is not the phone sheet', JSON.stringify(sheet787));
+else bad('787x627 is not the phone sheet', JSON.stringify(sheet787));
+if (shape787 && !shape787.fullBleed && shape787.left >= 8 && shape787.width <= 770) ok('787x627 keeps paper margins', JSON.stringify(shape787));
+else bad('787x627 keeps paper margins', JSON.stringify(shape787));
+if (shape787 && shape787.resize === 'block' && shape787.cursor === 'grab') ok('787x627 window can be dragged and resized', JSON.stringify(shape787));
+else bad('787x627 window can be dragged and resized', JSON.stringify(shape787));
+if (shape787 && shape787.cols >= 2 && shape787.listH >= 250 && shape787.rows >= 3) ok('787x627 prompt list keeps three full rows in two columns', JSON.stringify(shape787));
+else bad('787x627 prompt list keeps three full rows in two columns', JSON.stringify(shape787));
+if (shape787 && shape787.overflowX === 0) ok('787x627 has no horizontal overflow', JSON.stringify(shape787));
+else bad('787x627 has no horizontal overflow', JSON.stringify(shape787));
+
+// --- 真窄视口仍然整屏：500x900 必须保持手机形态，且 bounds 不被拉伸 ---
+await send('Emulation.setDeviceMetricsOverride', { width: 500, height: 900, deviceScaleFactor: 3, mobile: false });
+await sleep(460);
+const sheet500 = await run(function () {
+  var P = window.PaperOS;
+  var win = document.querySelector('.window.is-focused');
+  var rect = win ? win.getBoundingClientRect() : null;
+  var grip = win ? win.querySelector('.win-resize--se') : null;
+  var open = P.wm.getWindows();
+  return {
+    isSheet: P.wm.isSheet(),
+    fullBleed: rect ? Math.abs(rect.width - document.documentElement.clientWidth) <= 1 : null,
+    width: rect ? Math.round(rect.width) : null,
+    resize: grip ? getComputedStyle(grip).display : 'missing',
+    bounds: open.length ? open[0].bounds : null
+  };
+});
+if (sheet500 && sheet500.isSheet === true && sheet500.fullBleed === true) ok('500x900 stays the phone sheet', JSON.stringify(sheet500));
+else bad('500x900 stays the phone sheet', JSON.stringify(sheet500));
+if (sheet500 && sheet500.resize === 'none') ok('the phone sheet hides the resize handles', JSON.stringify(sheet500));
+else bad('the phone sheet hides the resize handles', JSON.stringify(sheet500));
+if (sheet500 && sheet500.bounds && sheet500.bounds.w <= 500) ok('window bounds stay honest inside the sheet', JSON.stringify(sheet500.bounds));
+else bad('window bounds stay honest inside the sheet', JSON.stringify(sheet500.bounds));
+
+// 回到桌面视口，后续断言依赖 1400x900
+await send('Emulation.setDeviceMetricsOverride', { width: 1400, height: 900, deviceScaleFactor: 1, mobile: false });
+await sleep(460);
+const back1400 = await run(function () {
+  var P = window.PaperOS;
+  var win = document.querySelector('.window.is-focused');
+  var rect = win ? win.getBoundingClientRect() : null;
+  return {
+    isSheet: P.wm.isSheet(),
+    width: rect ? Math.round(rect.width) : null,
+    viewportW: document.documentElement.clientWidth
+  };
+});
+if (back1400 && back1400.isSheet === false && back1400.width < back1400.viewportW) ok('leaving the sheet restores the window bounds', JSON.stringify(back1400));
+else bad('leaving the sheet restores the window bounds', JSON.stringify(back1400));
+
+// 上面三次改视口各自触发了一次布局保存（180ms 防抖，420ms 落盘）。离开这一段之前
+// 必须先把它落定：留着 pending 的话，下面 navigate 时的 pagehide 会写一份 recovery
+// journal，而 journal 在 init 里优先于 host 快照（无条件覆盖 raw），既有的
+//「更新版本只读」段落就会对着旧 journal 跑，四条断言全红。这与 narrow 段收尾同一机制。
+await ev('window.PaperOS.storage.flush()');
+await sleep(260);
 
 // --- a workspace from a NEWER version must not hang the desk ---
 // Regression: v2.3's boot called a helper it could not see (different IIFE),
