@@ -154,13 +154,11 @@ html[data-theme="dark"] .sticky__text::placeholder {
 
 html[data-theme="dark"] .cal-day__dot[data-priority="urgent-important"] { background: #b9756f; }
 html[data-theme="dark"] .cal-day__dot[data-priority="important"] { background: #b7a25c; }
-html[data-theme="dark"] .cal-day__dot[data-priority="urgent"] { background: #7f9ba8; }
-html[data-theme="dark"] .cal-day__dot[data-priority="none"] { background: #8b9c7f; }
+html[data-theme="dark"] .cal-day__dot[data-priority="none"] { background: #969696; }
 
 html[data-theme="dark"] .task-pip[data-priority="urgent-important"] { background: #b9756f; }
 html[data-theme="dark"] .task-pip[data-priority="important"] { background: #b7a25c; }
-html[data-theme="dark"] .task-pip[data-priority="urgent"] { background: #7f9ba8; }
-html[data-theme="dark"] .task-pip[data-priority="none"] { background: #8b9c7f; }
+html[data-theme="dark"] .task-pip[data-priority="none"] { background: #969696; }
 
 *,
 *::before,
@@ -1353,29 +1351,6 @@ body.os-ready .os {
   background: var(--clay);
 }
 
-.clock {
-  display: flex;
-  min-width: 78px;
-  flex-direction: column;
-  align-items: flex-end;
-  color: var(--ink-soft);
-  line-height: 1;
-}
-
-.clock time {
-  font-family: var(--font-serif);
-  font-size: 16px;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.04em;
-}
-
-.clock span {
-  margin-top: 4px;
-  color: var(--ink-faint);
-  font-size: 13px;
-  letter-spacing: 0.06em;
-}
-
 .topbar__btn {
   display: grid;
   width: 30px;
@@ -1998,11 +1973,19 @@ html[lang="en"] .day-card__seal {
   background: var(--paper-raised);
   box-shadow: 0 12px 26px -14px rgba(0, 0, 0, 0.45);
   cursor: grabbing;
-  transform: translateY(-6px) scale(1.06) !important;
+  transition: none;
+  transform: translate3d(var(--dock-dx, 0px), var(--dock-dy, 0px), 0) translateY(-6px) scale(1.06) !important;
 }
 
 .dock.is-sorting .dock__btn:not(.is-dragging) {
-  transition: transform 0.16s var(--ease-soft), opacity 0.16s;
+  transition: transform 0.2s var(--ease-soft), opacity 0.16s;
+  will-change: transform;
+}
+
+/* 松手落位：只动 translate（独立位移通道），transform 保持干净，
+   这样「落位后不留内联 transform」对门禁与读屏都是真的。 */
+.dock__btn.is-settling {
+  transition: translate 0.24s var(--ease-soft), transform 0.24s var(--ease-soft) !important;
 }
 
 /* 插入位：一条竖线，不整体位移，避免拖动时抖动 */
@@ -2318,16 +2301,6 @@ html[data-theme="dark"] .desk-notice__mark {
   text-align: center;
 }
 
-.prompts-rail__foot {
-  flex: 0 0 auto;
-  padding: 9px 16px 13px;
-  border-top: 1px dashed rgba(155, 120, 96, 0.32);
-  color: var(--ink-faint);
-  font-family: var(--font-serif);
-  font-size: 12px;
-  line-height: 1.7;
-}
-
 /* an index card: number + bookmark bar, no rounded card, no fill until active */
 .prompt-item {
   position: relative;
@@ -2501,30 +2474,12 @@ html[data-theme="dark"] .desk-notice__mark {
   border-bottom: 1px dashed rgba(155, 120, 96, 0.32);
 }
 
-.prompts-main__title {
-  min-width: 0;
-  flex: 1 1 auto;
-  overflow: hidden;
-  color: var(--ink);
-  font-family: var(--font-serif);
-  font-size: 15px;
-  letter-spacing: 0.02em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.prompts-main__title::before {
-  content: '正在编辑 · ';
-  color: var(--ink-faint);
-  font-size: 12.5px;
-  letter-spacing: 0.1em;
-}
-
 .prompts-main__actions {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
   gap: 2px;
+  margin-left: auto;
 }
 
 .prompts-main__actions .paper-btn {
@@ -2713,10 +2668,6 @@ html[data-theme="dark"] .desk-notice__mark {
   border-bottom: 1px dashed rgba(155, 120, 96, 0.42);
 }
 
-.prompts-app.is-stacked .prompts-rail__foot {
-  display: none;
-}
-
 .prompts-app.is-stacked .prompts-main {
   padding: 10px 12px 10px;
 }
@@ -2735,11 +2686,6 @@ html[data-theme="dark"] .desk-notice__mark {
 
 .prompts-app.is-stacked .prompts-body-input {
   min-height: 130px;
-}
-
-/* 矮窗口：收起 rail 底部的两行说明，给列表多留一条完整行的高度。 */
-.prompts-app.is-short .prompts-rail__foot {
-  display: none;
 }
 
 /* ---------------- command sheet (inside settings) ---------------- */
@@ -3043,27 +2989,6 @@ html[data-theme="dark"] .desk-notice__mark {
     gap: 5px;
     justify-content: center;
     font-size: 13.5px;
-  }
-
-  .save-pill #save-text {
-    display: inline;
-  }
-
-  .save-pill__time {
-    display: none;
-  }
-
-  .clock {
-    min-width: auto;
-    margin-right: 3px;
-  }
-
-  .clock time {
-    font-size: 15px;
-  }
-
-  .clock span {
-    display: none;
   }
 
   .topbar__btn {
@@ -4447,6 +4372,16 @@ body.is-window-resizing * {
   flex: 0 0 auto;
 }
 
+.note-item__pin {
+  flex: 0 0 auto;
+  color: var(--clay);
+}
+
+.note-item__pin svg {
+  width: 12px;
+  height: 12px;
+}
+
 .note-item__excerpt {
   overflow: hidden;
   color: var(--ink-faint);
@@ -4527,39 +4462,6 @@ body.is-window-resizing * {
   align-items: flex-start;
   gap: 10px;
   padding-bottom: 11px;
-}
-
-.editor-breadcrumb {
-  display: flex;
-  min-width: 0;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 5px;
-  color: var(--ink-faint);
-  font-family: var(--font-serif);
-  font-size: 13.5px;
-  letter-spacing: 0.02em;
-  line-height: 1.55;
-}
-
-.editor-breadcrumb button {
-  max-width: 150px;
-  overflow: hidden;
-  padding: 0;
-  border-bottom: 1px dashed transparent;
-  color: var(--ink-faint);
-  font: inherit;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.editor-breadcrumb button:hover {
-  border-bottom-color: var(--ink-faint);
-  color: var(--ink-soft);
-}
-
-.editor-breadcrumb .crumb-sep {
-  color: var(--ink-ghost);
 }
 
 .editor-head__actions {
@@ -5382,7 +5284,7 @@ body.is-window-resizing * {
 
 .cal-day__dot[data-priority="urgent-important"] { background: #d8a4a0; }
 .cal-day__dot[data-priority="important"] { background: #d9c47c; }
-.cal-day__dot[data-priority="urgent"] { background: #bdbdbd; }
+.cal-day__dot[data-priority="urgent"] { background: var(--sage); }
 .cal-day__dot[data-priority="none"] { background: #bebebe; }
 
 /* 完成 = 同一格、同一位置、只换灰色。
@@ -5426,14 +5328,6 @@ html[data-theme="dark"] .cal-day__dot.cal-day__dot--done {
   gap: 8px;
 }
 
-.calendar-tasks__date p {
-  margin: 0 0 3px;
-  color: var(--clay-deep);
-  font-size: 12px;
-  font-weight: 650;
-  letter-spacing: 0.16em;
-}
-
 .calendar-tasks__date h3 {
   margin: 0;
   font-family: var(--font-serif);
@@ -5471,7 +5365,7 @@ html[data-theme="dark"] .cal-day__dot.cal-day__dot--done {
 
 .task-pip[data-priority="urgent-important"] { background: #d8a4a0; }
 .task-pip[data-priority="important"] { background: #d9c47c; }
-.task-pip[data-priority="urgent"] { background: #bdbdbd; }
+.task-pip[data-priority="urgent"] { background: var(--sage); }
 .task-pip[data-priority="none"] { background: #bebebe; }
 
 .task-item__badge {
@@ -5540,37 +5434,20 @@ html[data-theme="dark"] .cal-day__dot.cal-day__dot--done {
   font-size: 14.5px;
 }
 
-.priority-option__hint {
-  grid-column: 2;
-  color: var(--ink-faint);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-/* 「状态」两项没有色点，各自占满整行：标签在左、说明在右。
+/* 「状态」两项没有色点，各占一整行。
    首列 10px 是给紧急程度的 .task-pip 留的，状态组必须覆写，
    否则中文单字宽度 > 10px，标签会逐字竖排。 */
 .priority-list--repeat .priority-option {
-  grid-template-columns: minmax(112px, max-content) 1fr;
+  grid-template-columns: 1fr;
   align-items: baseline;
-  gap: 0 14px;
+  gap: 0;
   padding: 9px 12px;
-}
-
-.priority-list--repeat .priority-option__hint {
-  grid-column: 2;
-  grid-row: 1;
 }
 
 @media (max-width: 560px) {
   .priority-list--repeat .priority-option {
     grid-template-columns: minmax(0, 1fr);
     row-gap: 4px;
-  }
-
-  .priority-list--repeat .priority-option__hint {
-    grid-column: 1;
-    grid-row: auto;
   }
 }
 
@@ -6519,15 +6396,6 @@ html[data-theme="dark"] .cal-day__dot.cal-day__dot--done {
   letter-spacing: 0.01em;
 }
 
-.settings-section__intro {
-  max-width: 480px;
-  margin: 7px 0 18px;
-  color: var(--ink-faint);
-  font-family: var(--font-serif);
-  font-size: 14.5px;
-  line-height: 1.8;
-}
-
 .setting-row {
   display: flex;
   align-items: flex-start;
@@ -6547,13 +6415,6 @@ html[data-theme="dark"] .cal-day__dot.cal-day__dot--done {
   color: var(--ink);
   font-family: var(--font-serif);
   font-size: 14.5px;
-}
-
-.setting-row__desc {
-  margin: 0;
-  color: var(--ink-faint);
-  font-size: 13.5px;
-  line-height: 1.6;
 }
 
 .toggle {
@@ -6672,11 +6533,6 @@ html[data-theme="dark"] .cal-day__dot.cal-day__dot--done {
   color: var(--ink);
   font-family: var(--font-serif);
   font-size: 15px;
-}
-
-.setting-action__desc {
-  color: var(--ink-faint);
-  font-size: 13px;
 }
 
 .setting-action__arrow {
@@ -6807,16 +6663,6 @@ html[data-theme="dark"] .cal-day__dot.cal-day__dot--done {
   font-weight: 500;
 }
 
-.about-sheet p {
-  position: relative;
-  max-width: 470px;
-  margin: 0 0 10px;
-  color: var(--ink-soft);
-  font-family: var(--font-serif);
-  font-size: 14.5px;
-  line-height: 1.9;
-}
-
 .about-sheet__sign {
   position: relative;
   margin-top: 17px;
@@ -6834,16 +6680,6 @@ html[data-theme="dark"] .cal-day__dot.cal-day__dot--done {
   color: var(--ink-faint);
   font-size: 12px;
   letter-spacing: 0.04em;
-}
-
-.settings-note {
-  padding: 9px 10px;
-  border: 1px solid rgba(185, 111, 80, 0.2);
-  color: var(--ink-soft);
-  background: rgba(214, 214, 214, 0.16);
-  font-family: var(--font-serif);
-  font-size: 13.5px;
-  line-height: 1.7;
 }
 
 @container (max-width: 620px) {
@@ -7154,10 +6990,6 @@ html[data-theme="dark"] .cal-day__dot.cal-day__dot--done {
   font-size: 14.5px;
 }
 
-.save-pill__time {
-  color: var(--ink-faint);
-}
-
 .topbar__focus {
   color: var(--ink-soft);
 }
@@ -7237,12 +7069,6 @@ html[data-theme="dark"] .cal-day__dot.cal-day__dot--done {
 
 .window__app-name {
   color: var(--ink-faint);
-}
-
-.setting-row__desc,
-.setting-action__desc {
-  color: var(--ink-faint);
-  font-size: 14px;
 }
 
 .stat-card span,
@@ -7591,7 +7417,6 @@ html[data-theme="dark"] .topbar {
 html[data-theme="dark"] .brand__seal,
 html[data-theme="dark"] .topbar__btn,
 html[data-theme="dark"] .topbar__focus,
-html[data-theme="dark"] .clock,
 html[data-theme="dark"] .save-pill {
   color: var(--ink-soft);
 }
@@ -7772,13 +7597,8 @@ html[data-theme="dark"] .prompts-card::before {
 }
 
 html[data-theme="dark"] .prompts-main__bar,
-html[data-theme="dark"] .prompts-main__foot,
-html[data-theme="dark"] .prompts-rail__foot {
+html[data-theme="dark"] .prompts-main__foot {
   border-color: rgba(217, 217, 217, 0.16);
-}
-
-html[data-theme="dark"] .prompts-rail__foot {
-  color: var(--ink-faint);
 }
 
 html[data-theme="dark"] .prompts-title-input {
@@ -7910,7 +7730,6 @@ html[data-theme="dark"] .settings-head {
   border-color: rgba(217, 217, 217, 0.12);
 }
 
-html[data-theme="dark"] .settings-note,
 html[data-theme="dark"] .setting-action {
   border-color: rgba(217, 217, 217, 0.14);
   background: rgba(47, 47, 47, 0.7);
@@ -8120,8 +7939,7 @@ html[data-theme="dark"] .priority-option.is-active {
 }
 
 html[data-theme="dark"] .dialog-note,
-html[data-theme="dark"] .field-label,
-html[data-theme="dark"] .settings-section__intro {
+html[data-theme="dark"] .field-label {
   color: var(--ink-faint);
 }
 
@@ -8163,12 +7981,11 @@ html[data-theme="dark"] .settings-section__intro {
 
 .task-pip-btn[data-priority="urgent-important"]::after { background: #d8a4a0; }
 .task-pip-btn[data-priority="important"]::after { background: #d9c47c; }
-.task-pip-btn[data-priority="urgent"]::after { background: #bdbdbd; }
+.task-pip-btn[data-priority="urgent"]::after { background: var(--sage); }
 .task-pip-btn[data-priority="none"]::after { background: #bebebe; }
 
 html[data-theme="dark"] .task-pip-btn[data-priority="urgent-important"]::after { background: #b9756f; }
 html[data-theme="dark"] .task-pip-btn[data-priority="important"]::after { background: #b7a25c; }
-html[data-theme="dark"] .task-pip-btn[data-priority="urgent"]::after { background: #969696; }
 html[data-theme="dark"] .task-pip-btn[data-priority="none"]::after { background: #969696; }
 
 .task-repeat {
@@ -8290,12 +8107,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       <div class="topbar__right">
         <button class="save-pill" id="save-pill" type="button" title="点击立即保存">
           <span class="save-pill__dot" aria-hidden="true"></span>
-          <span id="save-text" aria-live="polite">正在铺纸</span>
+          <span id="save-text" class="sr-only" aria-live="polite">正在铺纸</span>
         </button>
-        <div class="clock" aria-label="当前时间">
-          <time id="clock-time" datetime="">--:--</time>
-          <span id="clock-date">--月--日</span>
-        </div>
         <button class="topbar__btn" id="settings-btn" type="button" aria-label="打开设置" title="纸屿设置 · Ctrl K 直达命令">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.1"></circle><path d="M19.1 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2.1-1.2L14.3 3H9.7l-.3 2.7a7 7 0 0 0-2.1 1.2l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 4.9 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2.1 1.2l.3 2.7h4.6l.3-2.7a7 7 0 0 0 2.1-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"></path></svg>
         </button>
@@ -8370,7 +8183,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
   P.codename = '纸屿';
   /* 版本号由 tools/build_page.py 从 package.json 注入，页面里不再有第二份事实源。 */
   P.version = '__PAGE_VERSION__';
-  P.schemaVersion = 3;
+  P.schemaVersion = 4;
 
   /* ---------------- 语言与带参句子 ----------------
      页面源只有中文（唯一 UI 事实源）。构建把 window.__PAPER_LANG__ 注入 <head>，
@@ -8426,10 +8239,10 @@ html[data-theme="dark"] .priority-popover__item.is-active {
   /* 待办的紧急程度：顺序即强弱（数字越小越急），颜色沿用便签色板。
      存语义 id 而不是 q1..q4，重排表项不会改写既有数据的含义。 */
   P.TASK_PRIORITIES = [
-    { id: 'urgent-important', label: '重要且紧急', color: 'rose', rank: 0, hint: '今天就得动手，拖下去会出事。' },
-    { id: 'important', label: '重要但不紧急', color: 'butter', rank: 1, hint: '值得慢慢做，决定以后的样子。' },
-    { id: 'urgent', label: '紧急但不重要', color: 'sky', rank: 2, hint: '有人等着，但做完就过去了。' },
-    { id: 'none', label: '不紧急也不重要', color: 'sage', rank: 3, hint: '有空再说，没空也不必内疚。' }
+    { id: 'urgent-important', label: '重要且紧急', color: 'rose', rank: 0 },
+    { id: 'important', label: '重要但不紧急', color: 'butter', rank: 1 },
+    { id: 'urgent', label: '紧急但不重要', color: 'sky', rank: 2 },
+    { id: 'none', label: '不紧急也不重要', color: 'sage', rank: 3 }
   ];
   P.priorityById = function (id) {
     for (var i = 0; i < P.TASK_PRIORITIES.length; i += 1) {
@@ -8438,8 +8251,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     return P.TASK_PRIORITIES[P.TASK_PRIORITIES.length - 1];
   };
   P.TASK_REPEATS = [
-    { id: 'once', label: '今日', hint: '只在这一天出现。' },
-    { id: 'daily', label: '每天，直到解决', hint: '从今天起每天出现一次，做完当天就灰掉。' }
+    { id: 'once', label: '今日' },
+    { id: 'daily', label: '每天，直到解决' }
   ];
 
   /* ============================================================
@@ -8531,6 +8344,17 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       if (seededHere && !out.meta.sampleClearedAt) out.meta.promptsSeededAt = Date.now();
       /* migratedFrom 记的是"最初从哪个版本升上来"，中间步骤不许覆盖它。 */
       if (out.meta.migratedFrom === undefined) out.meta.migratedFrom = 2;
+      out.meta.migratedAt = Date.now();
+      out.meta.updatedAt = Date.now();
+      return out;
+    },
+    3: function v3ToV4(raw) {
+      /* v4 只多一个 note.pinned，缺省值由 validateWorkspace 补。
+         迁移本身绝不碰 nodes / stickies / tasks / prompts / prefs —— 升级不丢数据要逐值可验证。 */
+      var out = JSON.parse(JSON.stringify(raw));
+      out.version = 4;
+      if (!out.meta || typeof out.meta !== 'object') out.meta = {};
+      if (out.meta.migratedFrom === undefined) out.meta.migratedFrom = 3;
       out.meta.migratedAt = Date.now();
       out.meta.updatedAt = Date.now();
       return out;
@@ -9431,6 +9255,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       name: uniqueName(parentId, normalizeName(info.name, '未命名纸页')),
       parentId: parentId,
       content: typeof info.content === 'string' ? info.content : '',
+      pinned: false,
       sample: !!info.sample,
       createdAt: now,
       updatedAt: now
@@ -9474,6 +9299,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     if (node.type === 'doc' && node.kind === 'note' && Object.prototype.hasOwnProperty.call(changes, 'content')) {
       node.content = String(changes.content === undefined || changes.content === null ? '' : changes.content);
     }
+    if (Object.prototype.hasOwnProperty.call(changes, 'pinned')) node.pinned = !!changes.pinned;
     if (node.type === 'doc' && node.kind === 'drawing') {
       if (Object.prototype.hasOwnProperty.call(changes, 'strokes') && Array.isArray(changes.strokes)) {
         node.strokes = changes.strokes;
@@ -9547,10 +9373,16 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     return counts;
   }
 
+  /* 置顶优先，其次仍是「新建时间倒序」——与列表原来的可预期顺序一致。 */
+  function noteSort(a, b) {
+    if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+    return Number(b.createdAt) - Number(a.createdAt);
+  }
+
   function listNotes() {
     return state.nodes
       .filter(function (node) { return node.type === 'doc' && node.kind === 'note'; })
-      .sort(function (a, b) { return b.createdAt - a.createdAt; });
+      .sort(noteSort);
   }
 
   function listDrawings() {
@@ -10998,6 +10830,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           var content = typeof rawNode.content === 'string' ? rawNode.content : '';
           if (content.length > 4000000) return invalid('纸页「' + name + '」的正文过长。');
           node.content = content;
+          node.pinned = !!rawNode.pinned;
         } else {
           var strokeResult = validateStrokes(rawNode.strokes);
           if (!strokeResult.ok) return invalid('「' + name + '」：' + strokeResult.error);
@@ -12870,8 +12703,6 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     refs.focusStatus = document.getElementById('focus-status');
     refs.savePill = document.getElementById('save-pill');
     refs.saveText = document.getElementById('save-text');
-    refs.clockTime = document.getElementById('clock-time');
-    refs.clockDate = document.getElementById('clock-date');
     refs.settingsBtn = document.getElementById('settings-btn');
     refs.brandButton = document.getElementById('brand-button');
     refs.dock = document.getElementById('dock');
@@ -13015,13 +12846,6 @@ html[data-theme="dark"] .priority-popover__item.is-active {
 
   function updateClock() {
     var now = new Date();
-    if (refs.clockTime) {
-      refs.clockTime.textContent = U.formatClock(now);
-      refs.clockTime.setAttribute('datetime', now.toISOString());
-    }
-    if (refs.clockDate) {
-      refs.clockDate.textContent = U.pad2(now.getMonth() + 1) + '.' + U.pad2(now.getDate()) + ' ' + U.weekdaysShort()[now.getDay()];
-    }
     if (refs.dayNum) updateDayCard(now);
   }
 
@@ -13178,32 +13002,102 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     return Array.prototype.slice.call(refs.dock.querySelectorAll('[data-dock-app]'));
   }
 
+  /* 插入位与插入线：语义与改前一致——遍历 others、比较中心、insertAt ∈ [0, others.length]。
+     只读激活瞬间缓存的几何，不读实时 rect，所以每次 pointermove 都能同步刷新。 */
+  function updateDockInsert() {
+    var drag = dockDrag;
+    var self = drag.metrics[drag.from];
+    var center = self.left + self.width / 2 + drag.dx;
+    var others = drag.metrics.filter(function (one) { return one.el !== drag.button; });
+    var insertAt = others.length;
+    for (var i = 0; i < others.length; i += 1) {
+      if (center < others[i].left + others[i].width / 2) { insertAt = i; break; }
+    }
+    dockButtons().forEach(function (node) { node.classList.remove('is-drop-before', 'is-drop-after'); });
+    if (insertAt < others.length) others[insertAt].el.classList.add('is-drop-before');
+    else if (others.length) others[others.length - 1].el.classList.add('is-drop-after');
+    drag.insertAt = insertAt;
+    return { others: others, insertAt: insertAt };
+  }
+
+  /* 一帧只做一次写：被拖项跟手 + 邻居让位（插入线与 insertAt 在 move 里同步更新）。
+     landNow：激活帧的首次让位直接落位（禁过渡一拍），拖动一开始就看得到让位；
+     之后每次槽位变化仍走 .is-sorting 的 0.2s 过渡。 */
+  function applyDockFrame(landNow) {
+    if (!dockDrag) return;
+    dockDrag.frame = 0;
+    var info = updateDockInsert();
+    if (dockDrag.reduced) return;
+    var button = dockDrag.button;
+    button.style.setProperty('--dock-dx', Math.round(dockDrag.dx) + 'px');
+    button.style.setProperty('--dock-dy', Math.round(dockDrag.dy) + 'px');
+    var fromIdx = dockDrag.from;
+    var shifts = info.others.map(function (one, index) {
+      var shift = 0;
+      if (info.insertAt < fromIdx && index >= info.insertAt && index < fromIdx) shift = 1;
+      else if (info.insertAt > fromIdx && index >= fromIdx && index < info.insertAt) shift = -1;
+      return { node: one.el, shift: shift };
+    });
+    var moved = shifts.filter(function (one) { return one.shift; });
+    if (landNow) moved.forEach(function (one) { one.node.style.transition = 'none'; });
+    shifts.forEach(function (one) {
+      one.node.style.transform = one.shift ? 'translate3d(' + (one.shift * dockDrag.slot) + 'px, 0, 0)' : '';
+    });
+    if (landNow && moved.length) {
+      refs.dock.getBoundingClientRect();
+      moved.forEach(function (one) { one.node.style.transition = ''; });
+    }
+  }
+
+  /* 清掉拖动预览的全部内联位移：取消手势与松手交接时都走这一处。 */
+  function clearDockPreview(drag) {
+    if (drag.frame) { cancelAnimationFrame(drag.frame); drag.frame = 0; }
+    if (drag.button) {
+      drag.button.style.removeProperty('--dock-dx');
+      drag.button.style.removeProperty('--dock-dy');
+    }
+    dockButtons().forEach(function (node) {
+      node.classList.remove('is-drop-before', 'is-drop-after');
+      node.style.transform = '';
+    });
+  }
+
   function onDockPointerMove(event) {
     if (!dockDrag) return;
     var dx = event.clientX - dockDrag.startX;
     var dy = event.clientY - dockDrag.startY;
+    var prime = false;
     if (!dockDrag.active) {
       /* 6px 阈值：低于它仍算点击，"点一下打开"的手感不会丢。 */
       if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
       dockDrag.active = true;
+      prime = true;
       dockDrag.button.classList.add('is-dragging');
       refs.dock.classList.add('is-sorting');
+      /* 几何只在激活瞬间量一次：offsetLeft 不受 transform 影响，
+         之后各帧都用这份缓存，兄弟的让位位移不会回灌进插入位计算。 */
+      var geom = dockButtons();
+      dockDrag.from = geom.indexOf(dockDrag.button);
+      if (dockDrag.from < 0) return;
+      dockDrag.metrics = geom.map(function (node) { return { el: node, left: node.offsetLeft, width: node.offsetWidth }; });
+      dockDrag.slot = geom.length > 1 ? (geom[1].offsetLeft - geom[0].offsetLeft) : 0;
+      dockDrag.reduced = U.prefersReducedMotion();
       try { dockDrag.button.setPointerCapture(dockDrag.pointerId); } catch (err) { /* ignore */ }
     }
     event.preventDefault();
-    var rect = dockDrag.button.getBoundingClientRect();
-    var centerX = rect.left + rect.width / 2 + dx;
-    var buttons = dockButtons();
-    var others = buttons.filter(function (node) { return node !== dockDrag.button; });
-    var insertAt = others.length;
-    for (var i = 0; i < others.length; i += 1) {
-      var other = others[i].getBoundingClientRect();
-      if (centerX < other.left + other.width / 2) { insertAt = i; break; }
+    dockDrag.dx = dx;
+    dockDrag.dy = dy;
+    if (prime && !dockDrag.reduced) {
+      /* 越过阈值这一帧同步落一次：让位立刻可见；之后各帧仍由 rAF 合并。 */
+      applyDockFrame(true);
+    } else {
+      /* 插入位同步刷新：pointerup 同 tick 结算时 insertAt 必须已经是最新值。 */
+      updateDockInsert();
+      if (!dockDrag.reduced && !dockDrag.frame) {
+        /* 不能直接把 applyDockFrame 交给 rAF：rAF 会回传时间戳，被当成 landNow。 */
+        dockDrag.frame = requestAnimationFrame(function () { applyDockFrame(); });
+      }
     }
-    buttons.forEach(function (node) { node.classList.remove('is-drop-before', 'is-drop-after'); });
-    if (insertAt < others.length) others[insertAt].classList.add('is-drop-before');
-    else if (others.length) others[others.length - 1].classList.add('is-drop-after');
-    dockDrag.insertAt = insertAt;
   }
 
   /* 手势被系统收走（触屏滚动、来电、切前台）时只清理，绝不提交顺序：
@@ -13217,23 +13111,77 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     window.removeEventListener('pointercancel', onDockPointerCancel);
     drag.button.classList.remove('is-dragging');
     refs.dock.classList.remove('is-sorting');
-    dockButtons().forEach(function (node) { node.classList.remove('is-drop-before', 'is-drop-after'); });
+    clearDockPreview(drag);
+  }
+
+  function measureDockPositions() {
+    var map = {};
+    dockButtons().forEach(function (node) {
+      var box = node.getBoundingClientRect();
+      map[node.getAttribute('data-dock-app')] = { left: box.left, top: box.top };
+    });
+    return map;
+  }
+
+  /* 换位统一出口：拖动松手与 Alt+方向键都走这里。
+     先测量旧视觉位置 → 同步提交 + 重建（pointerup 同 tick 生效）→ 再 FLIP 落位。
+     FLIP 走 translate（独立位移通道），transform 保持干净：落位期间不残留内联 transform。 */
+  function settleDockOrder(ids, focusId, previous) {
+    var before = previous || measureDockPositions();
+    commitDockOrder(ids);
+    buildDock();
+    if (!U.prefersReducedMotion()) {
+      var pending = [];
+      dockButtons().forEach(function (node) {
+        var appId = node.getAttribute('data-dock-app');
+        var was = before[appId];
+        if (!was) return;
+        var box = node.getBoundingClientRect();
+        var deltaX = was.left - box.left;
+        var deltaY = was.top - box.top;
+        if (Math.abs(deltaX) < 0.5 && Math.abs(deltaY) < 0.5) return;
+        node.style.translate = deltaX + 'px ' + deltaY + 'px';
+        pending.push(node);
+      });
+      if (pending.length) {
+        refs.dock.getBoundingClientRect();  /* 先记下起始位移，下一帧归零才会走过渡 */
+        pending.forEach(function (node) { node.classList.add('is-settling'); });
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            pending.forEach(function (node) { node.style.translate = ''; });
+          });
+        });
+        setTimeout(function () {
+          pending.forEach(function (node) {
+            node.classList.remove('is-settling');
+            node.style.translate = '';
+          });
+        }, 320);
+      }
+    }
+    if (focusId) {
+      var target = refs.dock.querySelector('[data-dock-app="' + focusId + '"]');
+      if (target) target.focus({ preventScroll: true });
+    }
   }
 
   function onDockPointerUp() {
     if (!dockDrag) return;
     var drag = dockDrag;
+    /* 先量「眼睛刚才看到的位置」（含跟手位移与邻居让位），再清预览态：
+       落位动画从旧视觉位置出发，才不是整坞重建的硬切。 */
+    var previous = drag.active ? measureDockPositions() : null;
     dockDrag = null;
     window.removeEventListener('pointermove', onDockPointerMove);
     window.removeEventListener('pointerup', onDockPointerUp);
     window.removeEventListener('pointercancel', onDockPointerCancel);
     drag.button.classList.remove('is-dragging');
     refs.dock.classList.remove('is-sorting');
-    var buttons = dockButtons();
-    buttons.forEach(function (node) { node.classList.remove('is-drop-before', 'is-drop-after'); });
+    clearDockPreview(drag);
     if (!drag.active) return;
     /* 拖完浏览器还会补发 click；只对这一枚生效 250ms，别误吞旁边的图标。 */
     dockClickGuard = { id: drag.id, until: Date.now() + 250 };
+    var buttons = dockButtons();
     var ids = buttons.map(function (node) { return node.getAttribute('data-dock-app'); });
     var from = ids.indexOf(drag.id);
     if (from === -1) return;
@@ -13242,11 +13190,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     if (to < 0) to = 0;
     if (to > ids.length) to = ids.length;
     ids.splice(to, 0, drag.id);
-    commitDockOrder(ids);
-    buildDock();
+    settleDockOrder(ids, drag.id, previous);
     announceDockMove(drag.id, ids);
-    var moved = refs.dock.querySelector('[data-dock-app="' + drag.id + '"]');
-    if (moved) moved.focus({ preventScroll: true });
   }
 
   function buildDock() {
@@ -13275,11 +13220,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         if (next < 0 || next >= ids.length) return;
         ids.splice(at, 1);
         ids.splice(next, 0, app.id);
-        commitDockOrder(ids);
-        buildDock();
+        settleDockOrder(ids, app.id);
         announceDockMove(app.id, ids);
-        var moved = refs.dock.querySelector('[data-dock-app="' + app.id + '"]');
-        if (moved) moved.focus({ preventScroll: true });
       });
       bindDockDrag(button, app.id);
       refs.dock.appendChild(button);
@@ -13378,10 +13320,6 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     refs.savePill.setAttribute('title', phase === 'error' && status.error ? status.error : '点击立即保存');
     refs.saveText.textContent = label;
     if (phase === 'saved' && status.at) {
-      var saveTime = document.createElement('span');
-      saveTime.className = 'save-pill__time';
-      saveTime.textContent = ' · ' + U.formatTime(status.at);
-      refs.saveText.appendChild(saveTime);
       refs.savePill.setAttribute('aria-label', '工作区已保存，最后保存于 ' + U.formatTime(status.at) + '。点击立即保存');
     } else {
       refs.savePill.setAttribute('aria-label', label + '。点击立即保存');
@@ -14580,14 +14518,14 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         if (!item) {
           refs.editor.hidden = true;
           if (refs.emptyBox) refs.emptyBox.hidden = false;
-          if (refs.barTitle) refs.barTitle.textContent = '提示词';
           if (refs.actions) refs.actions.hidden = true;
+          if (refs.bar) refs.bar.hidden = true;
           return;
         }
         refs.editor.hidden = false;
         if (refs.emptyBox) refs.emptyBox.hidden = true;
-        if (refs.barTitle) refs.barTitle.textContent = item.title || '未命名提示词';
         if (refs.actions) refs.actions.hidden = false;
+        if (refs.bar) refs.bar.hidden = false;
 
         var body = document.createElement('div');
         body.className = 'prompts-main__body';
@@ -14644,9 +14582,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         updatePinLabel(item);
       }
 
-      /* 只更新"会变但不需要重建"的部分：栏头标题、字数、置顶态。 */
+      /* 只更新"会变但不需要重建"的部分：字数、置顶态。 */
       function updateEditorMeta(item) {
-        if (refs.barTitle) refs.barTitle.textContent = item.title || '未命名提示词';
         if (refs.counter) refs.counter.textContent = F('{n} / 20000 字', charCount(item.body));
         updatePinLabel(item);
       }
@@ -14779,14 +14716,12 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           '<input type="search" placeholder="搜标题或正文" aria-label="搜索提示词" data-testid="prompt-search"></label>' +
           '<div class="prompts-rail__status"><span class="prompts-rail__count" data-testid="prompt-count-total"></span></div>' +
           '</div>' +
-          '<div class="prompts-list" data-testid="prompt-list"></div>' +
-          '<div class="prompts-rail__foot">在对话输入框点「提示词」取用<br>只填进草稿，不会发送</div>';
+          '<div class="prompts-list" data-testid="prompt-list"></div>';
 
         var main = document.createElement('div');
         main.className = 'prompts-main';
         main.innerHTML = '<div class="prompts-card">' +
           '<div class="prompts-main__bar">' +
-          '<span class="prompts-main__title" data-testid="prompt-heading">提示词</span>' +
           '<span class="prompts-main__actions" hidden>' +
           '<button class="paper-btn paper-btn--tiny paper-btn--ghost" type="button" data-testid="prompt-copy" title="只复制正文">复制</button>' +
           '<button class="paper-btn paper-btn--tiny paper-btn--ghost" type="button" data-testid="prompt-duplicate">复制一条</button>' +
@@ -14817,12 +14752,12 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         refs.editor = root.querySelector('[data-testid="prompt-editor"]');
         refs.emptyBox = root.querySelector('[data-testid="prompt-empty"]');
         refs.actions = root.querySelector('.prompts-main__actions');
-        refs.barTitle = root.querySelector('[data-testid="prompt-heading"]');
+        refs.bar = root.querySelector('.prompts-main__bar');
         refs.pinBtn = root.querySelector('[data-testid="prompt-pin"]');
         refs.saveState = root.querySelector('[data-testid="prompt-save-state"]');
         ctx.setTitle('提示词');
         /* 提示词排版跟着「窗口自己多宽」走（不看视口）：700 / 520 两档与 CSS 的
-           is-snug / is-stacked 一一对应；高度 ≤520 时收起 rail 底部说明（is-short）。 */
+           is-snug / is-stacked 一一对应；高度 ≤520 时给 root 挂 is-short。 */
         function syncPromptBox() {
           var box = root.getBoundingClientRect();
           root.classList.toggle('is-snug', box.width > 520 && box.width <= 700);
@@ -14999,30 +14934,40 @@ html[data-theme="dark"] .priority-popover__item.is-active {
             var tag = button.querySelector('.note-item__sample');
             tag.hidden = false;
           }
+          if (note.pinned) {
+            var pinBadge = document.createElement('span');
+            pinBadge.className = 'note-item__pin';
+            pinBadge.setAttribute('aria-label', '已置顶');
+            pinBadge.innerHTML = P.icon('sparkles');
+            var top = button.querySelector('.note-item__top');
+            if (top) top.insertBefore(pinBadge, button.querySelector('.note-item__sample'));
+          }
           button.addEventListener('click', function () { selectDoc(note.id); });
           refs.list.appendChild(button);
         });
       }
 
-      function updateBreadcrumb(doc) {
-        if (!refs.breadcrumb) return;
-        refs.breadcrumb.innerHTML = '';
-        var root = document.createElement('span');
-        root.textContent = '纸页';
-        refs.breadcrumb.appendChild(root);
-        var current = document.createElement('span');
-        current.className = 'crumb-current';
-        current.textContent = doc.name;
-        var sep = document.createElement('span');
-        sep.className = 'crumb-sep';
-        sep.textContent = ' / ';
-        refs.breadcrumb.appendChild(sep);
-        refs.breadcrumb.appendChild(current);
-      }
-
       function wordLabel(content) {
         var chars = String(content || '').replace(/\s/g, '').length;
         return chars ? F('{n} 个字', chars) : '空白纸页';
+      }
+
+      /* 置顶按钮的唯一刷新点：文案 / aria-pressed / 可用性。 */
+      function syncPinButton(doc) {
+        if (!refs.pinBtn) return;
+        var pinned = !!(doc && doc.pinned);
+        refs.pinBtn.textContent = pinned ? '取消置顶' : '置顶';
+        refs.pinBtn.setAttribute('aria-pressed', pinned ? 'true' : 'false');
+        refs.pinBtn.disabled = !doc;
+      }
+
+      function togglePinNote() {
+        var doc = currentDoc();
+        if (!doc) return;
+        P.data.updateNode(doc.id, { pinned: !doc.pinned });
+        renderList();
+        syncPinButton(P.data.getNode(doc.id));
+        updateEditorChrome(P.data.getNode(doc.id), { silentParams: true });
       }
 
       function updateEditorChrome(doc, options) {
@@ -15038,12 +14983,12 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         if (refs.body && (!refs.body.matches(':focus') || opts.force) && refs.body.value !== (doc.content || '')) {
           refs.body.value = doc.content || '';
         }
-        updateBreadcrumb(doc);
         if (refs.sampleTag) refs.sampleTag.hidden = !doc.sample;
         if (refs.updated) refs.updated.textContent = '修改于 ' + U.timeAgo(doc.updatedAt);
         if (refs.wordCount) refs.wordCount.textContent = wordLabel(doc.content);
         if (refs.deleteBtn) refs.deleteBtn.disabled = false;
         if (refs.saveNow) refs.saveNow.disabled = false;
+        syncPinButton(doc);
         ctx.setTitle(doc.name);
         if (!opts.silentParams) ctx.setParams({ docId: doc.id });
       }
@@ -15079,6 +15024,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         }
         if (refs.deleteBtn) refs.deleteBtn.disabled = true;
         if (refs.saveNow) refs.saveNow.disabled = true;
+        syncPinButton(null);
         renderList();
         ctx.setTitle('纸页笔记');
         ctx.setParams({});
@@ -15093,6 +15039,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         var fallbackName = missing && missing.name ? missing.name : '这张纸页';
         missing = { id: id, name: name || fallbackName };
         currentId = null;
+        syncPinButton(null);
         if (refs.sheet) refs.sheet.hidden = true;
         if (refs.empty) refs.empty.hidden = true;
         if (refs.missing) {
@@ -15262,8 +15209,9 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           '<div class="empty-state__actions"><button class="paper-btn paper-btn--ink" type="button" data-empty-new>写第一张纸</button></div></div>' +
           '</div>' +
           '<div class="editor-sheet" data-sheet hidden>' +
-          '<div class="notes-editor__head"><div class="editor-breadcrumb" data-breadcrumb></div>' +
+          '<div class="notes-editor__head">' +
           '<div class="editor-head__actions">' +
+          '<button class="paper-btn paper-btn--tiny paper-btn--ghost" type="button" data-testid="note-pin" aria-pressed="false">置顶</button>' +
           '<button class="paper-btn paper-btn--tiny paper-btn--ghost" type="button" data-save-now>立即保存</button>' +
           '<button class="icon-btn" type="button" data-rename aria-label="重命名纸页" title="重命名"><span aria-hidden="true"></span></button>' +
           '<button class="icon-btn icon-btn--danger" type="button" data-delete aria-label="删除纸页" title="删除纸页"><span aria-hidden="true"></span></button>' +
@@ -15293,7 +15241,6 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         refs.emptyTitle = root.querySelector('[data-empty-title]');
         refs.emptyText = root.querySelector('[data-empty-text]');
         refs.sheet = root.querySelector('[data-sheet]');
-        refs.breadcrumb = root.querySelector('[data-breadcrumb]');
         refs.titleInput = root.querySelector('.note-title-input');
         refs.body = root.querySelector('.note-body');
         refs.sampleTag = root.querySelector('[data-sample]');
@@ -15303,6 +15250,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         refs.missingName = root.querySelector('[data-missing-name]');
         refs.deleteBtn = root.querySelector('[data-delete]');
         refs.saveNow = root.querySelector('[data-save-now]');
+        refs.pinBtn = root.querySelector('[data-testid="note-pin"]');
         refs.renameBtn = root.querySelector('[data-rename]');
         var renameIcon = refs.renameBtn.querySelector('span');
         if (renameIcon) renameIcon.innerHTML = P.icon('pencil');
@@ -15327,6 +15275,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
             P.ui.toast('保存没有完成：' + (err && err.message ? err.message : '未知原因'), { kind: 'error' });
           });
         });
+        refs.pinBtn.addEventListener('click', togglePinNote);
         refs.searchInput.addEventListener('input', function () {
           if (refs.searchClear) refs.searchClear.hidden = !refs.searchInput.value;
           renderList();
@@ -15951,7 +15900,6 @@ html[data-theme="dark"] .priority-popover__item.is-active {
               pip.setAttribute('aria-hidden', 'true');
               option.appendChild(pip);
               option.appendChild(mk('span', 'priority-option__label', item.label));
-              option.appendChild(mk('span', 'priority-option__hint', item.hint));
               option.addEventListener('click', function () {
                 draft.priority = item.id;
                 priorityRow.querySelectorAll('.priority-option').forEach(function (node) {
@@ -15976,7 +15924,6 @@ html[data-theme="dark"] .priority-popover__item.is-active {
               option.setAttribute('aria-checked', item.id === draft.repeat ? 'true' : 'false');
               if (item.id === draft.repeat) option.classList.add('is-active');
               option.appendChild(mk('span', 'priority-option__label', item.label));
-              option.appendChild(mk('span', 'priority-option__hint', item.hint));
               option.addEventListener('click', function () {
                 draft.repeat = item.id;
                 repeatRow.querySelectorAll('.priority-option').forEach(function (node) {
@@ -16042,14 +15989,12 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         return true;
       }
 
-      /* 星期表头：中文取「星期一…星期日」的第二个字，英文用 M/T/W/T/F/S/S。
+      /* 星期表头：中文用「周一…周日」（复用唯一短名表），英文用 M/T/W/T/F/S/S。
          单字「日」与日期后缀撞键（英文里是零宽），所以表头不写死在 HTML 里。 */
       function weekdayInitials() {
         if (P.lang === 'en') return ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-        var out = [];
-        /* 2024-01-01 是星期一，按它取一周，避免再写一份单字表。 */
-        for (var i = 0; i < 7; i += 1) out.push(U.weekdayName(new Date(2024, 0, 1 + i)).slice(1));
-        return out;
+        var short = U.weekdaysShort();
+        return short.slice(1).concat([short[0]]);
       }
 
       function mount(container, params) {
@@ -16068,7 +16013,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           '</section>' +
           '<aside class="calendar-tasks" aria-label="这一天的待办">' +
           '<div class="calendar-tasks__head"><div class="calendar-tasks__date">' +
-          '<div><p>SELECTED DAY · 这一天</p><h3 data-selected-date aria-live="polite"></h3></div>' +
+          '<div><h3 data-selected-date aria-live="polite"></h3></div>' +
           '<span class="count-chip" data-task-count>0</span></div></div>' +
           '<div class="task-list" data-task-list></div>' +
           '<form class="task-add" data-task-form><input type="text" maxlength="300" data-task-input aria-label="新增待办" placeholder="在这一天留一件事…" autocomplete="off">' +
@@ -17134,7 +17079,6 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           if (node) node.textContent = String(values[key]);
         });
         var examples = stats.examples.nodes + stats.examples.stickies + stats.examples.tasks;
-        if (refs.examplesCount) refs.examplesCount.textContent = examples ? F('还有 {n} 件示例内容', examples) : '示例内容已经清理干净';
         if (refs.examplesAction) refs.examplesAction.disabled = examples === 0;
       }
 
@@ -17282,7 +17226,6 @@ html[data-theme="dark"] .priority-popover__item.is-active {
          数据与执行来自 P.commands（shell 里那份唯一清单），这里只负责画与按键。 */
       function buildCommands() {
         return '<h2 class="settings-section__title">命令与应用</h2>' +
-          '<p class="settings-section__intro">搜索应用、纸页或动作。选中回车即可执行；打开别的窗口后，设置会自动收起让出桌面。</p>' +
           '<div class="command-sheet" data-command-sheet>' +
           '<div class="command-sheet__search">' + P.icon('search') +
           '<input class="command-sheet__input" type="text" data-command-input role="combobox" aria-label="搜索应用、纸页或操作" aria-autocomplete="list" aria-expanded="true" aria-controls="command-results" aria-activedescendant="" placeholder="找一张纸，或做一件事…" autocomplete="off" spellcheck="false">' +
@@ -17294,43 +17237,40 @@ html[data-theme="dark"] .priority-popover__item.is-active {
 
       function buildAppearance() {
         return '<h2 class="settings-section__title">外观</h2>' +
-          '<p class="settings-section__intro">配色与 DSH 保持一致；这里再调纸纹、便签字形、桌面网格和动效。设置会自动保存。</p>' +
           /* 这一行的文案在 F() 里：它们是页面新增的静态字（语言 / 界面语言 / 中文 / 说明），
              走 en.templates.json（页面 owner）而不是 en.json（由页面抽取生成），
              构建按 F('…') 跳过静态替换，所以这些字不会在英文页里被二次翻译。 */
           '<div class="setting-row"><div class="setting-row__copy"><span class="setting-row__label">' + F('语言', {}) + '</span>' +
-          '<p class="setting-row__desc">' + F('跟随 DSH 时用宿主界面语言；也可以固定中文或 English。改完会重新铺一次纸张。', {}) + '</p></div>' +
+          '</div>' +
           '<div class="select-wrap"><select data-lang-select aria-label="' + F('界面语言', {}) + '">' +
           '<option value="system">跟随 DSH</option><option value="zh">' + F('中文', {}) + '</option><option value="en">English</option>' +
           '</select></div></div>' +
           '<div class="setting-row"><div class="setting-row__copy"><span class="setting-row__label">配色</span>' +
-          '<p class="setting-row__desc">跟随 DSH 时会跟着宿主的浅色／深色一起变。</p></div>' +
+          '</div>' +
           '<div class="select-wrap"><select data-theme-select aria-label="配色方案">' +
           '<option value="system">跟随 DSH</option><option value="light">浅色</option><option value="dark">深色</option>' +
           '</select></div></div>' +
           '<div class="setting-row"><div class="setting-row__copy"><span class="setting-row__label">便签字形</span>' +
-          '<p class="setting-row__desc">只影响便签正文；标题与按钮保持纸张字体。</p></div>' +
+          '</div>' +
           '<div class="select-wrap"><select data-hand-select aria-label="便签字形">' +
           '<option value="kai">霞鹜文楷（内置）</option><option value="xing">系统行楷</option><option value="serif">纸张宋体</option>' +
           '</select></div></div>' +
           '<div class="setting-row"><div class="setting-row__copy"><span class="setting-row__label">纸纹</span>' +
-          '<p class="setting-row__desc">纸张上的细颗粒。关掉更干净，打开更像纸。</p></div>' +
+          '</div>' +
           '<button class="toggle" type="button" data-texture-toggle aria-pressed="true" aria-label="显示纸张纹理"></button></div>' +
           '<div class="setting-row"><div class="setting-row__copy"><span class="setting-row__label">应用坞顺序</span>' +
-          '<p class="setting-row__desc">直接拖动底部图标即可换位置；聚焦图标后也能用 Alt + ←/→ 移动。</p></div>' +
+          '</div>' +
           '<button class="paper-btn paper-btn--tiny" type="button" data-dock-reset>恢复默认</button></div>' +
           '<div class="setting-row"><div class="setting-row__copy"><span class="setting-row__label">细网格</span>' +
-          '<p class="setting-row__desc">显示桌面点阵，方便对齐窗口。</p></div>' +
+          '</div>' +
           '<button class="toggle" type="button" data-grid-toggle aria-pressed="true" aria-label="显示桌面细网格"></button></div>' +
           '<div class="setting-row"><div class="setting-row__copy"><span class="setting-row__label">动效</span>' +
-          '<p class="setting-row__desc">跟随系统，或减少动画。</p></div>' +
-          '<div class="select-wrap"><select data-motion-select aria-label="动效偏好"><option value="system">跟随系统</option><option value="reduce">减少动效</option></select></div></div>' +
-          '<div class="settings-note">设置保存在本机，并会随工作区一起导出。</div>';
+          '</div>' +
+          '<div class="select-wrap"><select data-motion-select aria-label="动效偏好"><option value="system">跟随系统</option><option value="reduce">减少动效</option></select></div></div>';
       }
 
       function buildWorkspace() {
         return '<h2 class="settings-section__title">数据与备份</h2>' +
-          '<p class="settings-section__intro">内容会自动保存；在 DSH 里会写入 DSH 本地数据目录，同时保留浏览器缓存。导出可备份全部内容，导入会替换当前桌面。</p>' +
           '<div class="stats-grid" data-stats>' +
           '<div class="stat-card"><strong data-stat="notes">0</strong><span>纸页</span></div>' +
           '<div class="stat-card"><strong data-stat="drawings">0</strong><span>画纸</span></div>' +
@@ -17341,46 +17281,42 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           '<p class="storage-line" data-storage-line></p>' +
           '<div class="setting-actions">' +
           '<button class="setting-action" type="button" data-export><span class="setting-action__icon">' + P.icon('download') + '</span>' +
-          '<span class="setting-action__copy"><span class="setting-action__name">导出工作区</span><span class="setting-action__desc">把全部内容与窗口布局存成一份 JSON 备份</span></span><span class="setting-action__arrow">↓</span></button>' +
+          '<span class="setting-action__copy"><span class="setting-action__name">导出工作区</span></span><span class="setting-action__arrow">↓</span></button>' +
           '<button class="setting-action" type="button" data-import><span class="setting-action__icon">' + P.icon('upload') + '</span>' +
-          '<span class="setting-action__copy"><span class="setting-action__name">导入工作区</span><span class="setting-action__desc">校验格式后，确认替换当前桌面</span></span><span class="setting-action__arrow">↑</span></button>' +
+          '<span class="setting-action__copy"><span class="setting-action__name">导入工作区</span></span><span class="setting-action__arrow">↑</span></button>' +
           '<button class="setting-action" type="button" data-clear-examples><span class="setting-action__icon">' + P.icon('sparkles') + '</span>' +
-          '<span class="setting-action__copy"><span class="setting-action__name">清理示例内容</span><span class="setting-action__desc" data-examples-count>示例内容会保留到你主动清理</span></span><span class="setting-action__arrow">↗</span></button>' +
+          '<span class="setting-action__copy"><span class="setting-action__name">清理示例内容</span></span><span class="setting-action__arrow">↗</span></button>' +
           '<button class="setting-action setting-action--danger" type="button" data-reset><span class="setting-action__icon">' + P.icon('refresh') + '</span>' +
-          '<span class="setting-action__copy"><span class="setting-action__name">清空并重新开始</span><span class="setting-action__desc">删除全部内容并回到示例桌面</span></span><span class="setting-action__arrow">↻</span></button>' +
+          '<span class="setting-action__copy"><span class="setting-action__name">清空并重新开始</span></span><span class="setting-action__arrow">↻</span></button>' +
           '</div>' +
-          '<p class="settings-note">带「示例」印章的内容可以随时清理。导入格式不对时会拒绝，不会改动现有内容。</p>' +
           '<input type="file" accept=".json,application/json" data-import-file hidden>';
       }
 
       function buildTutorial() {
         return '<h2 class="settings-section__title">教程</h2>' +
-          '<p class="settings-section__intro">纸屿的上手说明。窗口、纸页和按钮都可以用 Tab 键访问。</p>' +
           '<div class="setting-row"><div class="setting-row__copy"><span class="setting-row__label">新手导览</span>' +
-          '<p class="setting-row__desc">重新看一遍底部应用坞、窗口操作和收好桌面的说明。</p></div>' +
+          '</div>' +
           '<button class="paper-btn paper-btn--tiny" type="button" data-replay-tour>重新播放</button></div>' +
           '<div class="setting-row"><div class="setting-row__copy"><span class="setting-row__label">触屏</span>' +
-          '<p class="setting-row__desc">点底部应用坞打开应用；在窄屏上，窗口会变成整页纸。</p></div>' +
+          '</div>' +
           '<span class="stamp-label">触摸友好</span></div>' +
           '<div class="setting-row"><div class="setting-row__copy"><span class="setting-row__label">窗口</span>' +
-          '<p class="setting-row__desc">拖标题栏移动窗口，拖右下角缩放；右上角按钮可最小化、最大化、关闭。</p></div>' +
+          '</div>' +
           '<span class="stamp-label">鼠标与触屏</span></div>';
       }
 
       function buildAbout() {
         return '<h2 class="settings-section__title">关于纸屿</h2>' +
-          '<p class="settings-section__intro">一个纸面风格的个人便签与日程工具，嵌在 DSH 里使用。</p>' +
           '<div class="about-sheet"><span class="about-sheet__mark">屿</span>' +
           '<h3>PAPER OS · 纸屿</h3>' +
-          '<p>便签、长纸页、日历待办和画纸都在同一个桌面里。窗口可以自由摆放，内容自动保存。</p>' +
           '<div class="about-meta"><span>版本 ' + P.version + '</span><span>插件 dsh-plugin-control-your-schedule</span><span data-storage-mode>' + P.storage.getModeLabel() + '</span></div>' +
           '</div>' +
           '<div class="divider"></div>' +
           '<div class="setting-row"><div class="setting-row__copy"><span class="setting-row__label">数据位置</span>' +
-          '<p class="setting-row__desc">在 DSH 中写入 DSH 数据目录，浏览器保留一份缓存；导出备份可以迁移到另一台设备。</p></div>' +
+          '</div>' +
           '<span class="stamp-label">自动保存</span></div>' +
           '<div class="setting-row"><div class="setting-row__copy"><span class="setting-row__label">备份</span>' +
-          '<p class="setting-row__desc">在「数据与备份」里导出工作区；换设备或重装时再导入。</p></div>' +
+          '</div>' +
           '<span class="stamp-label">可迁移</span></div>';
       }
 
@@ -17420,7 +17356,6 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         refs.storageLine = root.querySelector('[data-storage-line]');
         refs.storageMode = root.querySelector('[data-storage-mode]');
         refs.stats = root.querySelector('[data-stats]');
-        refs.examplesCount = root.querySelector('[data-examples-count]');
         refs.examplesAction = root.querySelector('[data-clear-examples]');
         importInput = root.querySelector('[data-import-file]');
         refs.nav.querySelectorAll('[data-section]').forEach(function (button) {
@@ -17616,7 +17551,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     },
     {
       title: '保存和备份',
-      body: '内容会自动保存，右上角显示保存状态。设置 → 数据与备份可以导出备份，也能重新播放这份导览。',
+      body: '内容会自动保存。设置 → 数据与备份可以导出备份，也能重新播放这份导览。',
       target: function () { return document.getElementById('save-pill'); },
       placement: 'bottom'
     },

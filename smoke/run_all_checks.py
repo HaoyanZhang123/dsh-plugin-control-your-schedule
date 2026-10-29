@@ -4,6 +4,8 @@
 
 No third-party dependencies. Run from anywhere:
     python smoke/run_all_checks.py
+    python smoke/run_all_checks.py --self-test   (judge the judge, no subprocesses)
+    python smoke/run_all_checks.py --cdp         (adds the real-browser suites)
 Exit code 0 only when every check passes.
 """
 from __future__ import annotations
@@ -32,6 +34,158 @@ NODE = shutil.which("node") or shutil.which("node.exe") or ""
 
 checks = []
 skipped = []
+
+# --- Static needles, kept at module scope so --self-test can audit the very
+# --- same judgement function the real gate runs (judge and the judged).
+
+BASE_REMOVED = {
+    "desktop icon container": 'id="desktop"',
+    "desktop icon class": "desk-icon",
+    "file cabinet string": "文件柜",
+    "file cabinet app id": "id: 'files'",
+    "old double-click copy": "双击纸页开始",
+    "old left-entry copy": "打开左边一张纸",
+    "window control buttons": "data-win-action",
+    "dock caption": "点击图标打开应用",
+    "desk focus placeholder": "选择底部应用开始",
+    "desk intro caption": "从底部应用坞打开应用",
+    "day card kicker": "TODAY'S PAPER",
+    "notes foot auto-save copy": "自动保存 · 无需手动提交",
+    "notes foot delete button": "删除这张纸页",
+    "notes rail saved label": "已保存到纸屿",
+    "day card overflow copy": "件 · 翻开日历",
+    "sticky delete undo toast": "便签已经揭下来了",
+    "shortcut table": "P.shortcuts = [",
+    "shortcut grid css": ".shortcut-grid",
+    "shortcut keys css": ".shortcut-keys",
+    "legacy settings tab id": 'data-section="shortcuts"',
+    "hardcoded page version": "P.version = '1.",
+    "standalone command palette overlay": "palette-layer",
+    "palette top-bar button": 'id="palette-btn"',
+    "palette item class": "palette-item",
+    "palette open function": "function openPalette()",
+    "paper tone picker": "data-tones",
+    "paper tone token": 'html[data-paper=',
+}
+
+BASE_EXPECTED = {
+    "bottom dock home": 'data-testid="dock-home"',
+    "sticky drag handle": 'class="sticky__drag"',
+    "guided tour api": "P.tour =",
+    "host bootstrap": "__SCHEDULE_HOST_SNAPSHOT__",
+    "host save bridge": "__SCHEDULE_RESTART__",
+    "dynamic day summary": "daySummaryText",
+    "fixed right calendar rail": "right: 18px;",
+    "uniform surface radius": "--radius-win: 18px;",
+    "dialog radius": ".paper-dialog,",
+    "window paper layers removed": ".window::before,",
+    "delete palette action": "关闭当前窗口",
+    "command section panel": "data-section-panel=\"commands\"",
+    "command section nav button": "data-section=\"commands\"",
+    "command list is the shell's single source": "P.commands = {",
+    "ctrl+k lands on the command section": "openSettings('commands')",
+    "dock order preference": "dockOrder: []",
+    "dock reordering entry": "function commitDockOrder(ids)",
+    "settings icon is a gear": "M19.1 12a7 7 0 0 0-.1-1.2l2-1.5",
+    "desktop click dismiss": "bindDesktopDismiss",
+    "page version placeholder": "__PAGE_VERSION__",
+    "schema is v4": "P.schemaVersion = 4;",
+    "prompt app registered": "id: 'prompts',",
+    "prompt sanitizer": "function sanitizePrompts(raw, now)",
+    "prompt migration step": "2: function v2ToV3(raw)",
+    "migration markers": "/* @migrate-begin */",
+    "single ingest gate": "function ingestWorkspace(raw)",
+    "priority table": "P.TASK_PRIORITIES = [",
+    "task completion is day-based": "function setTaskDone(id, day, done)",
+    "recurring resolution": "function resolveTask(id)",
+    "sticky trash retention": "var TRASH_DAYS = 7;",
+    "sticky raise on touch": "P.data.raiseSticky(",
+    "whole-card sticky drag": "if (event.target.closest('.sticky__text, .sticky__swatches, .sticky__del')) return;",
+    "theme resolution": "function resolveTheme(mode)",
+    "host dark signal": "data-ds-dark-theme",
+    "builtin hand font face": "font-family: \"LXGW WenKai\";",
+    "corner toast placement": "placement: 'corner'",
+    "almanac table": "var ALMANAC = [",
+    "first open fills work area": "function defaultBounds(app)",
+    "drawing paging": "function stepGallery(direction)",
+    "drawing delete": "function confirmDeleteDrawing()",
+    "tutorial tab": 'data-section="tutorial"',
+    "tutorial panel": 'data-section-panel="tutorial"',
+    "prompt width sync": "function syncPromptBox()",
+    "prompt snug class": ".prompts-app.is-snug",
+    "prompt stacked class": ".prompts-app.is-stacked",
+}
+
+# --- K7 (0.5.0) 新增：--self-test 必须逐条把它们在内存里翻面，判定变红并点名 ---
+K7_REMOVED = {
+    "selected day kicker": "SELECTED DAY · 这一天",
+    "prompts title row": "prompts-main__title",
+    "prompts rail foot": "prompts-rail__foot",
+    "notes breadcrumb": "data-breadcrumb",
+    "notes breadcrumb css": "editor-breadcrumb",
+    "settings intro": "settings-section__intro",
+    "settings row desc": "setting-row__desc",
+    "settings note": "settings-note",
+    "settings action desc": "setting-action__desc",
+    # 用原句而不是类名：删了文案却把句子搬到别的元素里，这条仍会红。
+    "about body": "便签、长纸页、日历待办和画纸都在同一个桌面里",
+    "clock markup": 'id="clock-time"',
+    "clock css": ".clock {",
+    "save pill time": "save-pill__time",
+    # 卡面写裸串「期一」：它会命中 weekdayName 里的「星期一」字面表，是 needle 写作
+    # 错误。改成定位旧实现那一行——正是它把「星期一」切出「期一」。
+    "weekday initials bug": "U.weekdayName(new Date(2024, 0, 1 + i)).slice(1)",
+    "priority hint urgent-important": "今天就得动手，拖下去会出事。",
+    # 卡面写的是裸句「只在这一天出现。」：该句作为「切成今日」的成功 toast 在
+    # 0.4.4 里就已存在并保留至今，裸 needle 会永久红。收紧到 02 §C06 唯一被删的
+    # 位置（旧 hint 字段），语义仍是「紧急程度/状态的解释性 hint 不许回来」。
+    "priority hint once": "hint: '只在这一天出现。'",
+    "tour save-status clause": "右上角显示保存状态",
+    "composer draft-only hint on the page": "只填进草稿，不会发送",
+}
+
+K7_EXPECTED = {
+    "note pin button": 'data-testid="note-pin"',
+    # 卡面写 pinned: !!rawNode.pinned；源码实际是赋值语句（K5 回执 §2.1 同款）。
+    "note pin in validator": "node.pinned = !!rawNode.pinned;",
+    "note pinned badge": "note-item__pin",
+    "note sort": "function noteSort(a, b)",
+    "migration v3->v4": "3: function v3ToV4(raw)",
+    "urgent is sage": '[data-priority="urgent"] { background: var(--sage); }',
+    "none is neutral": '[data-priority="none"] { background: #bebebe; }',
+    "weekday short table reused": "U.weekdaysShort()",
+    "dock settle entry": "function settleDockOrder(",
+    "dock frame entry": "function applyDockFrame(",
+    # AC-29 的另一半：旧句已删，新句必须真的在（英文值由 page_e2e / i18n 覆盖）。
+    "tour save sentence": "内容会自动保存。设置 → 数据与备份可以导出备份，也能重新播放这份导览。",
+    # D-05：无选中态整条 bar 隐藏，探针造不出空库；用源码级断言固化这个分支。
+    "prompt bar hides when nothing is selected": "if (refs.bar) refs.bar.hidden = true;",
+}
+
+REMOVED = dict(BASE_REMOVED)
+REMOVED.update(K7_REMOVED)
+EXPECTED = dict(BASE_EXPECTED)
+EXPECTED.update(K7_EXPECTED)
+
+
+def needle_verdicts(page_text: str) -> list[tuple[bool, str, str]]:
+    """Single judgement path for the real gate and for --self-test.
+
+    Returns (passed, name, detail). Detail names the offending needle, which is
+    exactly what --self-test asserts on the reverse side.
+    """
+    verdicts = []
+    for label, needle in REMOVED.items():
+        if needle in page_text:
+            verdicts.append((False, "removed: " + label, "still present: " + needle))
+        else:
+            verdicts.append((True, "removed: " + label, ""))
+    for label, needle in EXPECTED.items():
+        if needle in page_text:
+            verdicts.append((True, "present: " + label, ""))
+        else:
+            verdicts.append((False, "present: " + label, "missing: " + needle))
+    return verdicts
 
 
 def ok(name: str, detail: str = "") -> None:
@@ -66,99 +220,75 @@ def run(name: str, cmd: list[str], cwd: Path | None = None) -> int:
     return proc.returncode
 
 
+def self_test(page_text: str) -> int:
+    """Judge the judge: positive on the real page, reverse for every K7 needle.
+
+    Reverse flips happen only in memory (string append / replace). Nothing is
+    written to disk, so no bad-paper artifact can be mistaken for evidence.
+    """
+    print("== --self-test 正向：真实 paper-os.html ==")
+    positive = needle_verdicts(page_text)
+    for passed, name, detail in positive:
+        if passed:
+            ok(name, detail)
+        else:
+            bad(name, detail)
+    positive_failures = [item for item in positive if not item[0]]
+    if positive_failures:
+        print("self-test: 正向 FAIL %d（真实页面本应全绿）" % len(positive_failures))
+    else:
+        print("self-test: 正向全绿（removed %d + expected %d）" % (len(REMOVED), len(EXPECTED)))
+
+    print("== --self-test 反向：K7 新增 needle 逐条翻面 ==")
+    new_total = 0
+    for label, needle in K7_REMOVED.items():
+        new_total += 1
+        target = "removed: " + label
+        flipped = page_text + "\n<!-- " + needle + " -->\n"
+        verdicts = needle_verdicts(flipped)
+        failures = [item for item in verdicts if not item[0]]
+        target_verdict = next((item for item in verdicts if item[1] == target), None)
+        others = [item[1] for item in failures if item[1] != target]
+        if (target_verdict is None or target_verdict[0] is not False
+                or needle not in target_verdict[2] or others):
+            bad(target, "翻面后没有单独变红或没有点名 needle（其它失败：%s）" % (", ".join(others) or "无"))
+        else:
+            ok(target, "翻面 -> FAIL 且点名 needle")
+
+    for label, needle in K7_EXPECTED.items():
+        new_total += 1
+        target = "present: " + label
+        flipped = page_text.replace(needle, "")
+        verdicts = needle_verdicts(flipped)
+        failures = [item for item in verdicts if not item[0]]
+        target_verdict = next((item for item in verdicts if item[1] == target), None)
+        others = [item[1] for item in failures if item[1] != target]
+        if (target_verdict is None or target_verdict[0] is not False
+                or needle not in target_verdict[2] or others):
+            bad(target, "翻面后没有单独变红或没有点名 needle（其它失败：%s）" % (", ".join(others) or "无"))
+        else:
+            ok(target, "翻面 -> FAIL 且点名 needle")
+
+    failed = [item for item in checks if not item[0]]
+    print("self-test: 反向 %d 条 K7 needle 逐条翻面完成" % new_total)
+    print("checks: PASS %d / FAIL %d / SKIP 0" % (len(checks) - len(failed), len(failed)))
+    return 0 if not failed else 1
+
+
 def main() -> int:
     if not PAGE.is_file():
         bad("page asset exists", str(PAGE))
         return 1
     page = PAGE.read_text(encoding="utf-8")
 
-    removed = {
-        "desktop icon container": 'id="desktop"',
-        "desktop icon class": "desk-icon",
-        "file cabinet string": "文件柜",
-        "file cabinet app id": "id: 'files'",
-        "old double-click copy": "双击纸页开始",
-        "old left-entry copy": "打开左边一张纸",
-        "window control buttons": "data-win-action",
-        "dock caption": "点击图标打开应用",
-        "desk focus placeholder": "选择底部应用开始",
-        "desk intro caption": "从底部应用坞打开应用",
-        "day card kicker": "TODAY'S PAPER",
-        "notes foot auto-save copy": "自动保存 · 无需手动提交",
-        "notes foot delete button": "删除这张纸页",
-        "notes rail saved label": "已保存到纸屿",
-        "day card overflow copy": "件 · 翻开日历",
-        "sticky delete undo toast": "便签已经揭下来了",
-        "shortcut table": "P.shortcuts = [",
-        "shortcut grid css": ".shortcut-grid",
-        "shortcut keys css": ".shortcut-keys",
-        "legacy settings tab id": 'data-section="shortcuts"',
-        "hardcoded page version": "P.version = '1.",
-        "standalone command palette overlay": "palette-layer",
-        "palette top-bar button": 'id="palette-btn"',
-        "palette item class": "palette-item",
-        "palette open function": "function openPalette()",
-        "paper tone picker": "data-tones",
-        "paper tone token": 'html[data-paper=',
-    }
-    for label, needle in removed.items():
-        if needle in page:
-            bad("removed: " + label, "still present: " + needle)
-        else:
-            ok("removed: " + label)
+    if "--self-test" in sys.argv:
+        return self_test(page)
 
-    expected = {
-        "bottom dock home": 'data-testid="dock-home"',
-        "sticky drag handle": 'class="sticky__drag"',
-        "guided tour api": "P.tour =",
-        "host bootstrap": "__SCHEDULE_HOST_SNAPSHOT__",
-        "host save bridge": "__SCHEDULE_RESTART__",
-        "dynamic day summary": "daySummaryText",
-        "fixed right calendar rail": "right: 18px;",
-        "uniform surface radius": "--radius-win: 18px;",
-        "dialog radius": ".paper-dialog,",
-        "window paper layers removed": ".window::before,",
-        "delete palette action": "关闭当前窗口",
-        "command section panel": "data-section-panel=\"commands\"",
-        "command section nav button": "data-section=\"commands\"",
-        "command list is the shell's single source": "P.commands = {",
-        "ctrl+k lands on the command section": "openSettings('commands')",
-        "dock order preference": "dockOrder: []",
-        "dock reordering entry": "function commitDockOrder(ids)",
-        "settings icon is a gear": "M19.1 12a7 7 0 0 0-.1-1.2l2-1.5",
-        "desktop click dismiss": "bindDesktopDismiss",
-        "page version placeholder": "__PAGE_VERSION__",
-        "schema is v3": "P.schemaVersion = 3;",
-        "prompt app registered": "id: 'prompts',",
-        "prompt sanitizer": "function sanitizePrompts(raw, now)",
-        "prompt migration step": "2: function v2ToV3(raw)",
-        "migration markers": "/* @migrate-begin */",
-        "single ingest gate": "function ingestWorkspace(raw)",
-        "priority table": "P.TASK_PRIORITIES = [",
-        "task completion is day-based": "function setTaskDone(id, day, done)",
-        "recurring resolution": "function resolveTask(id)",
-        "sticky trash retention": "var TRASH_DAYS = 7;",
-        "sticky raise on touch": "P.data.raiseSticky(",
-        "whole-card sticky drag": "if (event.target.closest('.sticky__text, .sticky__swatches, .sticky__del')) return;",
-        "theme resolution": "function resolveTheme(mode)",
-        "host dark signal": "data-ds-dark-theme",
-        "builtin hand font face": "font-family: \"LXGW WenKai\";",
-        "corner toast placement": "placement: 'corner'",
-        "almanac table": "var ALMANAC = [",
-        "first open fills work area": "function defaultBounds(app)",
-        "drawing paging": "function stepGallery(direction)",
-        "drawing delete": "function confirmDeleteDrawing()",
-        "tutorial tab": 'data-section="tutorial"',
-        "tutorial panel": 'data-section-panel="tutorial"',
-        "prompt width sync": "function syncPromptBox()",
-        "prompt snug class": ".prompts-app.is-snug",
-        "prompt stacked class": ".prompts-app.is-stacked",
-    }
-    for label, needle in expected.items():
-        if needle in page:
-            ok("present: " + label)
+    for passed, name, detail in needle_verdicts(page):
+        if passed:
+            ok(name, detail)
         else:
-            bad("present: " + label, "missing: " + needle)
+            bad(name, detail)
 
     app_ids = re.findall(r"id: '(stickies|prompts|notes|calendar|draw|files)'", page)
     if "files" not in app_ids and set(app_ids) == {"stickies", "prompts", "notes", "calendar", "draw"}:

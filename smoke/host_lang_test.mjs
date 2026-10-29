@@ -86,6 +86,8 @@ function buildWorld(src) {
   return { src, api, dict, asked };
 }
 
+/* 夹具故意保留 version: 3（0.5.0 的 schemaVersion 是 4）：它顺带就是一份
+   「v3 快照仍能被宿主读取」的活样本。本套件断言的是语言解析，不是版本号。 */
 function snapshotWith(prefs) {
   return { format: 'paper-os/workspace', version: 3, prefs: Object.assign({}, prefs), meta: { updatedAt: 1 } };
 }

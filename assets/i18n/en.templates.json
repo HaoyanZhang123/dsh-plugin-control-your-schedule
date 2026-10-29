@@ -68,10 +68,6 @@
   "other": "First appeared on {date} · checked in {n} days"
  },
  "，其中 {n} 件重要且紧急": ", of which {n} are urgent and important",
- "还有 {n} 件示例内容": {
-  "one": "There is {n} sample item",
-  "other": "There are {n} sample items"
- },
  "一共收走了 {n} 件示例内容。": {
   "one": "Removed {n} sample item.",
   "other": "Removed {n} sample items in all."
@@ -89,6 +85,5 @@
  "不想一个个关窗口？点最右边的<b>房子按钮</b>，或直接点窗口外的空白桌面，所有窗口会收进应用坞。再点应用坞里的图标就能恢复。": "Do not want to close windows one by one? Click the <b>house button</b> on the far right, or click the empty desk outside the windows, and every window goes back into the dock. Click a dock icon to bring one back.",
  "语言": "Language",
  "界面语言": "Interface language",
- "中文": "Chinese",
- "跟随 DSH 时用宿主界面语言；也可以固定中文或 English。改完会重新铺一次纸张。": "When set to follow DSH it uses the host's interface language; you can also pin Chinese or English. The desk is laid out again after the change."
+ "中文": "Chinese"
 }

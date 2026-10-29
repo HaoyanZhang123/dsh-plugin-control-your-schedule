@@ -123,7 +123,7 @@ const version = await ev('window.PaperOS.version');
 if (version && version !== '__PAGE_VERSION__') ok('page version injected by the build', String(version));
 else bad('page version injected by the build', String(version));
 const schema = await ev('window.PaperOS.schemaVersion');
-if (schema === 3) ok('schema is v3'); else bad('schema is v3', String(schema));
+if (schema === 4) ok('schema is v4'); else bad('schema is v4', String(schema));
 
 // The Chinese page is the source of truth: it runs with the zh runtime and F() keeps the wording.
 const zhRuntime = await ev('({ lang: (window.PaperOS && window.PaperOS.lang) || "", sample: window.PaperOS ? window.PaperOS.F("{n} 张纸页", 2) : "" })');
@@ -198,6 +198,28 @@ await run(function () {
 await shot('page-calendar');
 if (dots && dots.priority) ok('calendar dots carry a priority', dots.priority);
 else bad('calendar dots carry a priority', JSON.stringify(dots));
+
+// --- R7 日历：中文表头周一…周日、SELECTED DAY 小标题删除、日期行仍在 ---
+const calendarChrome = await run(function () {
+  var shell = document.querySelector('.window[data-app=calendar]');
+  if (!shell) return { error: 'no calendar window' };
+  var header = shell.querySelector('.calendar-weekdays');
+  var cells = [];
+  if (header) {
+    var spans = header.querySelectorAll('span');
+    for (var i = 0; i < spans.length; i += 1) cells.push(spans[i].textContent);
+  }
+  var selected = shell.querySelector('[data-selected-date]');
+  return {
+    weekdays: cells.join(''),
+    kickerParagraphs: shell.querySelectorAll('.calendar-tasks__date p').length,
+    selectedDate: selected ? selected.textContent.trim() : ''
+  };
+});
+if (calendarChrome && !calendarChrome.error && calendarChrome.weekdays === '周一周二周三周四周五周六周日') ok('the zh weekday header runs Monday to Sunday', calendarChrome.weekdays);
+else bad('the zh weekday header runs Monday to Sunday', JSON.stringify(calendarChrome && calendarChrome.weekdays));
+if (calendarChrome && !calendarChrome.error && calendarChrome.kickerParagraphs === 0 && calendarChrome.selectedDate) ok('the SELECTED DAY kicker is gone but the date line stays', JSON.stringify({ kickerParagraphs: calendarChrome.kickerParagraphs, selectedDate: calendarChrome.selectedDate }));
+else bad('the SELECTED DAY kicker is gone but the date line stays', JSON.stringify(calendarChrome));
 
 // --- recurring task projection ---
 const recurring = await run(function () {
@@ -330,6 +352,59 @@ if (note && note.titleValue === '' && /名字/.test(note.titlePlaceholder || '')
 else bad('new note title is a placeholder, not literal text', JSON.stringify(note));
 if (note && note.bodyPlaceholder === '从这里开始写，纸会自动收好。') ok('note body placeholder uses a comma');
 else bad('note body placeholder uses a comma', JSON.stringify(note && note.bodyPlaceholder));
+
+// --- R6/R1 纸页：面包屑删除；置顶开关 / 徽标 / 排序 / 快照往返 ---
+const notePin = await run(function () {
+  var P = window.PaperOS;
+  P.wm.open('notes');
+  var shell = document.querySelector('.window[data-app=notes]');
+  if (!shell) return { error: 'no notes window' };
+  var created = P.data.createNote({ name: '置顶回归纸页', content: '刷新与导入都不能丢。' });
+  P.wm.open('notes', { docId: created.id });
+  var btn = shell.querySelector('[data-testid="note-pin"]');
+  if (!btn) return { error: 'no pin button' };
+  var before = { text: btn.textContent, pressed: btn.getAttribute('aria-pressed'), disabled: btn.disabled };
+  btn.click();
+  var node = P.data.getNode(created.id);
+  var list = P.data.listNotes();
+  var pinned = {
+    value: node ? node.pinned : null,
+    pressed: btn.getAttribute('aria-pressed'),
+    text: btn.textContent,
+    badges: shell.querySelectorAll('.note-item__pin').length,
+    firstId: list.length ? list[0].id : null
+  };
+  var snap = P.data.snapshotData();
+  var ingested = P.ingestWorkspace(JSON.parse(JSON.stringify(snap)));
+  var back = ingested && ingested.ok ? ingested.snapshot.nodes.filter(function (n) { return n.id === created.id; })[0] : null;
+  var roundTrip = back ? back.pinned : null;
+  btn.click();
+  var cleared = P.data.getNode(created.id);
+  var off = {
+    value: cleared ? cleared.pinned : null,
+    pressed: btn.getAttribute('aria-pressed'),
+    text: btn.textContent,
+    badges: shell.querySelectorAll('.note-item__pin').length
+  };
+  return {
+    id: created.id,
+    breadcrumb: !!document.querySelector('[data-breadcrumb]'),
+    before: before,
+    pinned: pinned,
+    roundTrip: roundTrip,
+    off: off
+  };
+});
+if (notePin && !notePin.error && notePin.breadcrumb === false) ok('the notes editor has no breadcrumb', 'no [data-breadcrumb] in the page');
+else bad('the notes editor has no breadcrumb', JSON.stringify(notePin && notePin.breadcrumb));
+if (notePin && !notePin.error && notePin.before.text === '置顶' && notePin.before.pressed === 'false' && notePin.before.disabled === false) ok('the note pin starts unpressed', JSON.stringify(notePin.before));
+else bad('the note pin starts unpressed', JSON.stringify(notePin && notePin.before));
+if (notePin && !notePin.error && notePin.pinned.value === true && notePin.pinned.pressed === 'true' && notePin.pinned.text === '取消置顶' && notePin.pinned.badges === 1 && notePin.pinned.firstId === notePin.id) ok('pinning a note sets the flag, the pressed state, the badge and the order', JSON.stringify(notePin.pinned));
+else bad('pinning a note sets the flag, the pressed state, the badge and the order', JSON.stringify(notePin && notePin.pinned));
+if (notePin && !notePin.error && notePin.roundTrip === true) ok('a pinned note survives the workspace round-trip', 'pinned=' + notePin.roundTrip);
+else bad('a pinned note survives the workspace round-trip', JSON.stringify(notePin && notePin.roundTrip));
+if (notePin && !notePin.error && notePin.off.value === false && notePin.off.pressed === 'false' && notePin.off.text === '置顶' && notePin.off.badges === 0) ok('the note pin can be turned off again', JSON.stringify(notePin.off));
+else bad('the note pin can be turned off again', JSON.stringify(notePin && notePin.off));
 
 // --- drawing ---
 const drawing = await run(function () {
@@ -523,6 +598,98 @@ if (!clearance || clearance.error) bad('clearing the variable restores the 56px 
 else if (ctBack.height === 56 && ctBack.padTop === 0 && ctBack.rowTop === ctBase.rowTop && ctBack.stageHeight === ctBase.stageHeight && ctBack.overflowX === 0) ok('clearing the variable restores the 56px top bar', JSON.stringify(ctBack));
 else bad('clearing the variable restores the 56px top bar', JSON.stringify(ctBack));
 
+// --- R5 顶栏：时钟删除、可见文字清零，但 #save-text 的播报节点与齿轮仍活 ---
+const topbarEmpty = await run(function () {
+  var P = window.PaperOS;
+  if (P.tour && P.tour.close) P.tour.close();
+  var right = document.querySelector('.topbar__right');
+  var saveText = document.getElementById('save-text');
+  var gear = document.getElementById('settings-btn');
+  var pill = document.getElementById('save-pill');
+  if (!right || !saveText || !gear || !pill) return { error: 'topbar parts missing' };
+  var cs = getComputedStyle(saveText);
+  var box = saveText.getBoundingClientRect();
+  /* .sr-only 仍有 1x1 rect，不能用 getClientRects().length === 0 判断不可见；
+     这里按 D-01 的口径同时核对 class / 计算尺寸 / 定位与裁切。 */
+  var visible = [];
+  var nodes = right.querySelectorAll('*');
+  for (var i = 0; i < nodes.length; i += 1) {
+    var el = nodes[i];
+    if (el.classList.contains('sr-only')) continue;
+    if (el.children.length) continue;
+    var text = (el.textContent || '').trim();
+    if (text) visible.push(text);
+  }
+  return {
+    hasClock: !!document.querySelector('.clock'),
+    clockTime: !!document.getElementById('clock-time'),
+    saveTextPresent: !!saveText,
+    saveTextClass: String(saveText.className || ''),
+    saveRect: { w: box.width, h: box.height },
+    savePosition: cs.position,
+    saveClip: cs.clip || cs.clipPath || '',
+    pillRect: (function () { var r = pill.getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height) }; })(),
+    visibleText: visible.join(''),
+    gearPresent: !!gear
+  };
+});
+const clockGone = topbarEmpty && !topbarEmpty.error && topbarEmpty.hasClock === false && topbarEmpty.clockTime === false;
+if (clockGone) ok('the topbar clock is gone', JSON.stringify({ clock: topbarEmpty.hasClock, clockTime: topbarEmpty.clockTime }));
+else bad('the topbar clock is gone', JSON.stringify(topbarEmpty));
+const srOnlyOk = topbarEmpty && !topbarEmpty.error
+  && topbarEmpty.saveTextPresent
+  && topbarEmpty.saveTextClass.split(/\s+/).indexOf('sr-only') !== -1
+  && topbarEmpty.saveRect.w <= 1.5 && topbarEmpty.saveRect.h <= 1.5
+  && topbarEmpty.savePosition === 'absolute'
+  && /rect\(0(px)?, 0(px)?, 0(px)?, 0(px)?\)/.test(topbarEmpty.saveClip);
+if (srOnlyOk) ok('the save text stays as a 1x1 screen-reader node', JSON.stringify({ className: topbarEmpty.saveTextClass, rect: topbarEmpty.saveRect, position: topbarEmpty.savePosition, clip: topbarEmpty.saveClip }));
+else bad('the save text stays as a 1x1 screen-reader node', JSON.stringify(topbarEmpty));
+if (topbarEmpty && !topbarEmpty.error && topbarEmpty.visibleText === '') ok('the topbar right side shows no visible text', JSON.stringify({ visible: topbarEmpty.visibleText, pill: topbarEmpty.pillRect }));
+else bad('the topbar right side shows no visible text', JSON.stringify(topbarEmpty && topbarEmpty.visibleText));
+await ev('document.getElementById("settings-btn").click()');
+await sleep(420);
+const gearOpen = await run(function () {
+  var P = window.PaperOS;
+  var win = P.wm.getWindows().filter(function (w) { return w.appId === 'settings' && !w.minimized; })[0];
+  return { opened: !!win, shell: !!document.querySelector('.window[data-app=settings]') };
+});
+if (gearOpen && gearOpen.opened && gearOpen.shell) ok('the settings gear still opens settings', JSON.stringify(gearOpen));
+else bad('the settings gear still opens settings', JSON.stringify(gearOpen));
+
+// --- R4 设置：解释性文字清零，名称/语言三选/命令脚注仍在 ---
+const settingsCopy = await run(function () {
+  var shell = document.querySelector('.window[data-app=settings]');
+  if (!shell) return { error: 'no settings window' };
+  var count = function (sel) { return shell.querySelectorAll(sel).length; };
+  var select = shell.querySelector('[data-lang-select]');
+  var footer = shell.querySelector('.command-sheet__footer');
+  var about = shell.querySelector('.about-sheet');
+  return {
+    panels: count('[data-section-panel]'),
+    intros: count('.settings-section__intro'),
+    descs: count('.setting-row__desc'),
+    notes: count('.settings-note'),
+    actionDescs: count('.setting-action__desc'),
+    aboutParagraphs: about ? about.querySelectorAll('p').length : -1,
+    langOptions: select ? select.options.length : -1,
+    commandFooter: footer ? footer.textContent.replace(/\s+/g, ' ').trim() : ''
+  };
+});
+if (settingsCopy && !settingsCopy.error && settingsCopy.panels === 5 && settingsCopy.intros === 0 && settingsCopy.descs === 0 && settingsCopy.notes === 0 && settingsCopy.actionDescs === 0 && settingsCopy.aboutParagraphs === 0) {
+  ok('settings explainer copy is gone from all five panels', JSON.stringify(settingsCopy));
+} else {
+  bad('settings explainer copy is gone from all five panels', JSON.stringify(settingsCopy));
+}
+if (settingsCopy && settingsCopy.langOptions === 3) ok('the language row still offers three options', 'options=' + settingsCopy.langOptions);
+else bad('the language row still offers three options', JSON.stringify(settingsCopy && settingsCopy.langOptions));
+const footerOk = settingsCopy && settingsCopy.commandFooter.indexOf('↑↓ 选择') !== -1 && settingsCopy.commandFooter.indexOf('Enter 打开') !== -1;
+if (footerOk) ok('the command footer keeps its key hints', settingsCopy.commandFooter);
+else bad('the command footer keeps its key hints', JSON.stringify(settingsCopy && settingsCopy.commandFooter));
+await run(function () {
+  var P = window.PaperOS;
+  P.wm.getWindows().forEach(function (w) { if (w.appId === 'settings') P.wm.close(w.id); });
+});
+
 // --- the empty placeholder copy is gone ---
 const noPlaceholder = await run(function () {
   var P = window.PaperOS;
@@ -709,6 +876,28 @@ if (repeatRow && repeatRow.count === 2
 } else {
   bad('repeat status renders on one line each', JSON.stringify(repeatRow));
 }
+
+// --- R7 待办详情：四档 + 状态共 6 项、解释性 hint 清零、打卡行仍在 ---
+const taskDialogShape = await run(function () {
+  var shell = document.querySelector('.window[data-app=calendar]');
+  var btn = shell ? shell.querySelector('[aria-label^=编辑待办], [aria-label^="编辑待办"]') : null;
+  if (!btn) return { error: 'no edit button' };
+  btn.click();
+  var dialog = document.querySelector('.paper-dialog[open]');
+  if (!dialog) return { error: 'no dialog' };
+  var note = dialog.querySelector('.dialog-note');
+  var out = {
+    options: dialog.querySelectorAll('.priority-option').length,
+    hints: dialog.querySelectorAll('.priority-option__hint').length,
+    note: note ? note.textContent.trim() : ''
+  };
+  dialog.close();
+  return out;
+});
+if (taskDialogShape && !taskDialogShape.error && taskDialogShape.options === 6 && taskDialogShape.hints === 0) ok('the task dialog keeps six options and no explainer hints', JSON.stringify(taskDialogShape));
+else bad('the task dialog keeps six options and no explainer hints', JSON.stringify(taskDialogShape));
+if (taskDialogShape && !taskDialogShape.error && taskDialogShape.note.indexOf('首次出现在') === 0) ok('the task dialog keeps the first-seen line', taskDialogShape.note);
+else bad('the task dialog keeps the first-seen line', JSON.stringify(taskDialogShape && taskDialogShape.note));
 
 // --- 命令面板已经并进设置：只有一个入口，Ctrl+K 落在命令分区 ---
 const commandHome = await run(function () {
@@ -1076,6 +1265,115 @@ if (dockDragNoClick && dockDragNoClick.before === dockDragNoClick.after) {
   bad('a finished drag does not also open the app', JSON.stringify(dockDragNoClick));
 }
 
+// --- R2 应用坞：拖动中邻居让位、落位两帧内清干净、减少动效不位移但仍换位 ---
+const dockMotion = await run(function () {
+  var P = window.PaperOS;
+  function buttons() { return Array.prototype.slice.call(document.querySelectorAll('[data-dock-app]')); }
+  function matrixX(value) {
+    var m = /matrix\(([^)]+)\)/.exec(String(value || ''));
+    if (!m) return null;
+    var parts = m[1].split(',').map(function (v) { return parseFloat(v); });
+    return parts.length === 6 ? parts[4] : null;
+  }
+  function snapshotDock() {
+    return buttons().map(function (node) {
+      return {
+        id: node.getAttribute('data-dock-app'),
+        transform: node.style.transform,
+        translate: node.style.translate,
+        computed: getComputedStyle(node).transform
+      };
+    });
+  }
+  function reset(motion) {
+    P.data.setPrefs({ motion: motion, dockOrder: [] });
+    P.shell.applyPrefs();
+    P.shell.buildDock();
+  }
+  function dragAcross() {
+    var list = buttons();
+    var first = list[0];
+    var third = list[2];
+    var a = first.getBoundingClientRect();
+    var c = third.getBoundingClientRect();
+    var startX = a.left + a.width / 2;
+    var startY = a.top + a.height / 2;
+    var endX = c.left + c.width / 2 + 16;
+    var opts = { bubbles: true, pointerId: 71, pointerType: 'mouse', button: 0, isPrimary: true };
+    first.dispatchEvent(new PointerEvent('pointerdown', Object.assign({ clientX: startX, clientY: startY }, opts)));
+    window.dispatchEvent(new PointerEvent('pointermove', Object.assign({ clientX: endX, clientY: startY }, opts)));
+    var dragging = document.querySelector('.dock__btn.is-dragging');
+    var before = { id: first.getAttribute('data-dock-app'), order: buttons().map(function (n) { return n.getAttribute('data-dock-app'); }) };
+    var during = {
+      dragging: !!dragging,
+      draggedX: dragging ? matrixX(getComputedStyle(dragging).transform) : null,
+      rows: snapshotDock(),
+      neighboursMoved: buttons().filter(function (node) {
+        return node !== dragging && (node.style.transform !== '' || getComputedStyle(node).transform !== 'none');
+      }).length
+    };
+    window.dispatchEvent(new PointerEvent('pointerup', Object.assign({ clientX: endX, clientY: startY }, opts)));
+    var sync = {
+      draggingLeft: !!document.querySelector('.dock__btn.is-dragging'),
+      saved: P.data.getPrefs().dockOrder.slice(),
+      dom: buttons().map(function (n) { return n.getAttribute('data-dock-app'); }),
+      rows: snapshotDock()
+    };
+    return { before: before, during: during, sync: sync };
+  }
+  function afterFrames(result) {
+    return new Promise(function (resolve) {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          resolve({
+            before: result.before,
+            during: result.during,
+            sync: result.sync,
+            after: { draggingLeft: !!document.querySelector('.dock__btn.is-dragging'), rows: snapshotDock() }
+          });
+        });
+      });
+    });
+  }
+
+  reset('system');
+  return afterFrames(dragAcross()).then(function (normal) {
+    reset('reduce');
+    return afterFrames(dragAcross()).then(function (reduced) {
+      P.data.setPrefs({ motion: 'system', dockOrder: [] });
+      P.shell.applyPrefs();
+      P.shell.buildDock();
+      return { normal: normal, reduced: reduced };
+    });
+  });
+});
+
+const normalDock = dockMotion && dockMotion.normal;
+const reducedDock = dockMotion && dockMotion.reduced;
+if (normalDock && normalDock.during.dragging && normalDock.during.draggedX !== null && Math.abs(normalDock.during.draggedX) > 30) ok('the dragged dock icon follows the pointer', JSON.stringify({ x: normalDock.during.draggedX }));
+else bad('the dragged dock icon follows the pointer', JSON.stringify(normalDock && normalDock.during));
+if (normalDock && normalDock.during.neighboursMoved >= 1) ok('neighbouring dock icons make room during the drag', 'moved=' + normalDock.during.neighboursMoved);
+else bad('neighbouring dock icons make room during the drag', JSON.stringify(normalDock && normalDock.during.rows));
+const dockSettled = normalDock && normalDock.sync && !normalDock.sync.draggingLeft
+  && normalDock.sync.saved.join(',') === normalDock.sync.dom.join(',')
+  && normalDock.sync.saved.length === normalDock.sync.dom.length
+  && normalDock.sync.dom[0] !== normalDock.before.id;
+if (dockSettled) ok('dropping settles the new order and drops is-dragging', JSON.stringify({ before: normalDock.before.order, after: normalDock.sync.dom }));
+else bad('dropping settles the new order and drops is-dragging', JSON.stringify(normalDock && { before: normalDock.before, sync: normalDock.sync }));
+const inlineClean = (frames) => frames && frames.rows && frames.rows.every(function (row) {
+  return row.transform === '' && row.translate === '' && row.computed === 'none';
+});
+if (inlineClean(normalDock && normalDock.after)) ok('every inline dock transform is cleared within two frames', JSON.stringify(normalDock.after.rows));
+else bad('every inline dock transform is cleared within two frames', JSON.stringify(normalDock && normalDock.after));
+if (reducedDock && reducedDock.during.neighboursMoved === 0) ok('reduced motion keeps neighbours still during the drag', 'moved=0');
+else bad('reduced motion keeps neighbours still during the drag', JSON.stringify(reducedDock && reducedDock.during));
+const reducedSettled = reducedDock && reducedDock.sync && !reducedDock.sync.draggingLeft
+  && reducedDock.sync.saved.join(',') === reducedDock.sync.dom.join(',')
+  && reducedDock.sync.dom[0] !== reducedDock.before.id
+  && inlineClean(reducedDock.sync) && inlineClean(reducedDock.after);
+if (reducedSettled) ok('reduced motion still reorders the dock', JSON.stringify({ before: reducedDock.before.order, after: reducedDock.sync.dom }));
+else bad('reduced motion still reorders the dock', JSON.stringify(reducedDock && { before: reducedDock.before, sync: reducedDock.sync }));
+
 
 // --- a finished dot is grey, never the priority colour ---
 const doneDot = await run(function () {
@@ -1094,6 +1392,46 @@ const doneDot = await run(function () {
 });
 if (doneDot && doneDot.done && doneDot.open && doneDot.done !== doneDot.open) ok('finished dot is grey, unfinished keeps its colour', JSON.stringify(doneDot));
 else bad('finished dot is grey, unfinished keeps its colour', JSON.stringify(doneDot));
+
+// --- R3 紧急程度配色：浅色 / 深色，dot 载体实读 ---
+const priorityColors = await run(function () {
+  var P = window.PaperOS;
+  var host = document.createElement('div');
+  host.style.position = 'fixed';
+  host.style.left = '-9999px';
+  host.style.top = '0';
+  document.body.appendChild(host);
+  var levels = ['urgent-important', 'important', 'urgent', 'none'];
+  function readAll() {
+    var out = {};
+    levels.forEach(function (level) {
+      var dot = document.createElement('span');
+      dot.className = 'cal-day__dot';
+      dot.setAttribute('data-priority', level);
+      host.appendChild(dot);
+      out[level] = getComputedStyle(dot).backgroundColor;
+    });
+    return out;
+  }
+  P.data.setPrefs({ theme: 'light' });
+  P.shell.applyPrefs();
+  var light = readAll();
+  P.data.setPrefs({ theme: 'dark' });
+  P.shell.applyPrefs();
+  var dark = readAll();
+  P.data.setPrefs({ theme: 'light' });
+  P.shell.applyPrefs();
+  host.parentNode.removeChild(host);
+  var distinct = {};
+  levels.forEach(function (level) { distinct[light[level]] = true; });
+  return { light: light, dark: dark, lightDistinct: Object.keys(distinct).length };
+});
+if (priorityColors && priorityColors.light.urgent === 'rgb(123, 143, 114)' && priorityColors.light.none === 'rgb(190, 190, 190)') ok('light urgency dots use sage for urgent and neutral for none', JSON.stringify(priorityColors.light));
+else bad('light urgency dots use sage for urgent and neutral for none', JSON.stringify(priorityColors && priorityColors.light));
+if (priorityColors && priorityColors.dark.urgent === 'rgb(147, 168, 138)' && priorityColors.dark.none === 'rgb(150, 150, 150)') ok('dark urgency dots use the dark sage and neutral values', JSON.stringify(priorityColors.dark));
+else bad('dark urgency dots use the dark sage and neutral values', JSON.stringify(priorityColors && priorityColors.dark));
+if (priorityColors && priorityColors.lightDistinct === 4) ok('the four urgency levels paint four different colours', 'distinct=' + priorityColors.lightDistinct);
+else bad('the four urgency levels paint four different colours', JSON.stringify(priorityColors && priorityColors.light));
 
 // --- per-app view survives into the saved snapshot ---
 const viewState = await run(function () {
@@ -1243,14 +1581,12 @@ const promptDom = await run(function () {
   var counts = document.querySelector('[data-testid="prompt-count-total"]');
   var items = document.querySelectorAll('[data-testid="prompt-item"]');
   var search = document.querySelector('[data-testid="prompt-search"]');
-  var head = document.querySelector('[data-testid="prompt-heading"]');
   return {
     listFound: !!list,
     items: items.length,
     countText: counts ? counts.textContent : '',
     hasSearch: !!search,
     firstTitle: (P.data.listPrompts('')[0] || {}).title || '',
-    heading: head ? head.textContent : '',
     editorTitle: (document.querySelector('[data-testid="prompt-title"]') || {}).value || ''
   };
 });
@@ -1259,7 +1595,37 @@ else bad('prompt list renders rows', JSON.stringify(promptDom));
 if (promptDom && promptDom.hasSearch) ok('prompt list has a search box');
 else bad('prompt list has a search box', JSON.stringify(promptDom));
 if (promptDom && promptDom.editorTitle === '调研同类产品再动手') ok('editor opens on the first prompt', promptDom.editorTitle);
-else bad('editor opens on the first prompt', JSON.stringify(promptDom && promptDom.heading));
+else bad('editor opens on the first prompt', JSON.stringify(promptDom && promptDom.editorTitle));
+
+// --- R8 提示词窗口：动作组贴右（D-05 口径：不用 marginLeft === "auto"） ---
+// 空态整条 bar 隐藏无法在真机上造出空库（打开即选中第一条），它的源码分支由
+// run_all_checks 的 expected needle「prompt bar hides when nothing is selected」守着。
+const promptActions = await run(function () {
+  var shell = document.querySelector('.window[data-app=prompts]');
+  if (!shell) return { error: 'no prompts window' };
+  var actions = shell.querySelector('.prompts-main__actions');
+  var bar = shell.querySelector('.prompts-main__bar');
+  if (!actions || !bar) return { error: 'no actions/bar' };
+  var ab = actions.getBoundingClientRect();
+  var bb = bar.getBoundingClientRect();
+  var cs = getComputedStyle(actions);
+  return {
+    actionsVisible: actions.getClientRects().length > 0 && cs.display !== 'none' && !actions.hidden,
+    marginLeft: parseFloat(cs.marginLeft) || 0,
+    rightGap: Math.round((bb.right - ab.right) * 10) / 10,
+    barVisible: bar.getClientRects().length > 0 && !bar.hidden,
+    buttons: actions.querySelectorAll('.paper-btn').length,
+    titleRowGone: !document.querySelector('[data-testid="prompt-heading"]'),
+    railFootGone: !document.querySelector('.prompts-rail__foot')
+  };
+});
+const promptActionsOk = promptActions && !promptActions.error && promptActions.actionsVisible
+  && promptActions.marginLeft > 0 && Math.abs(promptActions.rightGap) <= 1
+  && promptActions.barVisible && promptActions.buttons === 4;
+if (promptActionsOk) ok('the prompt actions sit flush right of the bar', JSON.stringify(promptActions));
+else bad('the prompt actions sit flush right of the bar', JSON.stringify(promptActions));
+if (promptActions && !promptActions.error && promptActions.titleRowGone && promptActions.railFootGone) ok('the prompts window has no title row or rail foot', JSON.stringify({ heading: promptActions.titleRowGone, railFoot: promptActions.railFootGone }));
+else bad('the prompts window has no title row or rail foot', JSON.stringify(promptActions));
 
 const uiNew = await run(function () {
   var button = document.querySelector('[data-testid="new-prompt"]');
@@ -1267,18 +1633,16 @@ const uiNew = await run(function () {
   var before = window.PaperOS.data.listPrompts('').length;
   button.click();
   var titleInput = document.querySelector('[data-testid="prompt-title"]');
-  var heading = document.querySelector('[data-testid="prompt-heading"]');
   return {
     before: before,
     after: window.PaperOS.data.listPrompts('').length,
     editorTitle: titleInput ? titleInput.value : null,
-    titlePlaceholder: titleInput ? titleInput.placeholder : null,
-    heading: heading ? heading.textContent : ''
+    titlePlaceholder: titleInput ? titleInput.placeholder : null
   };
 });
 if (uiNew && uiNew.after === uiNew.before + 1) ok('the new button creates a prompt');
 else bad('the new button creates a prompt', JSON.stringify(uiNew));
-if (uiNew && uiNew.editorTitle === '' && uiNew.titlePlaceholder === '未命名提示词' && uiNew.heading === '未命名提示词') ok('a new prompt opens with an empty title + placeholder', JSON.stringify({ placeholder: uiNew.titlePlaceholder }));
+if (uiNew && uiNew.editorTitle === '' && uiNew.titlePlaceholder === '未命名提示词') ok('a new prompt opens with an empty title + placeholder', JSON.stringify({ placeholder: uiNew.titlePlaceholder }));
 else bad('a new prompt opens with an empty title + placeholder', JSON.stringify(uiNew));
 
 // --- typing must survive the autosave round-trip ---
@@ -1891,6 +2255,8 @@ if (!enMatch) {
   else bad('the guided tour reads as English', JSON.stringify(tourBad.length ? tourBad : enTour));
   if (enTour && enTour.bodies[0] && enTour.bodies[0].indexOf('bottom dock') !== -1) ok('the tour keeps its bold phrase and wording');
   else bad('the tour keeps its bold phrase and wording', JSON.stringify(enTour && enTour.bodies[0]));
+  if (enTour && enTour.bodies[4] && enTour.bodies[4].indexOf('Content saves automatically') !== -1) ok('the tour no longer mentions the save status', enTour.bodies[4].slice(0, 60));
+  else bad('the tour no longer mentions the save status', JSON.stringify(enTour && enTour.bodies[4]));
 
   // settings -> appearance: the language row reflects prefs.lang and writes it back
   const langPref = await run(function () {
@@ -1999,7 +2365,8 @@ const cross = await run(function () {
     names: names,
     titles: titles,
     placeholder: titleInput ? titleInput.placeholder : '',
-    barTitle: (document.querySelector('[data-testid=prompt-heading]') || {}).textContent || '',
+    /* 原来的状态行 [data-testid=prompt-heading] 已删；当前编辑对象改读标题输入框。 */
+    editorTitle: titleInput ? titleInput.value : '',
     cjk: hits.length,
     promptCount: P.data.listPrompts('').length,
     hasSnapshot: !!window.__SCHEDULE_HOST_SNAPSHOT__,
@@ -2024,9 +2391,9 @@ const crossNamesOk = cross && cross.rows === 2 && cross.names.length === 2
   && cross.names.every(function (one) { return one === cross.placeholder; });
 if (crossPlaceholder && crossNamesOk) ok('both untitled prompts show the English placeholder', JSON.stringify(cross.names));
 else bad('both untitled prompts show the English placeholder', JSON.stringify(cross && { placeholder: cross.placeholder, names: cross.names, rows: cross.rows }));
-const crossClean = cross && cross.cjk === 0 && !/[\u4e00-\u9fff]/.test(cross.barTitle || '');
-if (crossClean) ok('an old workspace shows no CJK in the English prompt library', JSON.stringify({ cjk: cross.cjk, barTitle: cross.barTitle }));
-else bad('an old workspace shows no CJK in the English prompt library', JSON.stringify(cross && { cjk: cross.cjk, barTitle: cross.barTitle }));
+const crossClean = cross && cross.cjk === 0 && !/[\u4e00-\u9fff]/.test(cross.editorTitle || '');
+if (crossClean) ok('an old workspace shows no CJK in the English prompt library', JSON.stringify({ cjk: cross.cjk, editorTitle: cross.editorTitle }));
+else bad('an old workspace shows no CJK in the English prompt library', JSON.stringify(cross && { cjk: cross.cjk, editorTitle: cross.editorTitle }));
 if (!pageErrors.length) ok('no page exceptions on the cross-language workspace');
 else bad('no page exceptions on the cross-language workspace', pageErrors.slice(0, 3).join(' | '));
 

@@ -166,6 +166,53 @@ if (!result.ok) {
     else bad('v3 prompt entries pass through unchanged', JSON.stringify(kept.ok && kept.snapshot.prompts));
   }
 
+  // --- v3 -> v4 只加一个数据版本：nodes/stickies/tasks/prompts/prefs 逐值不动 ---
+  // 迁移本身不发明 note.pinned；缺省 false 由 validateWorkspace 补（page_e2e 的
+  // ingest 往返断言覆盖那一层），所以这里对「没有该字段的旧纸页」按 !!pinned 读 false。
+  const v3 = JSON.parse(JSON.stringify(v1));
+  v3.version = 3;
+  v3.prompts = [{ id: 'prompt_v3', title: '旧提示词', body: '正文', pinned: false, createdAt: 5, updatedAt: 6 }];
+  v3.nodes = v3.nodes.map((node) => (
+    node.kind === 'note' ? Object.assign({}, node, { pinned: true }) : node
+  ));
+  v3.nodes.push({
+    id: 'doc_nopin',
+    type: 'doc',
+    kind: 'note',
+    name: '没有置顶字段',
+    parentId: 'folder_notes',
+    content: 'v3 写的纸页',
+    sample: false,
+    createdAt: 1792600000000,
+    updatedAt: 1792600000000,
+  });
+  const v3Input = JSON.parse(JSON.stringify(v3));
+  const fromV3 = P.migrateWorkspace(v3Input);
+  if (!fromV3.ok) {
+    bad('v3 migrates', JSON.stringify(fromV3));
+  } else {
+    const s3 = fromV3.snapshot;
+    if (s3.version === 4 && P.schemaVersion === 4) ok('v3 migration reaches v4', 'v' + s3.version);
+    else bad('v3 migration reaches v4', 'v' + s3.version + ' / schema ' + P.schemaVersion);
+
+    const pinnedNote = s3.nodes.filter((node) => node.id === 'doc_welcome')[0];
+    const plainNote = s3.nodes.filter((node) => node.id === 'doc_nopin')[0];
+    if (pinnedNote && pinnedNote.pinned === true) ok('v3 note with pinned:true keeps it', 'doc_welcome');
+    else bad('v3 note with pinned:true keeps it', JSON.stringify(pinnedNote && pinnedNote.pinned));
+    if (plainNote && !plainNote.pinned) ok('v3 note without pinned reads as false', 'doc_nopin.pinned=' + ('pinned' in (plainNote || {}) ? String(plainNote.pinned) : 'absent -> false'));
+    else bad('v3 note without pinned reads as false', JSON.stringify(plainNote && plainNote.pinned));
+
+    same('v3 nodes preserved', s3.nodes, v3.nodes);
+    same('v3 stickies preserved', s3.stickies, v3.stickies);
+    same('v3 tasks preserved', s3.tasks, v3.tasks);
+    same('v3 prompts preserved', s3.prompts, v3.prompts);
+    same('v3 prefs preserved', s3.prefs, v3.prefs);
+    if (s3.meta.migratedFrom === 3) ok('v3 migration records migratedFrom=3');
+    else bad('v3 migration records migratedFrom=3', JSON.stringify(s3.meta.migratedFrom));
+    if (JSON.stringify(v3Input) === JSON.stringify(v3)) ok('v3 input snapshot not mutated');
+    else bad('v3 input snapshot not mutated', 'caller object was modified');
+  }
+
   // Idempotent: migrating an already-current snapshot changes nothing.
   const again = P.migrateWorkspace(JSON.parse(JSON.stringify(snap)));
   if (again.ok && JSON.stringify(again.snapshot) === JSON.stringify(snap)) ok('migration is idempotent');

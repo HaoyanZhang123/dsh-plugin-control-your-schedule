@@ -5,14 +5,14 @@
 > 把便签、纸页笔记、日历待办、画纸和常用提示词，装进 DeepSeek Harness 的左侧栏。
 > 纸面风格的个人工作台：数据保存在本机，不联网。
 >
-> 面板插件 v0.4.4
+> 面板插件 v0.5.0
 
 [![ci](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/actions/workflows/ci.yml/badge.svg)](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/HaoyanZhang123/dsh-plugin-control-your-schedule)](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/releases)
 [![npm](https://img.shields.io/npm/v/dsh-plugin-control-your-schedule)](https://www.npmjs.com/package/dsh-plugin-control-your-schedule)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-当前版本 **0.4.4** · 开发依据 DSH **0.2.1-rc.2** · Windows 实测，macOS / Linux 由 CI 构建与静态门禁覆盖 | 界面中英双语 | 语言：[English](README.en.md)
+当前版本 **0.5.0** · 开发依据 DSH **0.2.1-rc.2** · Windows 实测，macOS / Linux 由 CI 构建与静态门禁覆盖 | 界面中英双语 | 语言：[English](README.en.md)
 
 <img width="1400" alt="纸屿：一张纸面桌面" src="assets/screenshot-home.webp">
 
@@ -72,7 +72,7 @@ DSH → Plugins → Add plugin，填：
 dsh-plugin-control-your-schedule
 ```
 
-也可以带版本：`dsh-plugin-control-your-schedule@0.4.4`。
+也可以带版本：`dsh-plugin-control-your-schedule@0.5.0`。
 
 ### GitHub（备选，不需要 npm 时）
 
