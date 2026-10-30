@@ -132,10 +132,10 @@ if (!result.ok) {
   else bad('meta records migratedFrom=1', JSON.stringify(snap.meta.migratedFrom));
 
   // v3 只做加法：提示词库出现，并铺上三条原生示例；别的既有内容不变。
-  const sampleIds = ['prompt_sample_research', 'prompt_sample_align', 'prompt_sample_agents'];
+  const sampleIds = ['prompt_sample_research', 'prompt_sample_align', 'prompt_sample_agents', 'prompt_sample_depth', 'prompt_sample_comm'];
   const seeded = Array.isArray(snap.prompts) ? snap.prompts : [];
-  if (seeded.length === 3 && sampleIds.every((id) => seeded.some((p) => p.id === id))) ok('v1 -> v3 seeds the three native prompts');
-  else bad('v1 -> v3 seeds the three native prompts', JSON.stringify(seeded.map((p) => p.id)));
+  if (seeded.length === 5 && sampleIds.every((id) => seeded.some((p) => p.id === id))) ok('v1 -> v3 seeds the five native prompts');
+  else bad('v1 -> v3 seeds the five native prompts', JSON.stringify(seeded.map((p) => p.id)));
   if (seeded.every((p) => p.sample === true)) ok('native prompts are marked as samples');
   else bad('native prompts are marked as samples', JSON.stringify(seeded.map((p) => p.sample)));
 
@@ -155,8 +155,8 @@ if (!result.ok) {
     same('v2 stickies preserved', s2.stickies, v2.stickies);
     same('v2 tasks preserved', s2.tasks, v2.tasks);
     same('v2 desktop preserved', s2.desktop, v2.desktop);
-    if (Array.isArray(s2.prompts) && s2.prompts.length === 3) ok('v2 -> v3 seeds the three native prompts');
-    else bad('v2 -> v3 seeds the three native prompts', JSON.stringify(s2.prompts && s2.prompts.length));
+    if (Array.isArray(s2.prompts) && s2.prompts.length === 5) ok('v2 -> v3 seeds the five native prompts');
+    else bad('v2 -> v3 seeds the five native prompts', JSON.stringify(s2.prompts && s2.prompts.length));
 
     // 一个含有提示词的 v3 快照原样保留
     const withPrompt = JSON.parse(JSON.stringify(s2));

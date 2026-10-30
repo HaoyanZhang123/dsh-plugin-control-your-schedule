@@ -15,9 +15,9 @@
 [![IndexedDB](https://img.shields.io/badge/IndexedDB-local%20cache-4f7cac)](https://developer.mozilla.org/docs/Web/API/IndexedDB_API)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB)](https://www.python.org/)
 
-当前版本 **0.5.1** · 开发依据 DSH **0.2.1-rc.2** · Windows 实测，macOS / Linux 由 CI 构建与静态门禁覆盖 | 界面中英双语 | 语言：[English](README.en.md)
+当前版本 **0.5.2** · 开发依据 DSH **0.2.1-rc.2** · Windows 实测，macOS / Linux 由 CI 构建与静态门禁覆盖 | 界面中英双语 | 语言：[English](README.en.md)
 
-> 面板插件 v0.5.1
+> 面板插件 v0.5.2
 
 ## 简介
 
@@ -57,7 +57,7 @@
 
 ### 提示词库与对话入口
 
-- **提示词库**：应用坞第 5 个应用。左列表搜索、置顶优先；右编辑器写标题与多行正文，自动保存。正文上限 20000 字，最多 300 条。新建/复制一条/置顶/删除，删除有确认。
+- **提示词库**：应用坞第 5 个应用，内置 5 条示例提示词（含「深层」「沟通原则」）。左列表搜索、置顶优先；右编辑器写标题与多行正文，自动保存。正文上限 20000 字，最多 300 条。新建/复制一条/置顶/删除，删除有确认。
 - **对话里随取随用**：每个对话输入框工具行左侧有一个「提示词」小按钮，点开上方弹出列表，`↑↓` 选择、`Enter` 填入、`Esc` 关闭。**只填进草稿**：草稿为空时整段填入，非空时插到光标处（单步可撤销），输入框正在发送会提示稍后再试。不写系统提示词、不自动发送。点「在便签里管理 ↗」会切到纸屿并打开提示词窗口。
 
 <img width="1400" alt="提示词库：动作按钮靠右，无标题行" src="assets/screenshot-prompts.webp">
@@ -102,7 +102,7 @@ DSH → Plugins → Add plugin，填：
 dsh-plugin-control-your-schedule
 ```
 
-也可以带版本：`dsh-plugin-control-your-schedule@0.5.1`。
+也可以带版本：`dsh-plugin-control-your-schedule@0.5.2`。
 
 ### GitHub（备选，不需要 npm 时）
 
@@ -214,7 +214,7 @@ node smoke/page_e2e.mjs
 
 ## 更新与发布
 
-- 当前版本：**0.5.1**
+- 当前版本：**0.5.2**
 - [CHANGELOG.md](CHANGELOG.md) · [Releases](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/releases) · [npm](https://www.npmjs.com/package/dsh-plugin-control-your-schedule)
 
 ## 许可证

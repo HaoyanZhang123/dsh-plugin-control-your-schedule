@@ -8266,7 +8266,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
   /* @migrate-begin */
 
   /* 原生示例提示词：唯一一份定义。
-     三条都用 sample: true 标记，随「清除示例」一起清掉；id 固定，重复落地不会长出第二份。
+     五条都用 sample: true 标记，随「清除示例」一起清掉；id 固定，重复落地不会长出第二份。
      放在迁移块里，是因为 createSeed、v2→v3 迁移、以及"读到缺少 prompts 的旧文件"三处都要用它，
      而迁移块是本文件唯一会被单独抽出跑测试的片段。 */
   P.SAMPLE_PROMPTS = [
@@ -8284,6 +8284,16 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       id: 'prompt_sample_agents',
       title: '多开子代理争最好效果',
       body: '你可以开很多的子代理，我要最好的效果。'
+    },
+    {
+      id: 'prompt_sample_depth',
+      title: '深层',
+      body: '在我们反复讨论过的所有问题中，有没有一个更深层次的问题，是我一直在围着它打转，却始终没有真正问出口的？'
+    },
+    {
+      id: 'prompt_sample_comm',
+      title: '沟通原则',
+      body: '以格赖斯合作原则及四项会话准则为指导，确保信息充分而不冗余、论述真实且有依据、回应紧扣问题、表达清晰有序；在不牺牲准确性与必要深度的前提下，提高沟通效率。'
     }
   ];
 

@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-control-your-schedule",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Paper-style sticky notes, paper notes, calendar, drawing and a reusable prompt library inside DSH",
   "type": "module",
   "main": "index.js",

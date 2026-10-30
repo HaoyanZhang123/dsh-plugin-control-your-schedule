@@ -134,8 +134,8 @@ const seededPrompts = await run(function () {
   var P = window.PaperOS;
   return { samples: P.data.getExampleCounts().prompts, total: P.data.listPrompts('').length };
 });
-if (seededPrompts && seededPrompts.samples === 3) ok('first run seeds three sample prompts', JSON.stringify(seededPrompts));
-else bad('first run seeds three sample prompts', JSON.stringify(seededPrompts));
+if (seededPrompts && seededPrompts.samples === 5) ok('first run seeds five sample prompts', JSON.stringify(seededPrompts));
+else bad('first run seeds five sample prompts', JSON.stringify(seededPrompts));
 
 // --- first open fills the work area ---
 const geometry = await run(function () {
@@ -1778,7 +1778,7 @@ const promptSeeding = await run(function () {
     emptyCount: emptyResult.ok ? emptyResult.snapshot.prompts.length : -1
   };
 });
-if (promptSeeding && promptSeeding.legacyOk && promptSeeding.legacyCount === 3) ok('a v3 file without a prompts field gets the native samples', 'count=' + promptSeeding.legacyCount);
+if (promptSeeding && promptSeeding.legacyOk && promptSeeding.legacyCount === 5) ok('a v3 file without a prompts field gets the native samples', 'count=' + promptSeeding.legacyCount);
 else bad('a v3 file without a prompts field gets the native samples', JSON.stringify(promptSeeding));
 if (promptSeeding && promptSeeding.emptyOk && promptSeeding.emptyCount === 0) ok('an emptied prompt library is not refilled', 'count=' + promptSeeding.emptyCount);
 else bad('an emptied prompt library is not refilled', JSON.stringify(promptSeeding));
@@ -1840,8 +1840,8 @@ const samples = await run(function () {
 });
 if (samples && samples.samplePrompts >= 2 && samples.cleared === samples.samplePrompts && samples.left === 0 && samples.after === samples.before - samples.cleared) ok('sample prompts are counted and cleared with the other examples', JSON.stringify(samples));
 else bad('sample prompts are counted and cleared with the other examples', JSON.stringify(samples));
-const nativeIds = ['prompt_sample_agents', 'prompt_sample_align', 'prompt_sample_research'];
-if (samples && samples.restored === 3 && JSON.stringify(samples.backIds) === JSON.stringify(nativeIds)) ok('the native samples can be put back from the empty state', JSON.stringify(samples.backIds));
+const nativeIds = ['prompt_sample_agents', 'prompt_sample_align', 'prompt_sample_comm', 'prompt_sample_depth', 'prompt_sample_research'];
+if (samples && samples.restored === 5 && JSON.stringify(samples.backIds) === JSON.stringify(nativeIds)) ok('the native samples can be put back from the empty state', JSON.stringify(samples.backIds));
 else bad('the native samples can be put back from the empty state', JSON.stringify(samples && { restored: samples.restored, backIds: samples.backIds }));
 
 // --- reload keeps data ---

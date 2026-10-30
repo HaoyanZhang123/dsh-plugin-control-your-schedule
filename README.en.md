@@ -15,9 +15,9 @@
 [![IndexedDB](https://img.shields.io/badge/IndexedDB-local%20cache-4f7cac)](https://developer.mozilla.org/docs/Web/API/IndexedDB_API)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB)](https://www.python.org/)
 
-Version **0.5.1** · Built against DSH **0.2.1-rc.2** · Tested on Windows; macOS / Linux are covered by the CI build and static gates | English / 中文 UI | 语言：[中文](README.md)
+Version **0.5.2** · Built against DSH **0.2.1-rc.2** · Tested on Windows; macOS / Linux are covered by the CI build and static gates | English / 中文 UI | 语言：[中文](README.md)
 
-> panel plugin v0.5.1
+> panel plugin v0.5.2
 
 ## Overview
 
@@ -57,7 +57,7 @@ The eight screenshots below cover the six apps plus light and dark surfaces; all
 
 ### Prompt library and composer entry
 
-- **Prompt library**: the fifth app on the dock. Search and pin on the left; write a title and a multi-line body on the right, saved automatically. Body limit 20 000 characters, up to 300 entries, with duplicate/pin/delete (delete asks first).
+- **Prompt library**: the fifth app on the dock, with five sample prompts (including “The deeper question” and “Communication principles”). Search and pin on the left; write a title and a multi-line body on the right, saved automatically. Body limit 20 000 characters, up to 300 entries, with duplicate/pin/delete (delete asks first).
 - **Use prompts from the composer**: every conversation input has a small “Prompts” button on the left of its tool row. It opens a list above the composer — arrow keys to move, Enter to fill, Esc to close. **It only fills the draft**: an empty draft takes the whole prompt, a non-empty one gets it at the caret (undoable in one step); while the message is sending it asks you to wait. It never writes a system prompt and never sends anything. “Manage in Paper Isle ↗” jumps to the plugin with the prompt window open.
 
 <img width="1400" alt="Prompt library: actions flush right, no title row" src="assets/screenshot-prompts-en.webp">
@@ -102,7 +102,7 @@ DSH → Plugins → Add plugin, then enter:
 dsh-plugin-control-your-schedule
 ```
 
-A version can be pinned too: `dsh-plugin-control-your-schedule@0.5.1`.
+A version can be pinned too: `dsh-plugin-control-your-schedule@0.5.2`.
 
 ### GitHub (alternative, without npm)
 
@@ -214,7 +214,7 @@ node smoke/page_e2e.mjs
 
 ## Releases
 
-- Current version: **0.5.1**
+- Current version: **0.5.2**
 - [CHANGELOG.md](CHANGELOG.md) · [Releases](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/releases) · [npm](https://www.npmjs.com/package/dsh-plugin-control-your-schedule)
 
 ## License
