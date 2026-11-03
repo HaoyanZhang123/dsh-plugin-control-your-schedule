@@ -19,7 +19,9 @@ import { dirname, join } from 'node:path';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
-const CLIENT = join(ROOT, 'plugin', 'client.js');
+/* 开发树是 <项目>/plugin/client.js，发布仓是 <包根>/client.js；两种布局都要能跑（GitHub CI 用后者）。 */
+const CLIENT = [join(ROOT, 'plugin', 'client.js'), join(ROOT, 'client.js')]
+  .find((candidate) => existsSync(candidate)) || join(ROOT, 'plugin', 'client.js');
 const OUT = join(ROOT, '..', '..', 'output', '_probe', 'cys-e2e');
 // 端口固定 + 上一个进程没退干净 = 新测试连到旧浏览器，测的是旧页面和旧状态，
 // 表现是一堆逻辑上不可能的失败。改成按 pid 取一个不冲突的端口。
