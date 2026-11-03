@@ -1161,6 +1161,376 @@ html[data-motion="reduce"] *::after {
    Desk, header, dock, onboarding, command palette
    ============================================================ */
 
+/* ---------------- 皮肤选择页（K5：A⁺ 双卡 + 真实小型界面预览） ----------------
+   02 §3 要求两张真实的小型界面预览，裁定 #5 不接受灰色示意块。预览是同一套
+   设计语言的 DOM 缩小版：顶栏 / 窗口 / 今日卡 / 应用坞，两套皮肤各一份调色板，
+   只画结构不承载交互。 */
+
+.skin-choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 0 0 14px;
+}
+
+.skin-choice__card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 9px;
+  border: 1px solid rgba(64, 64, 64, 0.2);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: border-color 0.16s, background 0.16s, box-shadow 0.16s;
+}
+
+.skin-choice__card:hover {
+  background: rgba(252, 252, 252, 0.5);
+}
+
+.skin-choice__card.is-selected {
+  border-color: var(--indigo);
+  box-shadow: 0 0 0 2px rgba(86, 92, 140, 0.16);
+}
+
+.skin-choice__card:focus-within {
+  outline: 2px solid var(--indigo);
+  outline-offset: 3px;
+}
+
+/* 选中的那张已经有一圈强调边，再叠一个焦点框会看起来像两张都选中。 */
+.skin-choice__card.is-selected:focus-within {
+  outline: none;
+}
+
+/* 原生 radio 仍可聚焦（方向键切卡），视觉交给选中态与对勾。 */
+.skin-choice__card input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.skin-choice__text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0 3px 3px;
+}
+
+.skin-choice__name {
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.skin-choice__note {
+  color: var(--ink-faint);
+  font-family: var(--font-serif);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.skin-choice__preview {
+  --pv-bg: linear-gradient(145deg, #f7f3e9, #ece5d7);
+  --pv-surface: #fffdf8;
+  --pv-surface-2: rgba(255, 253, 246, 0.72);
+  --pv-line: rgba(120, 100, 70, 0.24);
+  --pv-text: rgba(90, 74, 55, 0.55);
+  --pv-accent: #9a6d51;
+  --pv-shadow: 0 7px 16px -10px rgba(90, 70, 45, 0.55);
+  --pv-radius: 3px;
+  position: relative;
+  display: block;
+  height: 132px;
+  overflow: hidden;
+  border-radius: 9px;
+  background: var(--pv-bg);
+}
+
+.skin-choice__preview[data-preview-skin="modern"] {
+  --pv-bg:
+    radial-gradient(ellipse 60% 65% at 96% -4%, rgba(159, 169, 235, 0.32), rgba(0, 0, 0, 0) 72%),
+    radial-gradient(ellipse 48% 55% at -6% 102%, rgba(153, 203, 190, 0.26), rgba(0, 0, 0, 0) 74%),
+    linear-gradient(145deg, #fafafb, #eef0f4);
+  --pv-surface: rgba(255, 255, 255, 0.9);
+  --pv-surface-2: rgba(255, 255, 255, 0.68);
+  --pv-line: rgba(28, 30, 38, 0.13);
+  --pv-text: rgba(48, 52, 62, 0.5);
+  --pv-accent: #526fd4;
+  --pv-shadow: 0 12px 24px -14px rgba(49, 51, 76, 0.55);
+  --pv-radius: 7px;
+}
+
+/* 顶栏 */
+.pv__bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  height: 15px;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--pv-line);
+}
+
+.pv__mark {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--pv-accent);
+  opacity: 0.85;
+}
+
+.pv__crumb {
+  width: 26px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--pv-text);
+  opacity: 0.5;
+}
+
+.pv__save {
+  width: 10px;
+  height: 3px;
+  margin-left: auto;
+  border-radius: 2px;
+  background: var(--pv-text);
+  opacity: 0.42;
+}
+
+.pv__gear {
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--pv-text);
+  border-radius: 50%;
+  opacity: 0.6;
+}
+
+/* 桌面：窗口 + 今日卡 */
+.pv__desk {
+  position: absolute;
+  top: 15px;
+  left: 0;
+  right: 0;
+  bottom: 17px;
+}
+
+.pv__win {
+  position: absolute;
+  top: 11px;
+  left: 9px;
+  width: 62%;
+  height: 62px;
+  overflow: hidden;
+  border: 1px solid var(--pv-line);
+  border-radius: var(--pv-radius);
+  background: var(--pv-surface);
+  box-shadow: var(--pv-shadow);
+}
+
+.pv__winbar {
+  display: flex;
+  height: 15px;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  border-bottom: 1px solid var(--pv-line);
+  background: var(--pv-surface-2);
+}
+
+.pv__winicon {
+  width: 6px;
+  height: 6px;
+  border-radius: 1.5px;
+  background: var(--pv-accent);
+  opacity: 0.7;
+}
+
+.pv__wintitle {
+  color: var(--pv-text);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  line-height: 1;
+  opacity: 0.9;
+  transform: scale(0.62);
+  transform-origin: left center;
+}
+
+.pv__winctl {
+  width: 12px;
+  height: 3px;
+  margin-left: auto;
+  border-radius: 2px;
+  background: var(--pv-text);
+  opacity: 0.4;
+}
+
+.pv__winbody {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 8px 0;
+}
+
+.pv__line {
+  display: block;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--pv-text);
+  opacity: 0.38;
+}
+
+.pv__line--lead {
+  width: 58%;
+  height: 5px;
+  opacity: 0.62;
+}
+
+.pv__line--short {
+  width: 46%;
+}
+
+.pv__line--tiny {
+  width: 72%;
+  height: 2px;
+  opacity: 0.3;
+}
+
+.pv__card {
+  position: absolute;
+  top: 11px;
+  right: 9px;
+  display: flex;
+  width: 27%;
+  height: 62px;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 7px;
+  border: 1px solid var(--pv-line);
+  border-radius: var(--pv-radius);
+  background: var(--pv-surface);
+  box-shadow: var(--pv-shadow);
+}
+
+.pv__num {
+  color: var(--pv-accent);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.95;
+  transform: scale(1.5);
+  transform-origin: left center;
+}
+
+/* 应用坞 */
+.pv__dock {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  display: flex;
+  gap: 3px;
+  padding: 3px 5px;
+  border: 1px solid var(--pv-line);
+  border-radius: 6px;
+  background: var(--pv-surface);
+  box-shadow: var(--pv-shadow);
+  transform: translateX(-50%);
+}
+
+.pv__dockdot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--pv-text);
+  opacity: 0.34;
+}
+
+.pv__dockdot:nth-child(2) {
+  opacity: 0.5;
+}
+
+.pv__dockdot:nth-child(3) {
+  background: var(--pv-accent);
+  opacity: 0.7;
+}
+
+/* 选中态的对勾徽标（content 里只有一个勾，不是文案，不进 i18n） */
+.skin-choice__card::after {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  display: none;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fbfbfb;
+  background: var(--indigo);
+  box-shadow: 0 1px 3px rgba(30, 30, 30, 0.24);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  line-height: 1;
+  content: "✓";
+}
+
+.skin-choice__card.is-selected::after {
+  display: grid;
+}
+
+.skin-choice__suppress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+}
+
+/* 选择页右上角的关闭按钮：和「关闭」动作同一条路（不是第二个关闭路径）。 */
+.dialog-x {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--ink-faint);
+  background: transparent;
+  cursor: pointer;
+}
+
+.dialog-x:hover {
+  color: var(--ink);
+  background: rgba(252, 252, 252, 0.62);
+}
+
+/* 深色里不能留浅底 + ink 文字的面（门禁 no light pills left uncovered in dark）。 */
+html[data-theme="dark"] .dialog-x {
+  color: var(--ink-faint);
+  background: transparent;
+}
+
+html[data-theme="dark"] .dialog-x:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dialog-x svg {
+  width: 13px;
+  height: 13px;
+  stroke-width: 1.8;
+}
+
 html {
   background: var(--desk-a);
 }
@@ -1560,6 +1930,12 @@ body.os-ready .os {
   line-height: 1.9;
 }
 
+/* 桌面副标题只属于 modern（本轮新增）：其它皮肤一律不渲染，经典因此零变化。
+   现代桌面现在整块 .desk-intro 都隐藏，这条守卫仍然必要——它守的是经典侧。 */
+html:not([data-skin="modern"]) .desk-intro__caption {
+  display: none;
+}
+
 /* ---------------- day card ---------------- */
 
 .day-card {
@@ -1796,64 +2172,6 @@ html[lang="en"] .day-card__seal {
   font-weight: 600;
   letter-spacing: 0.01em;
   line-height: 1.1;
-}
-
-/* ---------------- first run tip ---------------- */
-
-.first-run {
-  position: absolute;
-  z-index: 15;
-  bottom: calc(var(--dock-height) + var(--dock-gap) + 26px);
-  left: 28px;
-  display: flex;
-  width: 285px;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 15px 32px 15px 15px;
-  border: 1px solid rgba(79, 79, 79, 0.16);
-  color: var(--ink-soft);
-  background-color: rgba(249, 249, 249, 0.92);
-  background-image: var(--paper-noise);
-  box-shadow: var(--shadow-soft);
-  font-family: var(--font-serif);
-  font-size: 15px;
-  line-height: 1.8;
-  transform: rotate(-0.5deg);
-}
-
-.first-run__mark {
-  color: var(--clay);
-  font-size: 14.5px;
-}
-
-.first-run p {
-  margin: 0;
-}
-
-.first-run button:not(.first-run__close) {
-  color: var(--indigo);
-  border-bottom: 1px solid rgba(93, 93, 93, 0.4);
-  font-family: var(--font-serif);
-  font-size: 15px;
-}
-
-.first-run__close {
-  position: absolute;
-  top: 7px;
-  right: 8px;
-  display: grid;
-  width: 19px;
-  height: 19px;
-  place-items: center;
-  border-radius: 50%;
-  color: var(--ink-faint);
-  font-size: 16px;
-  line-height: 1;
-}
-
-.first-run__close:hover {
-  color: var(--ink);
-  background: var(--paper-deep);
 }
 
 /* ---------------- dock ---------------- */
@@ -2950,10 +3268,6 @@ html[data-theme="dark"] .desk-notice__mark {
   .desk-intro {
     opacity: 0.78;
   }
-
-  .first-run {
-    display: none;
-  }
 }
 
 @media (max-width: 820px) {
@@ -3043,10 +3357,6 @@ html[data-theme="dark"] .desk-notice__mark {
   }
 
   .dock::after {
-    display: none;
-  }
-
-  .first-run {
     display: none;
   }
 
@@ -6417,6 +6727,32 @@ html[data-theme="dark"] .cal-day__dot.cal-day__dot--done {
   font-size: 14.5px;
 }
 
+/* 界面皮肤那一行（02 §2）：只读显示当前皮肤 + 「选择」按钮。
+   选择页本体是本轮新组件，经典没有历史基线，所以这段是基样式。 */
+.setting-row__control {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 9px;
+}
+
+.skin-now {
+  color: var(--ink-soft);
+  font-family: var(--font-serif);
+  font-size: 13.5px;
+  letter-spacing: 0.02em;
+}
+
+/* 界面皮肤那一行是「标签 + 名称 + 按钮」的横排，三者对齐到中线。 */
+.setting-row--skin {
+  align-items: center;
+}
+
+/* 左栏品牌块只在现代出现；经典继续用原来的 settings-head。 */
+.settings-nav-brand {
+  display: none;
+}
+
 .toggle {
   position: relative;
   display: inline-flex;
@@ -7807,12 +8143,6 @@ html[data-theme="dark"] .dock__tip {
   box-shadow: 0 10px 24px -14px rgba(0, 0, 0, 0.9);
 }
 
-html[data-theme="dark"] .first-run {
-  border-color: rgba(217, 217, 217, 0.16);
-  color: var(--ink-soft);
-  background: rgba(45, 45, 45, 0.95);
-}
-
 html[data-theme="dark"] .boot {
   background: var(--desk-b);
 }
@@ -8081,6 +8411,3640 @@ html[data-theme="dark"] .priority-popover__item.is-active {
   font-size: 14px;
 }
 
+/* ============================================================
+   A⁺ 原生柔光 · modern 皮肤（K2 波次）
+   ------------------------------------------------------------
+   作用域铁律：本段所有规则都以 html[data-skin="modern"] 开头，
+   classic 的既有层叠一行都不覆盖；深色一律写
+   html[data-skin="modern"][data-theme="dark"]，特异性高于生产的
+   html[data-theme="dark"] 规则。全局选择器（svg / body /
+   :focus-visible / @keyframes 同名）一律不许出现。
+   ============================================================ */
+
+/* @modern-k2-begin */
+
+/* ---------- 令牌：文字与边线优先消费宿主令牌（03 §4 / 05 §7） ---------- */
+
+html[data-skin="modern"] {
+  /* 宿主令牌桥把 --ink* / --line* / --focus-ring 写在 html 内联变量上，
+     只有在「跟随 DSH」时才有；静态值只是回退，不写死宿主颜色。 */
+  --m-text: var(--ink, #202125);
+  --m-text-2: var(--ink-soft, #62656d);
+  --m-text-3: var(--ink-faint, #92959e);
+  --m-line: var(--line, rgba(28, 30, 38, 0.09));
+  --m-line-strong: var(--line-strong, rgba(28, 30, 38, 0.15));
+  --m-accent: var(--focus-ring, #526fd4);
+
+  --m-bg: var(--paper-sink, #f2f3f5);
+  --m-stage-a: #fafafb;
+  --m-stage-b: #f1f2f5;
+  --m-surface: rgba(252, 252, 253, 0.88);
+  --m-surface-solid: #fcfcfd;
+  --m-surface-2: #f4f5f7;
+  --m-surface-3: #eff0f3;
+  --m-accent-soft: #e8edfb;
+  --m-danger: #b7595d;
+  --m-success: #708c72;
+  --m-edge: rgba(255, 255, 255, 0.65);
+
+  --m-ambient-a: rgba(159, 169, 235, 0.24);
+  --m-ambient-b: rgba(153, 203, 190, 0.2);
+  --m-stage-paint:
+    radial-gradient(ellipse 60% 65% at 96% -4%, var(--m-ambient-a), rgba(0, 0, 0, 0) 72%),
+    radial-gradient(ellipse 48% 55% at -6% 102%, var(--m-ambient-b), rgba(0, 0, 0, 0) 74%),
+    linear-gradient(145deg, var(--m-stage-a) 0%, var(--m-stage-b) 72%);
+
+  --m-shadow: 0 28px 80px -42px rgba(49, 51, 76, 0.36), 0 3px 12px rgba(30, 32, 40, 0.04);
+  --m-shadow-float: 0 18px 46px -26px rgba(42, 44, 66, 0.32), 0 2px 8px rgba(30, 32, 40, 0.05);
+
+  --m-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --m-topbar-h: 58px;
+  --m-titlebar-h: 48px;
+  --m-radius-window: 19px;
+  --m-radius-dock: 17px;
+  --m-radius-btn: 10px;
+
+  /* 便签五色：语义 id 不变，只在 modern 作用域另起 --note-*，
+     不重定义生产 --sage（那是品牌绿，36 处引用），见 K0 §6.2。 */
+  --m-note-ink: #39372f;
+  --m-note-edge: rgba(70, 60, 45, 0.055);
+  --note-butter: #f5edca;
+  --note-peach: #f2dfd5;
+  --note-sage: #dfe9dc;
+  --note-sky: #dce8ef;
+  --note-rose: #efdde1;
+}
+
+html[data-skin="modern"][data-theme="dark"] {
+  --m-bg: #131417;
+  --m-stage-a: #191a1e;
+  --m-stage-b: #121316;
+  --m-surface: rgba(33, 34, 39, 0.9);
+  --m-surface-solid: #232428;
+  --m-surface-2: #2b2c31;
+  --m-surface-3: #303137;
+  --m-accent-soft: #30394f;
+  --m-danger: #df9195;
+  --m-success: #9bbba0;
+  --m-edge: rgba(255, 255, 255, 0.1);
+
+  --m-ambient-a: rgba(91, 85, 151, 0.22);
+  --m-ambient-b: rgba(51, 105, 94, 0.16);
+
+  --m-shadow: 0 30px 90px -42px rgba(0, 0, 0, 0.8), 0 3px 12px rgba(0, 0, 0, 0.2);
+  --m-shadow-float: 0 20px 50px -26px rgba(0, 0, 0, 0.7);
+
+  --m-note-ink: #efeee9;
+  --m-note-edge: rgba(255, 255, 255, 0.06);
+  --note-butter: #49432f;
+  --note-peach: #493831;
+  --note-sage: #344238;
+  --note-sky: #30414c;
+  --note-rose: #49363d;
+}
+
+/* ---------- 桌面：环境光 / 构图 / 今日卡 ---------- */
+
+/* 底色只在 body 上兜底；真正被看见的是下面 .os 上的环境光。 */
+html[data-skin="modern"] body {
+  background: var(--m-bg);
+}
+
+/* 环境光铺在 .os 上：生产的顶栏是 .stage 的兄弟，直接铺 .stage 会在顶栏下
+   留一条硬缝。铺整张 .os 与 Demo「顶栏在 stage 内」的构图等价，且完全静止。 */
+html[data-skin="modern"] .os {
+  background: var(--m-stage-paint);
+}
+
+html[data-skin="modern"] .stage {
+  background: transparent;
+}
+
+html[data-skin="modern"] .stage::before,
+html[data-skin="modern"] .stage::after {
+  display: none;
+}
+
+html[data-skin="modern"] .desk-decor {
+  display: none;
+}
+
+html[data-skin="modern"] .ambient {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+}
+
+html[data-skin="modern"] .os:not(.no-grid) .ambient {
+  background-image: radial-gradient(var(--m-line-strong) 0.65px, transparent 0.65px);
+  background-size: 24px 24px;
+  opacity: 0.45;
+}
+
+/* 现代桌面不摆标题/副标题：桌面只留环境光、今日卡与应用坞（用户 2026-11-03 决定）。 */
+html[data-skin="modern"] .desk-intro {
+  display: none;
+}
+
+html[data-skin="modern"] .day-card {
+  display: flex;
+  z-index: 90;
+  top: 94px;
+  right: 38px;
+  width: 252px;
+  padding: 23px;
+  border: 1px solid var(--m-edge);
+  border-radius: 19px;
+  color: var(--m-text);
+  background: var(--m-surface);
+  background-image: none;
+  box-shadow: var(--m-shadow-float);
+  backdrop-filter: blur(24px);
+  transition: opacity 0.25s var(--m-ease), box-shadow 0.25s var(--m-ease);
+}
+
+html[data-skin="modern"] .day-card::before {
+  display: none;
+}
+
+html[data-skin="modern"] .day-card__tape,
+html[data-skin="modern"] .day-card__seal {
+  display: none;
+}
+
+html[data-skin="modern"] .day-card:hover {
+  box-shadow: var(--m-shadow-float);
+  transform: none;
+}
+
+html[data-skin="modern"] .day-card__date {
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+}
+
+html[data-skin="modern"] .day-card__num {
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 48px;
+  font-weight: 550;
+  letter-spacing: -0.06em;
+  line-height: 1;
+}
+
+html[data-skin="modern"] .day-card__meta {
+  display: grid;
+  gap: 3px;
+  padding-top: 0;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+html[data-skin="modern"] .day-card__meta strong {
+  color: var(--m-text);
+  font-size: 12px;
+  font-weight: 550;
+}
+
+html[data-skin="modern"] .day-card__meta span:last-child {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .day-card__quote {
+  min-height: 0;
+  margin: 20px 0 16px;
+  padding: 0;
+  border-top: 0;
+  color: var(--m-text-2);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  letter-spacing: 0;
+  line-height: 1.7;
+}
+
+html[data-skin="modern"] .day-card__quote::before {
+  display: none;
+}
+
+html[data-skin="modern"] .day-card__tasks {
+  display: grid;
+  width: auto;
+  margin: 0;
+  padding: 0;
+  gap: 8px;
+  align-content: start;
+  border-top: 0;
+}
+
+html[data-skin="modern"] .day-card__tasks-head {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--m-line);
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .day-card__tasks-head span:last-child {
+  color: var(--m-text-3);
+}
+
+html[data-skin="modern"] .day-card__task {
+  gap: 8px;
+  color: var(--m-text-2);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+html[data-skin="modern"] .day-card__task::before {
+  width: 5px;
+  height: 5px;
+  border: 0;
+  background: var(--m-text-3);
+}
+
+html[data-skin="modern"] .day-card__task.is-done {
+  color: var(--m-text-3);
+}
+
+html[data-skin="modern"] .day-card__task.is-done::before {
+  border: 0;
+  background: var(--m-success);
+}
+
+html[data-skin="modern"] .day-card__tasks-empty,
+html[data-skin="modern"] .day-card__tasks-more {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-style: normal;
+}
+
+html[data-skin="modern"] .day-card__link {
+  display: flex;
+  justify-content: space-between;
+  align-self: stretch;
+  width: 100%;
+  margin-top: 17px;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--m-line);
+  border-bottom: 0;
+  color: var(--m-text-2);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0;
+  line-height: 1.5;
+}
+
+html[data-skin="modern"] .day-card__link:hover {
+  border-top-color: var(--m-line);
+  color: var(--m-accent);
+}
+
+html[data-skin="modern"] .stage.has-windows .day-card {
+  opacity: 0.72;
+}
+
+html[data-skin="modern"] .stage.has-windows .day-card:hover {
+  opacity: 1;
+}
+
+/* ---------- 顶栏：品牌 / 上下文 / 保存状态 / 设置 ---------- */
+
+html[data-skin="modern"] .topbar {
+  height: calc(var(--m-topbar-h) + var(--cys-top-clearance));
+  flex: 0 0 calc(var(--m-topbar-h) + var(--cys-top-clearance));
+  gap: 0;
+  padding: var(--cys-top-clearance) 24px 0;
+  border-bottom: 1px solid var(--m-line);
+  /* 顶栏必须真的把 macOS 让位带画出来：贴 viewport 的同一张环境光，
+     与 .os 上那张逐像素对齐，既不留缝也不多一层色。 */
+  background: var(--m-stage-paint) fixed;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+html[data-skin="modern"] .topbar::after {
+  display: none;
+}
+
+html[data-skin="modern"] .topbar__left,
+html[data-skin="modern"] .topbar__right {
+  gap: 10px;
+}
+
+html[data-skin="modern"] .brand {
+  gap: 10px;
+  padding: 0;
+  border-radius: 8px;
+}
+
+html[data-skin="modern"] .brand__seal {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--m-surface-solid);
+  background: var(--m-text);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  transform: none;
+}
+
+html[data-skin="modern"] .brand:hover .brand__seal {
+  background: var(--m-text);
+  transform: none;
+}
+
+html[data-skin="modern"] .brand__word {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+html[data-skin="modern"] .brand__en {
+  display: none;
+}
+
+html[data-skin="modern"] .brand__cn {
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .topbar__stitch {
+  display: none;
+}
+
+/* 当前上下文：沿用 topbar__focus 的内容源（focused window 标题），
+   只在有内容时画出 Demo 的分隔斜杠，空着时顶栏保持安静。 */
+html[data-skin="modern"] .topbar__focus {
+  display: block;
+  max-width: 36vw;
+  margin-left: 23px;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .topbar__focus:not(:empty)::before {
+  margin-right: 10px;
+  color: var(--m-text-3);
+  content: "/";
+}
+
+html[data-skin="modern"] .save-pill {
+  height: auto;
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--m-text-3);
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .save-pill:hover {
+  border-color: transparent;
+  color: var(--m-text-2);
+  background: var(--m-surface-2);
+}
+
+/* 只在 modern 解除 1x1：经典仍是那条 sr-only 节点（page_e2e 按皮肤分别验）。 */
+html[data-skin="modern"] .save-pill #save-text {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  clip: auto !important;
+  white-space: nowrap !important;
+}
+
+html[data-skin="modern"] .save-pill__dot {
+  width: 5px;
+  height: 5px;
+  background: var(--m-success);
+}
+
+html[data-skin="modern"] .save-pill[data-state="pending"] .save-pill__dot,
+html[data-skin="modern"] .save-pill[data-state="saving"] .save-pill__dot {
+  background: var(--m-accent);
+  animation: modern-pulse-dot 1s ease-in-out infinite;
+}
+
+html[data-skin="modern"] .save-pill[data-state="error"] {
+  color: var(--m-danger);
+}
+
+html[data-skin="modern"] .save-pill[data-state="error"] .save-pill__dot {
+  background: var(--m-danger);
+}
+
+html[data-skin="modern"] .topbar__btn {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--m-text-3);
+}
+
+html[data-skin="modern"] .topbar__btn:hover {
+  border-color: transparent;
+  color: var(--m-text);
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .topbar__btn:active {
+  transform: scale(0.94);
+}
+
+html[data-skin="modern"] .topbar__btn svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.65;
+}
+
+@keyframes modern-pulse-dot {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* ---------- 窗口体系 ---------- */
+
+/* 控制按钮的 DOM 两套皮肤共用：经典皮肤的标题栏本来没有按钮，
+   这里用默认隐藏保住经典外观，modern 再显式展开（AC-05）。 */
+html:not([data-skin="modern"]) .window__controls {
+  display: none;
+}
+
+html[data-skin="modern"] .window {
+  border: 1px solid var(--m-line);
+  border-radius: var(--m-radius-window);
+  background: var(--m-surface);
+  background-image: none;
+  box-shadow: var(--m-shadow);
+  backdrop-filter: blur(26px);
+}
+
+html[data-skin="modern"] .window::before,
+html[data-skin="modern"] .window::after {
+  display: none;
+}
+
+html[data-skin="modern"] .window.is-focused {
+  border-color: var(--m-line-strong);
+}
+
+html[data-skin="modern"] .window.is-opening {
+  animation: modern-window-in 0.22s var(--m-ease);
+}
+
+html[data-skin="modern"] .window.is-closing {
+  animation: modern-window-out 0.16s var(--m-ease) forwards;
+}
+
+@keyframes modern-window-in {
+  from {
+    opacity: 0;
+    transform: translateY(9px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes modern-window-out {
+  to {
+    opacity: 0;
+    transform: translateY(5px) scale(0.988);
+  }
+}
+
+html[data-skin="modern"] .window__titlebar {
+  height: var(--m-titlebar-h);
+  flex: 0 0 var(--m-titlebar-h);
+  gap: 10px;
+  padding: 0 12px 0 17px;
+  border-bottom: 1px solid var(--m-line);
+  border-radius: var(--m-radius-window) var(--m-radius-window) 0 0;
+  background: transparent;
+}
+
+html[data-skin="modern"] .window__titlebar::after {
+  display: none;
+}
+
+html[data-skin="modern"] .window__grip {
+  display: none;
+}
+
+html[data-skin="modern"] .window__app-icon {
+  width: 16px;
+  height: 16px;
+}
+
+html[data-skin="modern"] .window__app-icon svg {
+  width: 16px;
+  height: 16px;
+  filter: none;
+}
+
+html[data-skin="modern"] .window__heading {
+  gap: 8px;
+}
+
+html[data-skin="modern"] .window__app-name {
+  color: var(--m-text-3);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+html[data-skin="modern"] .window__app-name::after {
+  content: none;
+}
+
+html[data-skin="modern"] .window__title {
+  color: var(--m-text-2);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .window:not(.is-focused) .window__app-name {
+  color: var(--m-text-3);
+}
+
+html[data-skin="modern"] .window:not(.is-focused) .window__title {
+  color: var(--m-text-3);
+}
+
+html[data-skin="modern"] .window:not(.is-focused) .window__app-icon {
+  opacity: 0.6;
+}
+
+html[data-skin="modern"] .window__controls {
+  margin-left: auto;
+  gap: 2px;
+}
+
+html[data-skin="modern"] .win-control {
+  width: 29px;
+  height: 29px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--m-text-3);
+  background: transparent;
+  cursor: pointer;
+}
+
+html[data-skin="modern"] .win-control:hover {
+  border-color: transparent;
+  color: var(--m-text);
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .win-control:active {
+  transform: scale(0.94);
+}
+
+html[data-skin="modern"] .win-control svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 1.65;
+}
+
+html[data-skin="modern"] .win-control--minimize:hover {
+  border-color: transparent;
+  color: var(--m-text);
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .win-control--close:hover {
+  border-color: transparent;
+  color: var(--m-danger);
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .window__body {
+  background: var(--m-surface-solid);
+  border-radius: 0 0 var(--m-radius-window) var(--m-radius-window);
+}
+
+/* ---------- 应用坞 ---------- */
+
+html[data-skin="modern"] .dock-wrap {
+  bottom: 20px;
+  gap: 0;
+}
+
+html[data-skin="modern"] .dock {
+  height: auto;
+  gap: 4px;
+  padding: 7px;
+  border: 1px solid var(--m-edge);
+  border-radius: var(--m-radius-dock);
+  background: var(--m-surface);
+  background-image: none;
+  box-shadow: var(--m-shadow-float);
+  backdrop-filter: blur(24px);
+}
+
+html[data-skin="modern"] .dock::before,
+html[data-skin="modern"] .dock::after {
+  display: none;
+}
+
+html[data-skin="modern"] .dock__btn {
+  width: 42px;
+  height: 40px;
+  border: 0;
+  border-radius: 11px;
+  color: var(--m-text-3);
+  transition: transform 0.18s var(--m-ease), color 0.16s, background 0.16s;
+}
+
+html[data-skin="modern"] .dock__btn:hover {
+  border-color: transparent;
+  color: var(--m-text);
+  background: var(--m-surface-2);
+  transform: translateY(-2px);
+}
+
+html[data-skin="modern"] .dock__btn:active {
+  transform: translateY(0) scale(0.96);
+}
+
+html[data-skin="modern"] .dock__btn.is-active {
+  border-color: transparent;
+  color: var(--m-text);
+  background: var(--m-surface-solid);
+  box-shadow: 0 2px 7px rgba(30, 32, 40, 0.1);
+}
+
+html[data-skin="modern"] .dock__btn.is-open::after {
+  bottom: 3px;
+  width: 3px;
+  height: 3px;
+  background: currentColor;
+}
+
+html[data-skin="modern"] .dock__btn.is-active::after {
+  width: 3px;
+  height: 3px;
+  background: currentColor;
+}
+
+html[data-skin="modern"] .dock__btn.is-minimized {
+  opacity: 0.45;
+}
+
+html[data-skin="modern"] .dock__btn.is-minimized::after {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+html[data-skin="modern"] .dock__btn.is-dragging {
+  border-color: transparent;
+  background: var(--m-surface-solid);
+  box-shadow: 0 12px 26px -14px rgba(0, 0, 0, 0.45);
+  /* 经典 .is-dragging 的 transition:none 输给上面的现代 transition，必须补回来：
+     否则拖动图标要等 180ms 才跟手。 */
+  transition: none;
+}
+
+html[data-skin="modern"] .dock__btn.is-drop-before::before,
+html[data-skin="modern"] .dock__btn.is-drop-after::before {
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--m-accent);
+}
+
+html[data-skin="modern"] .dock__btn.is-drop-before::before {
+  left: -4px;
+}
+
+html[data-skin="modern"] .dock__btn.is-drop-after::before {
+  right: -4px;
+}
+
+html[data-skin="modern"] .dock__btn svg {
+  width: 32px;
+  height: 32px;
+  filter: none;
+}
+
+html[data-skin="modern"] .dock__home svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.6;
+}
+
+html[data-skin="modern"] .dock__sep {
+  width: 1px;
+  height: 22px;
+  margin: 0 3px;
+  background: var(--m-line);
+  background-image: none;
+}
+
+html[data-skin="modern"] .dock__tip {
+  bottom: calc(100% + 12px);
+  padding: 6px 9px;
+  border: 1px solid var(--m-line-strong);
+  border-radius: 8px;
+  color: var(--m-text);
+  background: var(--m-surface-solid);
+  box-shadow: var(--m-shadow-float);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+html[data-skin="modern"] .dock__brand-mark {
+  display: none;
+}
+
+/* ---------- 动效：皮肤切换 250ms（裁定 #4），减少动效交给既有两条 reduce 规则 ---------- */
+
+/* 只在 applySkin 真正换皮肤的那一拍挂 is-skin-switching，280ms 后摘掉：
+   常驻过渡会把主题切换、尺寸探针、计算样式读取全部拖成慢半拍，也会让
+   「深色必须真深」这类同步测量读到过渡起点。 */
+html[data-skin="modern"].is-skin-switching .os,
+html[data-skin="modern"].is-skin-switching .stage,
+html[data-skin="modern"].is-skin-switching .topbar,
+html[data-skin="modern"].is-skin-switching .day-card,
+html[data-skin="modern"].is-skin-switching .dock,
+html[data-skin="modern"].is-skin-switching .window,
+html[data-skin="modern"].is-skin-switching .window__body,
+html[data-skin="modern"].is-skin-switching .window__titlebar,
+html[data-skin="modern"].is-skin-switching .brand__seal,
+html[data-skin="modern"].is-skin-switching .brand__cn,
+html[data-skin="modern"].is-skin-switching .topbar__focus,
+html[data-skin="modern"].is-skin-switching .save-pill,
+html[data-skin="modern"].is-skin-switching .save-pill__dot,
+html[data-skin="modern"].is-skin-switching .topbar__btn {
+  transition: background-color 0.25s var(--m-ease), border-color 0.25s var(--m-ease), color 0.25s var(--m-ease), box-shadow 0.25s var(--m-ease);
+}
+
+html[data-skin="modern"].is-skin-switching .window.is-layout-moving {
+  transition: left 0.24s var(--m-ease), top 0.24s var(--m-ease), width 0.24s var(--m-ease), height 0.24s var(--m-ease), background-color 0.25s var(--m-ease), border-color 0.25s var(--m-ease), box-shadow 0.25s var(--m-ease);
+}
+
+/* ---------- 响应式 ---------- */
+
+@media (max-width: 1100px) {
+  html[data-skin="modern"] .day-card {
+    right: 26px;
+    width: 224px;
+  }
+}
+
+@media (max-width: 900px) {
+  html[data-skin="modern"] .topbar__focus {
+    max-width: 30vw;
+  }
+
+  /* 窄桌面沿用经典的产品判断：今日卡在这个宽度会让 workArea 把窗口挤成细条
+     （787 面板上窗口只剩 505px），所以 900 以下收起卡片，把桌面让给工作区。 */
+  html[data-skin="modern"] .day-card {
+    display: none;
+  }
+}
+
+@media (max-width: 760px), (pointer: coarse) and (max-width: 900px) {
+  html[data-skin="modern"] .topbar {
+    height: calc(54px + var(--cys-top-clearance));
+    flex: 0 0 calc(54px + var(--cys-top-clearance));
+    padding: var(--cys-top-clearance) 14px 0;
+  }
+
+  html[data-skin="modern"] .topbar__focus {
+    margin-left: 12px;
+    max-width: 26vw;
+  }
+
+  html[data-skin="modern"] .day-card {
+    top: auto;
+    right: 20px;
+    bottom: 100px;
+    left: 20px;
+    width: auto;
+    padding: 16px 19px;
+  }
+
+  html[data-skin="modern"] .day-card__num {
+    font-size: 37px;
+  }
+
+  html[data-skin="modern"] .day-card__quote,
+  html[data-skin="modern"] .day-card__tasks {
+    display: none;
+  }
+
+  html[data-skin="modern"] .day-card__link {
+    position: absolute;
+    right: 18px;
+    bottom: 18px;
+    width: auto;
+    margin: 0;
+    padding: 0;
+    border-top: 0;
+  }
+
+  /* 窄屏窗口压在今日卡上方：卡片让位，别让 workArea 把窗口挤成细条。 */
+  html[data-skin="modern"] .stage.has-windows .day-card {
+    display: none;
+  }
+
+  html[data-skin="modern"] .handheld-card {
+    display: none;
+  }
+
+  html[data-skin="modern"] .dock-wrap {
+    bottom: 14px;
+  }
+
+  html[data-skin="modern"] .dock__btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  html[data-skin="modern"] .dock__tip {
+    display: none;
+  }
+}
+
+/* 触屏整屏工作区：判据与 JS 的 isSheet() 一致，只用 pointer: coarse。 */
+@media (pointer: coarse) {
+  html[data-skin="modern"] .windows-layer {
+    inset: 0;
+  }
+
+  html[data-skin="modern"] .window {
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: calc(100% - 86px) !important;
+    min-width: 0;
+    min-height: 0;
+    border-right: 0;
+    border-left: 0;
+    border-radius: 15px;
+  }
+
+  html[data-skin="modern"] .window__titlebar {
+    height: 48px;
+    flex: 0 0 48px;
+  }
+
+  html[data-skin="modern"] .window__body {
+    border-radius: 0 0 15px 15px;
+  }
+
+  html[data-skin="modern"] .win-control {
+    width: 44px;
+    height: 44px;
+  }
+
+  html[data-skin="modern"] .win-resize {
+    display: none;
+  }
+
+  html[data-skin="modern"] .dock__btn {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* 现代暗色的显式覆盖：绝大多数现代规则只吃 --m-* 令牌，而令牌本身已有
+   html[data-skin="modern"][data-theme="dark"] 取值（surface / text / line /
+   shadow 全套），所以「属性被现代覆盖后经典暗色兜不住」在令牌层就解决了。
+   这里只补三条不吃令牌、且深色下必须换强度的投影与边线。 */
+html[data-skin="modern"][data-theme="dark"] .window {
+  border-color: var(--m-line-strong);
+  box-shadow: var(--m-shadow);
+}
+
+html[data-skin="modern"][data-theme="dark"] .brand__seal {
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+}
+
+html[data-skin="modern"][data-theme="dark"] .dock__btn.is-active {
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.35);
+}
+
+/* ============================================================
+   K3 · 共享应用语言（页头 / 按钮 / 输入 / 空态）+ 便签 / 纸页 / 提示词
+   ============================================================ */
+
+/* ---------- 共享：应用底与页头（03 §3：页标题 25–26px、正文 13–14px） ---------- */
+
+html[data-skin="modern"] .app {
+  background: var(--m-surface-solid);
+}
+
+html[data-skin="modern"] .app-toolbar {
+  min-height: 80px;
+  gap: 14px;
+  padding: 22px 26px 16px;
+  border-bottom: 0;
+  background: transparent;
+}
+
+html[data-skin="modern"] .app-toolbar__meta {
+  gap: 14px;
+}
+
+html[data-skin="modern"] .app-toolbar__title {
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 25px;
+  font-weight: 640;
+  letter-spacing: -0.035em;
+}
+
+html[data-skin="modern"] .app-toolbar__actions {
+  gap: 8px;
+}
+
+html[data-skin="modern"] .app-toolbar__rule {
+  background: var(--m-line);
+}
+
+/* ---------- 共享：按钮 / 图标按钮（03 §3：主按钮 36 / r10；图标按钮 34） ---------- */
+
+html[data-skin="modern"] .paper-btn {
+  min-height: 36px;
+  gap: 7px;
+  padding: 0 14px;
+  border: 1px solid var(--m-line);
+  border-radius: var(--m-radius-btn);
+  color: var(--m-text-2);
+  background: var(--m-surface-2);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 550;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .paper-btn:hover {
+  border-color: var(--m-line-strong);
+  color: var(--m-text);
+  background: var(--m-surface-3);
+}
+
+html[data-skin="modern"] .paper-btn:active {
+  transform: scale(0.98);
+}
+
+html[data-skin="modern"] .paper-btn--ink {
+  border-color: transparent;
+  color: var(--m-surface-solid);
+  background: var(--m-text);
+  box-shadow: 0 3px 8px rgba(20, 22, 30, 0.12);
+}
+
+html[data-skin="modern"] .paper-btn--ink:hover {
+  border-color: transparent;
+  color: var(--m-surface-solid);
+  background: var(--m-text);
+  box-shadow: 0 6px 14px rgba(20, 22, 30, 0.17);
+  transform: translateY(-1px);
+}
+
+html[data-skin="modern"] .paper-btn--clay {
+  border-color: transparent;
+  color: #fff;
+  background: var(--m-danger);
+}
+
+html[data-skin="modern"] .paper-btn--clay:hover {
+  border-color: transparent;
+  color: #fff;
+  background: var(--m-danger);
+  opacity: 0.92;
+}
+
+html[data-skin="modern"] .paper-btn--ghost {
+  border-color: transparent;
+  color: var(--m-text-2);
+  background: transparent;
+}
+
+html[data-skin="modern"] .paper-btn--ghost:hover {
+  border-color: transparent;
+  color: var(--m-text);
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .paper-btn--tiny {
+  min-height: 28px;
+  padding: 0 9px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+
+html[data-skin="modern"] .icon-btn {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--m-text-3);
+}
+
+html[data-skin="modern"] .icon-btn:hover {
+  border-color: transparent;
+  color: var(--m-text);
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .icon-btn:active {
+  transform: scale(0.94);
+}
+
+html[data-skin="modern"] .icon-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.65;
+}
+
+html[data-skin="modern"] .icon-btn--danger:hover {
+  color: var(--m-danger);
+  background: var(--m-surface-2);
+}
+
+/* ---------- 共享：输入 / 搜索 / 计数 / 保存态 / 空态 ---------- */
+
+html[data-skin="modern"] .text-input {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--m-line);
+  border-radius: 9px;
+  color: var(--m-text);
+  background: var(--m-surface-2);
+  font-family: var(--font-ui);
+  font-size: 12px;
+}
+
+html[data-skin="modern"] .text-input:focus {
+  border-color: var(--m-accent);
+  background: var(--m-surface-solid);
+}
+
+html[data-skin="modern"] .search-box {
+  height: 34px;
+  gap: 8px;
+  padding: 0 10px;
+  border: 1px solid var(--m-line);
+  border-radius: 9px;
+  color: var(--m-text-3);
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .search-box:focus-within {
+  border-color: var(--m-accent);
+}
+
+html[data-skin="modern"] .search-box svg {
+  width: 14px;
+  height: 14px;
+}
+
+html[data-skin="modern"] .search-box .text-input {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 11px;
+}
+
+html[data-skin="modern"] .count-chip {
+  height: 19px;
+  border-radius: 7px;
+  color: var(--m-text-3);
+  background: var(--m-surface-2);
+  font-family: var(--font-ui);
+  font-size: 10px;
+}
+
+html[data-skin="modern"] .save-state {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .save-state::before {
+  width: 5px;
+  height: 5px;
+  background: var(--m-success);
+}
+
+html[data-skin="modern"] .save-state[data-state="pending"]::before,
+html[data-skin="modern"] .save-state[data-state="saving"]::before {
+  background: var(--m-accent);
+  animation: modern-pulse-dot 1s ease-in-out infinite;
+}
+
+html[data-skin="modern"] .save-state[data-state="error"] {
+  color: var(--m-danger);
+}
+
+html[data-skin="modern"] .save-state[data-state="error"]::before {
+  background: var(--m-danger);
+}
+
+html[data-skin="modern"] .sample-tag {
+  height: 18px;
+  padding: 0 6px;
+  border: 1px solid var(--m-line-strong);
+  border-radius: 6px;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 550;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .empty-state {
+  gap: 8px;
+  padding: 32px 26px;
+  color: var(--m-text-3);
+}
+
+html[data-skin="modern"] .empty-state__mark {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 6px;
+  place-items: center;
+  border: 0;
+  border-radius: 14px;
+  color: var(--m-text-3);
+  background: var(--m-surface-2);
+  font-family: var(--font-ui);
+  font-size: 18px;
+  transform: none;
+}
+
+html[data-skin="modern"] .empty-state__title {
+  color: var(--m-text-2);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 550;
+}
+
+html[data-skin="modern"] .empty-state__text {
+  max-width: 300px;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  line-height: 1.8;
+}
+
+html[data-skin="modern"] .inline-empty {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 11px;
+}
+
+/* ---------- 便签：Demo 的栅格秩序 ---------- */
+
+html[data-skin="modern"] .sticky-board {
+  padding: 0 26px 24px;
+  background-image: none;
+}
+
+html[data-skin="modern"] .sticky-board__inner {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+  gap: 15px;
+  align-content: start;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* 排序手势期间关掉选区：拖过别的卡片不该顺带把正文选上。
+   类只由 beginReorder（现代便签）在 pointerdown 时挂、finish 时摘。 */
+html[data-skin="modern"].is-sticky-ordering,
+html[data-skin="modern"].is-sticky-ordering .sticky,
+html[data-skin="modern"].is-sticky-ordering .sticky * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html[data-skin="modern"] .sticky {
+  position: relative;
+  display: flex;
+  width: auto;
+  height: 194px;
+  min-width: 0;
+  flex-direction: column;
+  padding: 13px 14px 11px;
+  border: 1px solid var(--m-note-edge);
+  border-radius: 14px;
+  color: var(--m-note-ink);
+  background-image: none;
+  box-shadow: 0 5px 16px -12px rgba(40, 40, 35, 0.35);
+  transform: none;
+  touch-action: none;
+  transition: transform 0.2s var(--m-ease), box-shadow 0.2s, opacity 0.16s;
+}
+
+html[data-skin="modern"] .sticky::after {
+  display: none;
+}
+
+html[data-skin="modern"] .sticky[data-color="butter"] {
+  --note-bg: var(--note-butter);
+}
+
+html[data-skin="modern"] .sticky[data-color="peach"] {
+  --note-bg: var(--note-peach);
+}
+
+html[data-skin="modern"] .sticky[data-color="sage"] {
+  --note-bg: var(--note-sage);
+}
+
+html[data-skin="modern"] .sticky[data-color="sky"] {
+  --note-bg: var(--note-sky);
+}
+
+html[data-skin="modern"] .sticky[data-color="rose"] {
+  --note-bg: var(--note-rose);
+}
+
+html[data-skin="modern"] .sticky__tape {
+  display: none;
+}
+
+html[data-skin="modern"] .sticky:hover {
+  box-shadow: 0 14px 25px -17px rgba(40, 40, 35, 0.45);
+  transform: translateY(-3px);
+}
+
+html[data-skin="modern"] .sticky.is-dragging {
+  z-index: 5;
+  box-shadow: 0 14px 25px -17px rgba(40, 40, 35, 0.45);
+  opacity: 0.35;
+  transform: scale(0.97);
+  transition: none;
+}
+
+html[data-skin="modern"] .sticky__head {
+  height: auto;
+  min-height: 24px;
+  margin: 0 0 7px;
+  padding: 0;
+  gap: 4px;
+  cursor: grab;
+  touch-action: none;
+}
+
+html[data-skin="modern"] .sticky.is-dragging .sticky__head {
+  cursor: grabbing;
+}
+
+html[data-skin="modern"] .sticky__drag {
+  width: 18px;
+  height: 18px;
+  margin-right: 2px;
+  opacity: 0.3;
+}
+
+html[data-skin="modern"] .sticky__swatches {
+  gap: 5px;
+  margin-left: auto;
+  opacity: 0;
+  transform: translateX(3px);
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+html[data-skin="modern"] .sticky:hover .sticky__swatches,
+html[data-skin="modern"] .sticky:focus-within .sticky__swatches {
+  opacity: 1;
+  transform: none;
+}
+
+html[data-skin="modern"] .sticky__swatch {
+  width: 13px;
+  height: 13px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 50%;
+}
+
+html[data-skin="modern"] .sticky__swatch.is-active {
+  box-shadow: 0 0 0 2.5px currentColor;
+}
+
+html[data-skin="modern"] .sticky__del {
+  width: 24px;
+  height: 24px;
+  margin-left: 2px;
+  border-radius: 7px;
+  color: currentColor;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+
+html[data-skin="modern"] .sticky:hover .sticky__del,
+html[data-skin="modern"] .sticky:focus-within .sticky__del {
+  opacity: 0.55;
+}
+
+html[data-skin="modern"] .sticky__del:hover {
+  color: var(--m-danger);
+  background: rgba(0, 0, 0, 0.06);
+  opacity: 1;
+}
+
+html[data-skin="modern"] .sticky__text {
+  margin: 0 0 8px;
+  padding: 0;
+  color: inherit;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.72;
+}
+
+html[data-skin="modern"] .sticky__text::placeholder {
+  color: currentColor;
+  opacity: 0.35;
+}
+
+html[data-skin="modern"] .sticky__foot {
+  color: currentColor;
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  opacity: 0.45;
+}
+
+/* 插入位：拖到哪张卡的前/后，用一条 2px 的插入线表达落点（04 §2 / Demo）。 */
+html[data-skin="modern"] .sticky.is-drop-before::before,
+html[data-skin="modern"] .sticky.is-drop-after::before {
+  position: absolute;
+  z-index: 2;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--m-accent);
+  content: "";
+  pointer-events: none;
+}
+
+html[data-skin="modern"] .sticky.is-drop-before::before {
+  left: -8px;
+}
+
+html[data-skin="modern"] .sticky.is-drop-after::before {
+  right: -8px;
+}
+
+/* 键盘排序时的焦点：卡片本身可聚焦（Box 阴影，不动布局）。 */
+html[data-skin="modern"] .sticky:focus-visible {
+  outline: 2px solid var(--m-accent);
+  outline-offset: 3px;
+}
+
+@media (pointer: coarse) {
+  html[data-skin="modern"] .sticky__swatches {
+    opacity: 1;
+    transform: none;
+  }
+
+  html[data-skin="modern"] .sticky__del {
+    opacity: 0.75;
+  }
+
+  html[data-skin="modern"] .sticky__swatch {
+    width: 20px;
+    height: 20px;
+  }
+
+  html[data-skin="modern"] .sticky {
+    height: 210px;
+  }
+}
+
+
+/* ---------- 纸页：左列表 / 右编辑器（Demo 双栏） ---------- */
+
+html[data-skin="modern"] .notes-layout {
+  grid-template-columns: 236px minmax(0, 1fr);
+  background: var(--m-surface-solid);
+}
+
+html[data-skin="modern"] .notes-rail {
+  padding: 0;
+  border-right: 1px solid var(--m-line);
+  background: rgba(240, 241, 244, 0.35);
+}
+
+html[data-skin="modern"][data-theme="dark"] .notes-rail {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+html[data-skin="modern"] .notes-rail__head {
+  padding: 18px 14px 12px;
+}
+
+html[data-skin="modern"] .notes-rail__top {
+  gap: 8px;
+}
+
+html[data-skin="modern"] .notes-rail__label {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+html[data-skin="modern"] .notes-new {
+  min-height: 32px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--m-text);
+  background: var(--m-surface-2);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 550;
+}
+
+html[data-skin="modern"] .notes-new:hover {
+  color: var(--m-text);
+  background: var(--m-surface-3);
+}
+
+html[data-skin="modern"] .notes-rail__status {
+  margin-top: 10px;
+}
+
+html[data-skin="modern"] .notes-rail__count {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 11px;
+}
+
+html[data-skin="modern"] .notes-list {
+  padding: 4px 8px 12px;
+}
+
+html[data-skin="modern"] .note-item {
+  padding: 12px;
+  border: 0;
+  border-radius: 10px;
+  color: var(--m-text-2);
+  background: transparent;
+}
+
+html[data-skin="modern"] .note-item + .note-item {
+  border-top: 0;
+}
+
+html[data-skin="modern"] .note-item:hover {
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .note-item.is-active {
+  color: var(--m-text);
+  background: var(--m-surface-solid);
+  box-shadow: 0 1px 5px rgba(30, 32, 40, 0.06);
+}
+
+html[data-skin="modern"] .note-item__top {
+  gap: 6px;
+}
+
+html[data-skin="modern"] .note-item__name {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 520;
+}
+
+html[data-skin="modern"] .note-item.is-active .note-item__name {
+  color: var(--m-text);
+}
+
+html[data-skin="modern"] .note-item__sample {
+  height: 17px;
+  padding: 0 5px;
+  border: 1px solid var(--m-line-strong);
+  border-radius: 5px;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10px;
+}
+
+html[data-skin="modern"] .note-item__pin {
+  color: var(--m-accent);
+}
+
+html[data-skin="modern"] .note-item__excerpt {
+  margin-top: 6px;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+html[data-skin="modern"] .note-item__foot {
+  margin-top: 6px;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+}
+
+html[data-skin="modern"] .notes-editor {
+  background: var(--m-surface-solid);
+}
+
+html[data-skin="modern"] .notes-editor__head {
+  min-height: 51px;
+  padding: 8px 18px;
+  border-bottom: 1px solid var(--m-line);
+  background: transparent;
+}
+
+html[data-skin="modern"] .editor-head__actions {
+  gap: 5px;
+}
+
+html[data-skin="modern"] .editor-sheet {
+  border: 0;
+  background: transparent;
+}
+
+html[data-skin="modern"] .note-title-input {
+  padding: 28px 34px 0;
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 25px;
+  font-weight: 610;
+  letter-spacing: -0.025em;
+}
+
+html[data-skin="modern"] .note-title-input::placeholder {
+  color: var(--m-text-3);
+}
+
+html[data-skin="modern"] .editor-subrow {
+  margin: 12px 34px 0;
+  padding: 0;
+  gap: 8px;
+  border-top: 0;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+}
+
+html[data-skin="modern"] .editor-subrow__sep {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--m-text-3);
+  opacity: 0.55;
+}
+
+html[data-skin="modern"] .note-writing {
+  padding: 18px 34px 12px;
+}
+
+html[data-skin="modern"] .note-body {
+  color: var(--m-text-2);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.95;
+}
+
+html[data-skin="modern"] .note-body::placeholder {
+  color: var(--m-text-3);
+}
+
+html[data-skin="modern"] .editor-foot {
+  min-height: 34px;
+  padding: 0 20px;
+  border-top: 1px solid var(--m-line);
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+}
+
+html[data-skin="modern"] .notes-missing h3 {
+  color: var(--m-text-2);
+  font-family: var(--font-ui);
+  font-size: 14px;
+}
+
+html[data-skin="modern"] .notes-missing p {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  line-height: 1.8;
+}
+
+/* ---------- 提示词：左列表 / 右卡片（Demo 双栏，紧凑化） ---------- */
+
+html[data-skin="modern"] .prompts-app {
+  grid-template-columns: 236px minmax(0, 1fr);
+  background: var(--m-surface-solid);
+}
+
+html[data-skin="modern"] .prompts-rail {
+  padding: 0;
+  border-right: 1px solid var(--m-line);
+  background: rgba(240, 241, 244, 0.35);
+}
+
+html[data-skin="modern"][data-theme="dark"] .prompts-rail {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+html[data-skin="modern"] .prompts-rail__head {
+  padding: 18px 14px 12px;
+}
+
+html[data-skin="modern"] .prompts-rail__top .eyebrow {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+}
+
+html[data-skin="modern"] .prompts-new {
+  min-height: 32px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--m-text);
+  background: var(--m-surface-2);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 550;
+}
+
+html[data-skin="modern"] .prompts-new:hover {
+  color: var(--m-text);
+  background: var(--m-surface-3);
+}
+
+html[data-skin="modern"] .prompts-search {
+  height: 34px;
+  border: 1px solid var(--m-line);
+  border-radius: 9px;
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .prompts-search:focus-within {
+  border-color: var(--m-accent);
+}
+
+html[data-skin="modern"] .prompts-search input {
+  font-family: var(--font-ui);
+  font-size: 11px;
+}
+
+html[data-skin="modern"] .prompts-rail__status,
+html[data-skin="modern"] .prompts-rail__count {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 11px;
+}
+
+html[data-skin="modern"] .prompts-list {
+  padding: 4px 8px 12px;
+}
+
+html[data-skin="modern"] .prompt-item {
+  padding: 12px;
+  border-radius: 10px;
+}
+
+html[data-skin="modern"] .prompt-item::before {
+  display: none;
+}
+
+html[data-skin="modern"] .prompt-item:hover {
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .prompt-item.is-active {
+  background: var(--m-surface-solid);
+  box-shadow: 0 1px 5px rgba(30, 32, 40, 0.06);
+}
+
+html[data-skin="modern"] .prompt-item__index {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+}
+
+html[data-skin="modern"] .prompt-item__name {
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 520;
+}
+
+html[data-skin="modern"] .prompt-item__excerpt {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+html[data-skin="modern"] .prompts-sample-badge {
+  border: 1px solid var(--m-line-strong);
+  border-radius: 5px;
+  color: var(--m-text-3);
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: 10px;
+}
+
+html[data-skin="modern"] .prompts-main {
+  background: var(--m-surface-solid);
+}
+
+html[data-skin="modern"] .prompts-card {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html[data-skin="modern"] .prompts-card::before {
+  display: none;
+}
+
+html[data-skin="modern"] .prompts-main__bar {
+  min-height: 51px;
+  padding: 8px 0 8px 26px;
+  border-bottom: 1px solid var(--m-line);
+}
+
+html[data-skin="modern"] .prompts-title-input {
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 20px;
+  font-weight: 610;
+  letter-spacing: -0.02em;
+}
+
+html[data-skin="modern"] .prompts-body-input {
+  color: var(--m-text-2);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.95;
+}
+
+html[data-skin="modern"] .prompts-main__foot {
+  border-top: 1px solid var(--m-line);
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+}
+/* ---------- K4：日历待办 / 画纸（作用域全部在 html[data-skin="modern"]） ---------- */
+
+/* 待办四档优先级的现代四色：语义 id 不变，只换颜色载体。
+   浅色取 Demo 的柔和值；深色单独提亮，避免在 #232428 上糊成一团。
+   三处载体（月历色点 / 待办行色点 / 详情与浮层色点）共用这一组。 */
+/* 待办四档优先级的现代四色：取值就是 Demo full.js 的 PRIORITIES
+   （urgent-important、important、urgent、none 一一对应，语义 id 不变）。
+   三处载体共用这一组：月历色点 / 待办行色点 / 详情与浮层色点。
+   深色单独提亮一套，不在 #232428 上糊成一团。 */
+html[data-skin="modern"] {
+  --m-prio-ui: #c67b7f;
+  --m-prio-important: #c5a552;
+  --m-prio-urgent: #7f9f79;
+  --m-prio-none: #a3a6ab;
+  --m-dot-done: #9a9a9a;
+  --m-paper-sheet: #fdfcf8;
+  --m-draw-rail: 166px;
+}
+
+html[data-skin="modern"][data-theme="dark"] {
+  --m-prio-ui: #d3908f;
+  --m-prio-important: #d4b768;
+  --m-prio-urgent: #93b28c;
+  --m-prio-none: #b6b9be;
+  --m-dot-done: #696969;
+  --m-paper-sheet: #e9e6de;
+}
+
+/* ---- 日历：月历 ---- */
+
+html[data-skin="modern"] .calendar-app {
+  background: var(--m-surface-solid);
+}
+
+html[data-skin="modern"] .calendar-layout {
+  grid-template-columns: minmax(0, 1.65fr) minmax(232px, 0.85fr);
+}
+
+html[data-skin="modern"] .calendar-month {
+  min-width: 0;
+  padding: 21px 24px 18px;
+  overflow-y: auto;
+  border-right: 1px solid var(--m-line);
+}
+
+html[data-skin="modern"] .calendar-month__head {
+  gap: 6px;
+  margin-bottom: 19px;
+}
+
+html[data-skin="modern"] .calendar-month__title {
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 23px;
+  font-weight: 620;
+  letter-spacing: -0.03em;
+}
+
+html[data-skin="modern"] .calendar-month__year {
+  padding-left: 2px;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .calendar-month__nav {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--m-text-3);
+}
+
+html[data-skin="modern"] .calendar-month__nav:hover {
+  border: 0;
+  color: var(--m-text);
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .calendar-month__nav svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.7;
+}
+
+html[data-skin="modern"] .calendar-month__today {
+  height: 30px;
+  margin-left: 4px;
+  padding: 0 11px;
+  border: 1px solid var(--m-line);
+  border-radius: 8px;
+  color: var(--m-text-2);
+  background: var(--m-surface-2);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .calendar-month__today:hover {
+  border-color: var(--m-line-strong);
+  color: var(--m-text);
+  background: var(--m-surface-3);
+}
+
+html[data-skin="modern"] .count-chip--month {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 11px;
+}
+
+html[data-skin="modern"] .calendar-weekdays {
+  margin-bottom: 7px;
+  border-bottom: 0;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .calendar-weekdays span {
+  padding: 4px 0 6px;
+}
+
+html[data-skin="modern"] .calendar-weekdays span:first-child,
+html[data-skin="modern"] .calendar-weekdays span:last-child {
+  color: var(--m-text-3);
+  opacity: 1;
+}
+
+html[data-skin="modern"] .calendar-grid {
+  grid-auto-rows: minmax(44px, 1fr);
+  border-top: 1px solid var(--m-line);
+  border-left: 1px solid var(--m-line);
+}
+
+html[data-skin="modern"] .cal-day {
+  gap: 0;
+  padding: 8px;
+  border-right: 1px solid var(--m-line);
+  border-bottom: 1px solid var(--m-line);
+  color: var(--m-text-2);
+  background: transparent;
+}
+
+html[data-skin="modern"] .cal-day:hover {
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .cal-day.is-outside {
+  color: var(--m-text-3);
+  opacity: 0.42;
+  background: transparent;
+}
+
+html[data-skin="modern"] .cal-day.is-selected {
+  background: var(--m-accent-soft);
+}
+
+html[data-skin="modern"] .cal-day.is-selected::after {
+  inset: 0;
+  width: auto;
+  height: auto;
+  border: 1px solid var(--m-accent);
+}
+
+html[data-skin="modern"] .cal-day__num {
+  width: 23px;
+  height: 23px;
+  border-radius: 8px;
+  color: inherit;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-skin="modern"] .cal-day.is-today .cal-day__num {
+  border: 0;
+  color: var(--m-surface-solid);
+  background: var(--m-text);
+}
+
+html[data-skin="modern"] .cal-day.is-selected .cal-day__num {
+  color: inherit;
+  background: transparent;
+  box-shadow: none;
+}
+
+html[data-skin="modern"] .cal-day.is-today.is-selected .cal-day__num {
+  color: var(--m-surface-solid);
+  background: var(--m-text);
+}
+
+/* 色点保持生产的语义排布：未完成跟在数字下面，已完成的沉到格子底部。
+   两类点位置一眼分开是既有版本的行为（门禁也钉着），
+   不为了贴 Demo 的一行排布把它改掉。 */
+html[data-skin="modern"] .cal-day__dots {
+  gap: 3px;
+  padding-left: 0;
+}
+
+html[data-skin="modern"] .cal-day__dot {
+  width: 4px;
+  height: 4px;
+  box-shadow: none;
+}
+
+html[data-skin="modern"] .cal-day__dot[data-priority="urgent-important"] { background: var(--m-prio-ui); }
+html[data-skin="modern"] .cal-day__dot[data-priority="important"] { background: var(--m-prio-important); }
+html[data-skin="modern"] .cal-day__dot[data-priority="urgent"] { background: var(--m-prio-urgent); }
+html[data-skin="modern"] .cal-day__dot[data-priority="none"] { background: var(--m-prio-none); }
+
+/* 完成 = 同一格、同一位置、只换成中性灰（既有版本的读法，门禁也按它断言）。
+   选择器必须比上面的 data-priority 规则更具体，否则两档现代色会把灰盖回去。 */
+html[data-skin="modern"] .cal-day__dot.cal-day__dot--done[data-priority] {
+  background: var(--m-dot-done);
+  box-shadow: none;
+}
+
+html[data-skin="modern"] .cal-day__more {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+}
+
+/* ---- 日历：右侧待办 ---- */
+
+html[data-skin="modern"] .calendar-tasks {
+  border-left: 1px solid var(--m-line);
+  background: transparent;
+}
+
+html[data-skin="modern"] .calendar-tasks__head {
+  padding: 22px 20px 17px;
+  border-bottom: 1px solid var(--m-line);
+}
+
+html[data-skin="modern"] .calendar-tasks__date {
+  align-items: center;
+}
+
+html[data-skin="modern"] .calendar-tasks__date h3 {
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+html[data-skin="modern"] .task-list {
+  padding: 10px 12px;
+}
+
+html[data-skin="modern"] .task-item {
+  grid-template-columns: 17px minmax(0, 1fr) auto;
+  gap: 7px;
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--m-line);
+}
+
+html[data-skin="modern"] .task-check {
+  width: 17px;
+  height: 17px;
+  margin-top: 1px;
+  border: 1px solid var(--m-line-strong);
+  border-radius: 6px;
+  color: var(--m-surface-solid);
+  background: transparent;
+}
+
+html[data-skin="modern"] .task-check svg {
+  width: 12px;
+  height: 12px;
+}
+
+html[data-skin="modern"] .task-check:hover {
+  border-color: var(--m-accent);
+}
+
+html[data-skin="modern"] .task-item.is-done .task-check {
+  border-color: var(--m-success);
+  color: var(--m-surface-solid);
+  background: var(--m-success);
+}
+
+html[data-skin="modern"] .task-title {
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+html[data-skin="modern"] .task-item.is-done .task-title {
+  color: var(--m-text-3);
+  text-decoration-color: currentColor;
+}
+
+html[data-skin="modern"] .task-item.is-resolved .task-title {
+  color: var(--m-text-3);
+}
+
+html[data-skin="modern"] .task-item__meta {
+  gap: 3px 7px;
+  margin-top: 6px;
+}
+
+html[data-skin="modern"] .task-item__meta span:not(.sample-tag) {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+}
+
+html[data-skin="modern"] .task-item__resolve {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  text-decoration-color: var(--m-line-strong);
+}
+
+html[data-skin="modern"] .task-item__resolve:hover {
+  color: var(--m-accent);
+}
+
+html[data-skin="modern"] .task-controls {
+  gap: 7px;
+  padding-top: 2px;
+}
+
+html[data-skin="modern"] .task-pip-btn {
+  width: 18px;
+  height: 18px;
+  border: 1px solid transparent;
+  border-radius: 50%;
+}
+
+html[data-skin="modern"] .task-pip-btn:hover,
+html[data-skin="modern"] .task-pip-btn:focus-visible {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: 0 0 0 3px var(--m-accent-soft);
+}
+
+html[data-skin="modern"] .task-pip-btn::after {
+  width: 11px;
+  height: 11px;
+  box-shadow: none;
+  background: var(--m-prio-urgent);
+}
+
+html[data-skin="modern"] .task-pip-btn[data-priority="urgent-important"]::after { background: var(--m-prio-ui); }
+html[data-skin="modern"] .task-pip-btn[data-priority="important"]::after { background: var(--m-prio-important); }
+html[data-skin="modern"] .task-pip-btn[data-priority="urgent"]::after { background: var(--m-prio-urgent); }
+html[data-skin="modern"] .task-pip-btn[data-priority="none"]::after { background: var(--m-prio-none); }
+
+/* 详情与浮层里的色点：第三处载体，和上面两处同一组颜色。 */
+html[data-skin="modern"] .task-pip {
+  width: 10px;
+  height: 10px;
+  box-shadow: none;
+}
+
+html[data-skin="modern"] .task-pip[data-priority="urgent-important"] { background: var(--m-prio-ui); }
+html[data-skin="modern"] .task-pip[data-priority="important"] { background: var(--m-prio-important); }
+html[data-skin="modern"] .task-pip[data-priority="urgent"] { background: var(--m-prio-urgent); }
+html[data-skin="modern"] .task-pip[data-priority="none"] { background: var(--m-prio-none); }
+
+html[data-skin="modern"] .task-repeat {
+  padding: 2px 7px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--m-text-3);
+  background: var(--m-surface-2);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  line-height: 1.7;
+}
+
+html[data-skin="modern"] .task-repeat:hover,
+html[data-skin="modern"] .task-repeat:focus-visible {
+  color: var(--m-text-2);
+  background: var(--m-surface-3);
+}
+
+html[data-skin="modern"] .task-repeat.is-daily {
+  border: 0;
+  color: var(--m-accent);
+  background: var(--m-accent-soft);
+}
+
+html[data-skin="modern"] .task-actions .icon-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+}
+
+html[data-skin="modern"] .task-actions .icon-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* 触屏没有 hover：删除/编辑动作常显，不靠悬停才能发现。 */
+@media (pointer: coarse) {
+  html[data-skin="modern"] .task-actions {
+    opacity: 1;
+  }
+}
+
+html[data-skin="modern"] .tasks-empty {
+  padding: 28px 16px;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  line-height: 1.85;
+}
+
+html[data-skin="modern"] .tasks-empty::before {
+  display: none;
+}
+
+html[data-skin="modern"] .task-add {
+  gap: 7px;
+  padding: 13px 15px;
+  border-top: 1px solid var(--m-line);
+}
+
+html[data-skin="modern"] .task-add input {
+  min-height: 35px;
+  padding: 0 11px;
+  border: 1px solid var(--m-line);
+  border-radius: 9px;
+  color: var(--m-text);
+  background: var(--m-surface-2);
+  font-family: var(--font-ui);
+  font-size: 12px;
+}
+
+html[data-skin="modern"] .task-add input::placeholder {
+  color: var(--m-text-3);
+}
+
+html[data-skin="modern"] .task-add input:focus {
+  border-color: var(--m-accent);
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .task-add button {
+  width: 35px;
+  height: 35px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--m-surface-solid);
+  background: var(--m-text);
+}
+
+html[data-skin="modern"] .task-add button:hover {
+  background: var(--m-text);
+  opacity: 0.9;
+}
+
+html[data-skin="modern"] .calendar-tasks__foot {
+  padding: 0 17px 12px;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .priority-popover {
+  width: 200px;
+  gap: 2px;
+  padding: 5px;
+  border: 1px solid var(--m-line);
+  border-radius: 11px;
+  background: var(--m-surface-solid);
+  box-shadow: var(--m-shadow-float);
+}
+
+html[data-skin="modern"] .priority-popover__item {
+  grid-template-columns: 12px 1fr;
+  gap: 2px 9px;
+  padding: 8px;
+  border-radius: 7px;
+  color: var(--m-text-2);
+}
+
+html[data-skin="modern"] .priority-popover__item:hover,
+html[data-skin="modern"] .priority-popover__item:focus-visible {
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .priority-popover__item.is-active {
+  background: var(--m-accent-soft);
+}
+
+html[data-skin="modern"] .priority-popover__label {
+  color: inherit;
+  font-family: var(--font-ui);
+  font-size: 11px;
+}
+
+/* 详情对话框里的四档选择（第三处载体的容器）。弹层外壳归 K5，
+   这里只保证色点与行样式和月历/待办行一致。 */
+html[data-skin="modern"] .priority-option {
+  border: 1px solid var(--m-line);
+  border-radius: 9px;
+  color: var(--m-text-2);
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .priority-option:hover {
+  border-color: var(--m-line-strong);
+  background: var(--m-surface-3);
+}
+
+html[data-skin="modern"] .priority-option.is-active {
+  border-color: var(--m-accent);
+  background: var(--m-accent-soft);
+}
+
+html[data-skin="modern"] .priority-option__label {
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 12px;
+}
+
+/* ---- 画纸：左簿右画（Demo 构图，控件一个不删） ---- */
+
+/* 生产 DOM 顺序是 工具条 / 画纸簿 / 控件条 / 画布 / 脚注；用 grid areas
+   把簿挪到左列、其余留在右列，DOM 与事件一行不改。 */
+html[data-skin="modern"] .draw-app {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--m-draw-rail) minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "shelf toolbar"
+    "shelf controls"
+    "shelf stage"
+    "shelf foot";
+  background: var(--m-surface-solid);
+}
+
+html[data-skin="modern"] .draw-app .app-toolbar {
+  grid-area: toolbar;
+  min-height: 76px;
+  padding: 16px 22px 12px;
+  border-bottom: 0;
+}
+
+html[data-skin="modern"] .draw-app .app-toolbar__title {
+  max-width: 46%;
+}
+
+html[data-skin="modern"] .draw-shelf {
+  display: grid;
+  grid-area: shelf;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "label label"
+    "prev next"
+    "gallery gallery"
+    "new new";
+  height: auto;
+  align-items: stretch;
+  gap: 0;
+  padding: 18px 12px 14px;
+  border-right: 1px solid var(--m-line);
+  border-bottom: 0;
+  background: var(--m-surface-2);
+  overflow: hidden;
+}
+
+html[data-skin="modern"] .draw-shelf__label {
+  display: block;
+  grid-area: label;
+  width: auto;
+  padding: 0 5px 12px;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 550;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  text-align: left;
+}
+
+html[data-skin="modern"] .draw-shelf__label br {
+  display: none;
+}
+
+html[data-skin="modern"] .draw-nav {
+  width: auto;
+  height: 24px;
+  margin-bottom: 8px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--m-text-3);
+  background: transparent;
+}
+
+html[data-skin="modern"] .draw-nav[data-gallery-prev] {
+  grid-area: prev;
+  margin-right: 3px;
+}
+
+html[data-skin="modern"] .draw-nav[data-gallery-next] {
+  grid-area: next;
+  margin-left: 3px;
+}
+
+html[data-skin="modern"] .draw-nav:hover {
+  border-color: transparent;
+  color: var(--m-text);
+  background: var(--m-surface-3);
+}
+
+html[data-skin="modern"] .draw-gallery {
+  grid-area: gallery;
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+html[data-skin="modern"] .draw-card {
+  width: 100%;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  padding: 6px;
+  margin-bottom: 8px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--m-text-2);
+}
+
+html[data-skin="modern"] .draw-card:hover {
+  border-color: var(--m-line);
+  background: var(--m-surface-3);
+}
+
+html[data-skin="modern"] .draw-card.is-active {
+  border-color: var(--m-accent);
+  color: var(--m-text);
+  background: var(--m-surface-solid);
+}
+
+html[data-skin="modern"] .draw-card__thumb {
+  width: 100%;
+  height: 58px;
+  background-color: var(--m-paper-sheet);
+  background-image: none;
+  border: 1px solid var(--m-line);
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+html[data-skin="modern"] .draw-card__text {
+  gap: 2px;
+  padding: 0 1px;
+}
+
+html[data-skin="modern"] .draw-card__name {
+  color: inherit;
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+}
+
+html[data-skin="modern"] .draw-card__date {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .draw-new {
+  grid-area: new;
+  height: 34px;
+  justify-content: center;
+  margin-top: 4px;
+  border: 1px dashed var(--m-line-strong);
+  border-radius: 9px;
+  color: var(--m-text-2);
+  font-family: var(--font-ui);
+  font-size: 11px;
+}
+
+html[data-skin="modern"] .draw-new:hover {
+  border-color: var(--m-accent);
+  color: var(--m-accent);
+  background: var(--m-accent-soft);
+}
+
+html[data-skin="modern"] .draw-new svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+
+html[data-skin="modern"] .draw-controls {
+  grid-area: controls;
+  min-height: 51px;
+  gap: 6px 16px;
+  padding: 0 22px;
+  border-bottom: 1px solid var(--m-line);
+  background: transparent;
+}
+
+html[data-skin="modern"] .draw-control-label {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .draw-tool-btn {
+  height: 31px;
+  min-width: 31px;
+  gap: 6px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .draw-tool-btn:hover {
+  border: 0;
+  color: var(--m-text);
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .draw-tool-btn.is-active {
+  color: var(--m-accent);
+  background: var(--m-accent-soft);
+}
+
+html[data-skin="modern"] .draw-tool-btn svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 1.6;
+}
+
+html[data-skin="modern"] .draw-tool-btn--export {
+  border: 0;
+  color: var(--m-text);
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .draw-tool-btn--export:hover {
+  color: var(--m-text);
+  background: var(--m-surface-3);
+}
+
+html[data-skin="modern"] .draw-tool-btn[disabled] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+html[data-skin="modern"] .draw-tool-btn[disabled]:hover {
+  color: var(--m-text-3);
+  background: transparent;
+}
+
+html[data-skin="modern"] .draw-color {
+  width: 20px;
+  height: 20px;
+  border: 1px solid transparent;
+  border-radius: 50%;
+}
+
+html[data-skin="modern"] .draw-color::before {
+  width: 12px;
+  height: 12px;
+  box-shadow: none;
+}
+
+html[data-skin="modern"] .draw-color.is-active {
+  border-color: var(--m-accent);
+}
+
+html[data-skin="modern"] .draw-size {
+  width: 24px;
+  height: 24px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+
+html[data-skin="modern"] .draw-size span {
+  background: var(--m-text);
+}
+
+html[data-skin="modern"] .draw-size:hover {
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .draw-size.is-active {
+  border-color: var(--m-accent);
+  background: var(--m-accent-soft);
+}
+
+/* 桌面色的「桌子」：纸是一张浅色画纸，靠边线与投影浮在上面。 */
+html[data-skin="modern"] .draw-stage {
+  grid-area: stage;
+  padding: 18px;
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .draw-stage::before {
+  display: none;
+}
+
+html[data-skin="modern"] .draw-board {
+  background-color: var(--m-paper-sheet);
+  background-image: none;
+  border: 1px solid var(--m-line);
+  border-radius: 12px;
+  box-shadow: var(--m-shadow-float);
+}
+
+html[data-skin="modern"] .draw-board::before {
+  display: none;
+}
+
+html[data-skin="modern"] .draw-canvas {
+  border-radius: 12px;
+  cursor: crosshair;
+}
+
+html[data-skin="modern"] .draw-board.is-erasing .draw-canvas {
+  cursor: cell;
+}
+
+html[data-skin="modern"] .draw-brush-cursor {
+  border: 1px solid var(--m-text-2);
+}
+
+html[data-skin="modern"] .draw-foot {
+  grid-area: foot;
+  min-height: 28px;
+  gap: 9px;
+  padding: 0 22px;
+  border-top: 1px solid var(--m-line);
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .draw-foot .dot {
+  background: var(--m-line-strong);
+}
+
+html[data-skin="modern"] .draw-foot__right {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+}
+
+/* 空态 / 缺纸态：盖在画布区，左列画纸簿与顶栏仍可点。 */
+html[data-skin="modern"] .draw-empty,
+html[data-skin="modern"] .draw-missing {
+  inset: 76px 0 28px var(--m-draw-rail);
+  gap: 10px;
+  padding: 24px;
+  background: var(--m-surface-solid);
+  backdrop-filter: none;
+  border-left: 1px solid var(--m-line);
+}
+
+html[data-skin="modern"] .draw-empty h3,
+html[data-skin="modern"] .draw-missing h3 {
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 610;
+  letter-spacing: -0.02em;
+}
+
+html[data-skin="modern"] .draw-missing p {
+  max-width: 340px;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  line-height: 1.85;
+}
+
+/* 窄面板：左列收窄，工具按钮改成纯图标（与 Demo 的窄屏一致）。 */
+@container (max-width: 700px) {
+  html[data-skin="modern"] .draw-app {
+    --m-draw-rail: 132px;
+  }
+
+  html[data-skin="modern"] .draw-app .app-toolbar {
+    min-height: 66px;
+    padding: 12px 14px 10px;
+  }
+
+  html[data-skin="modern"] .draw-app .app-toolbar__title {
+    max-width: 44%;
+    font-size: 19px;
+  }
+
+  html[data-skin="modern"] .draw-shelf {
+    padding: 12px 8px 10px;
+  }
+
+  html[data-skin="modern"] .draw-card__thumb {
+    height: 48px;
+  }
+
+  html[data-skin="modern"] .draw-controls {
+    min-height: 46px;
+    gap: 4px 10px;
+    padding: 0 14px;
+  }
+
+  html[data-skin="modern"] .draw-control-label {
+    display: none;
+  }
+
+  html[data-skin="modern"] .draw-tool-btn span {
+    display: none;
+  }
+
+  html[data-skin="modern"] .draw-tool-btn {
+    min-width: 30px;
+    padding: 0 6px;
+  }
+
+  html[data-skin="modern"] .draw-stage {
+    padding: 12px;
+  }
+
+  html[data-skin="modern"] .draw-foot {
+    padding: 0 14px;
+  }
+
+  html[data-skin="modern"] .draw-empty,
+  html[data-skin="modern"] .draw-missing {
+    inset: 66px 0 28px var(--m-draw-rail);
+    padding: 16px;
+  }
+
+  html[data-skin="modern"] .calendar-layout {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  html[data-skin="modern"] .calendar-month {
+    flex: 0 0 auto;
+    padding: 16px 14px 10px;
+    overflow: visible;
+    border-right: 0;
+    border-bottom: 1px solid var(--m-line);
+  }
+
+  html[data-skin="modern"] .calendar-month__head {
+    margin-bottom: 10px;
+  }
+
+  html[data-skin="modern"] .calendar-month__title {
+    font-size: 20px;
+  }
+
+  html[data-skin="modern"] .calendar-grid {
+    flex: 0 0 auto;
+    min-height: 216px;
+    grid-auto-rows: minmax(34px, auto);
+  }
+
+  html[data-skin="modern"] .cal-day {
+    padding: 4px 5px;
+  }
+
+  html[data-skin="modern"] .cal-day__num {
+    width: 21px;
+    height: 21px;
+    font-size: 10.5px;
+  }
+
+  html[data-skin="modern"] .calendar-tasks {
+    flex: 1 1 auto;
+    min-height: 0;
+    border-top: 1px solid var(--m-line);
+    border-left: 0;
+  }
+
+  html[data-skin="modern"] .calendar-tasks__head {
+    padding: 14px 14px 10px;
+  }
+
+  html[data-skin="modern"] .calendar-tasks__date h3 {
+    font-size: 16px;
+  }
+}
+
+/* ---------- K5：设置（五分区） ---------- */
+
+/* 设置窗口的标题由窗口标题栏承担（Demo 同款），正文从左侧导航开始：
+   收掉页内的 settings-head，把「设置 + 版本」交给左栏品牌块。
+   版本仍然来自 P.version，页内不写死任何版本串。 */
+html[data-skin="modern"] .settings-head {
+  display: none;
+}
+
+html[data-skin="modern"] .settings-app {
+  background-color: transparent;
+}
+
+html[data-skin="modern"] .settings-nav-brand {
+  display: block;
+  padding: 0 10px 18px;
+}
+
+html[data-skin="modern"] .settings-nav-brand strong {
+  display: block;
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .settings-nav-brand small {
+  display: block;
+  margin-top: 4px;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+
+html[data-skin="modern"] .settings-layout {
+  grid-template-columns: 178px minmax(0, 1fr);
+}
+
+html[data-skin="modern"] .settings-nav {
+  gap: 2px;
+  padding: 20px 11px;
+  border-right: 1px solid var(--m-line);
+  background: rgba(240, 241, 244, 0.35);
+}
+
+html[data-skin="modern"][data-theme="dark"] .settings-nav {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+html[data-skin="modern"] .settings-nav button {
+  gap: 0;
+  padding: 10px 11px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--m-text-2);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .settings-nav button::before {
+  display: none;
+}
+
+html[data-skin="modern"] .settings-nav button:hover {
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .settings-nav button.is-active {
+  border: 0;
+  color: var(--m-text);
+  background: var(--m-surface-solid);
+  box-shadow: 0 1px 4px rgba(30, 32, 40, 0.05);
+}
+
+html[data-skin="modern"] .settings-content {
+  padding: 26px 28px 30px;
+}
+
+html[data-skin="modern"] .settings-section {
+  animation: modern-settings-in 0.2s var(--m-ease);
+}
+
+@keyframes modern-settings-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+html[data-skin="modern"] .settings-section__title {
+  margin: 0 0 18px;
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 22px;
+  font-weight: 620;
+  letter-spacing: -0.025em;
+}
+
+html[data-skin="modern"] .setting-row {
+  min-height: 57px;
+  align-items: center;
+  gap: 15px;
+  padding: 10px 0;
+  border-top: 0;
+  border-bottom: 1px solid var(--m-line);
+}
+
+html[data-skin="modern"] .setting-row__label {
+  margin-bottom: 0;
+  color: var(--m-text-2);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+/* 经典专属的两行在现代不渲染，但 DOM 与取值都留着（04 §7）。 */
+html[data-skin="modern"] [data-classic-only] {
+  display: none;
+}
+
+html[data-skin="modern"] .skin-now {
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .select-wrap select {
+  height: 33px;
+  min-width: 135px;
+  padding: 0 28px 0 11px;
+  border: 1px solid var(--m-line);
+  border-radius: 8px;
+  color: var(--m-text);
+  background: var(--m-surface-2);
+  font-family: var(--font-ui);
+  font-size: 11px;
+}
+
+html[data-skin="modern"] .select-wrap::after {
+  border-color: var(--m-text-3);
+}
+
+html[data-skin="modern"] .select-wrap select:focus-visible {
+  border-color: var(--m-accent);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--m-accent-soft);
+}
+
+html[data-skin="modern"] .toggle {
+  width: 36px;
+  height: 21px;
+  padding: 2px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--m-surface-3);
+  box-shadow: inset 0 0 0 1px var(--m-line);
+  transition: background 0.16s var(--m-ease);
+}
+
+html[data-skin="modern"] .toggle::after {
+  width: 17px;
+  height: 17px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.18s var(--m-ease);
+}
+
+html[data-skin="modern"] .toggle[aria-pressed="true"] {
+  border: 0;
+  background: var(--m-accent);
+  box-shadow: inset 0 0 0 1px transparent;
+}
+
+html[data-skin="modern"] .toggle[aria-pressed="true"]::after {
+  background: #fff;
+  transform: translateX(15px);
+}
+
+html[data-skin="modern"] .stamp-label {
+  border: 0;
+  border-radius: 6px;
+  color: var(--m-text-3);
+  background: var(--m-surface-2);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0;
+}
+
+/* 数据与备份 */
+
+html[data-skin="modern"] .stats-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 9px;
+  margin: 0 0 18px;
+}
+
+html[data-skin="modern"] .stat-card {
+  min-height: 68px;
+  gap: 5px;
+  padding: 14px 12px;
+  border: 1px solid var(--m-line);
+  border-radius: 11px;
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .stat-card::after {
+  display: none;
+}
+
+html[data-skin="modern"] .stat-card strong {
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 21px;
+  font-weight: 580;
+}
+
+html[data-skin="modern"] .stat-card span {
+  margin: 0;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .storage-line {
+  padding: 11px 12px;
+  margin: 0 0 16px;
+  border-radius: 9px;
+  color: var(--m-text-3);
+  background: var(--m-surface-2);
+  font-family: var(--font-ui);
+  font-size: 11px;
+}
+
+html[data-skin="modern"] .storage-line::before {
+  background: var(--m-success);
+}
+
+html[data-skin="modern"] .storage-line[data-state="error"] {
+  color: var(--m-danger);
+}
+
+html[data-skin="modern"] .storage-line[data-state="error"]::before {
+  background: var(--m-danger);
+}
+
+html[data-skin="modern"] .setting-actions {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  border-top: 0;
+}
+
+html[data-skin="modern"] .setting-action {
+  gap: 11px;
+  padding: 13px;
+  border: 1px solid var(--m-line);
+  border-bottom: 1px solid var(--m-line);
+  border-radius: 10px;
+  background: var(--m-surface-solid);
+}
+
+html[data-skin="modern"] .setting-action:hover {
+  border-color: var(--m-line-strong);
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .setting-action__icon {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--m-text-3);
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .setting-action__name {
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .setting-action__arrow {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 13px;
+}
+
+html[data-skin="modern"] .setting-action:hover .setting-action__name {
+  color: var(--m-text);
+}
+
+html[data-skin="modern"] .setting-action--danger .setting-action__name {
+  color: var(--m-danger);
+}
+
+html[data-skin="modern"] .setting-action--danger .setting-action__icon {
+  border: 0;
+  border-radius: 9px;
+  color: var(--m-danger);
+  background: var(--m-surface-2);
+}
+
+/* 关于 */
+
+html[data-skin="modern"] .about-sheet {
+  padding: 26px;
+  border: 1px solid var(--m-line);
+  border-radius: 15px;
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .about-sheet::before {
+  display: none;
+}
+
+html[data-skin="modern"] .about-sheet__mark {
+  width: 38px;
+  height: 38px;
+  margin-bottom: 16px;
+  border: 0;
+  border-radius: 12px;
+  color: var(--m-surface-solid);
+  background: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 17px;
+  transform: none;
+}
+
+html[data-skin="modern"] .about-sheet h3 {
+  margin: 0;
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+html[data-skin="modern"] .about-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 17px;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .about-meta span {
+  padding: 5px 8px;
+  border-radius: 6px;
+  color: var(--m-text-3);
+  background: var(--m-surface-solid);
+}
+
+html[data-skin="modern"] .divider {
+  border-color: var(--m-line);
+}
+
+/* 命令与应用 */
+
+html[data-skin="modern"] .command-sheet {
+  gap: 12px;
+}
+
+html[data-skin="modern"] .command-sheet__search {
+  height: 43px;
+  gap: 10px;
+  padding: 0 13px;
+  border: 1px solid var(--m-accent);
+  border-radius: 11px;
+  background: var(--m-surface-solid);
+  box-shadow: 0 0 0 3px var(--m-accent-soft);
+}
+
+html[data-skin="modern"] .command-sheet__search svg {
+  width: 15px;
+  height: 15px;
+  color: var(--m-text-3);
+  stroke-width: 1.65;
+}
+
+html[data-skin="modern"] .command-sheet__input {
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 12px;
+}
+
+html[data-skin="modern"] .command-sheet__input::placeholder {
+  color: var(--m-text-3);
+}
+
+html[data-skin="modern"] .command-sheet__esc {
+  padding: 2px 6px;
+  border: 1px solid var(--m-line);
+  border-radius: 6px;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+html[data-skin="modern"] .command-sheet__results {
+  padding-bottom: 4px;
+}
+
+html[data-skin="modern"] .command-sheet__group {
+  margin-top: 12px;
+}
+
+html[data-skin="modern"] .command-sheet__group:first-child {
+  margin-top: 0;
+}
+
+html[data-skin="modern"] .command-sheet__group-label {
+  margin: 0 9px 6px;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+html[data-skin="modern"] .command-item {
+  gap: 11px;
+  padding: 10px 11px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+}
+
+html[data-skin="modern"] .command-item:hover,
+html[data-skin="modern"] .command-item.is-active {
+  border-color: transparent;
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .command-item__icon {
+  width: 26px;
+  height: 26px;
+  color: var(--m-text-3);
+}
+
+html[data-skin="modern"] .command-item__icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+html[data-skin="modern"] .command-item__name {
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .command-item__hint {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10px;
+}
+
+html[data-skin="modern"] .command-item__key {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .command-sheet__empty {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 11px;
+}
+
+html[data-skin="modern"] .command-sheet__footer {
+  gap: 12px;
+  padding-top: 9px;
+  border-top: 1px solid var(--m-line);
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10px;
+}
+
+html[data-skin="modern"] .command-sheet__footer kbd {
+  border: 1px solid var(--m-line);
+  border-radius: 4px;
+  color: var(--m-text-3);
+  background: var(--m-surface-2);
+  font-family: var(--font-ui);
+  font-size: 10px;
+}
+
+/* 窄面板：设置窗口在 408 宽时导航转横向、行转竖排（与经典同一容器查询） */
+@container (max-width: 620px) {
+  html[data-skin="modern"] .settings-nav {
+    padding: 8px 9px;
+    border-right: 0;
+    border-bottom: 1px solid var(--m-line);
+  }
+
+  html[data-skin="modern"] .settings-nav-brand {
+    display: none;
+  }
+
+  html[data-skin="modern"] .settings-nav button {
+    padding: 6px 9px;
+    font-size: 11px;
+  }
+
+  html[data-skin="modern"] .settings-content {
+    padding: 16px 16px 22px;
+  }
+
+  html[data-skin="modern"] .setting-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  html[data-skin="modern"] .setting-row__control {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  html[data-skin="modern"] .stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ---------- K5：弹层（选择页与确认/输入框共用一套） ---------- */
+
+html[data-skin="modern"] .paper-dialog {
+  border: 1px solid var(--m-line-strong);
+  border-radius: 19px;
+  color: var(--m-text);
+  background: var(--m-surface-solid);
+  background-image: none;
+  box-shadow: 0 35px 100px -35px rgba(0, 0, 0, 0.4);
+}
+
+html[data-skin="modern"] .paper-dialog::backdrop {
+  background: rgba(25, 27, 35, 0.25);
+  backdrop-filter: blur(6px);
+}
+
+html[data-skin="modern"] .dialog-sheet {
+  padding: 22px 24px 20px;
+}
+
+html[data-skin="modern"] .dialog-sheet::before {
+  display: none;
+}
+
+html[data-skin="modern"] .dialog-kicker {
+  margin: 0 0 6px;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+}
+
+html[data-skin="modern"] .dialog-title {
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 17px;
+  font-weight: 620;
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+}
+
+html[data-skin="modern"] .dialog-description {
+  margin: 6px 0 0;
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1.75;
+}
+
+html[data-skin="modern"] .dialog-body {
+  margin-top: 16px;
+}
+
+html[data-skin="modern"] .dialog-actions {
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+html[data-skin="modern"] .dialog-actions .paper-btn {
+  min-height: 36px;
+}
+
+html[data-skin="modern"] .dialog-x {
+  border-radius: 8px;
+  color: var(--m-text-3);
+}
+
+html[data-skin="modern"] .dialog-x:hover {
+  color: var(--m-text);
+  background: var(--m-surface-2);
+}
+
+/* 选择页：A⁺ 双卡（预览、名称、差异、选中态、对勾） */
+html[data-skin="modern"] .skin-choice {
+  gap: 12px;
+  margin: 0 0 16px;
+}
+
+html[data-skin="modern"] .skin-choice__card {
+  border: 1px solid var(--m-line);
+  border-radius: 14px;
+  background: transparent;
+}
+
+html[data-skin="modern"] .skin-choice__card:hover {
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .skin-choice__card.is-selected {
+  border-color: var(--m-accent);
+  box-shadow: 0 0 0 2px var(--m-accent-soft);
+}
+
+html[data-skin="modern"] .skin-choice__card:focus-within {
+  outline-color: var(--m-accent);
+}
+
+html[data-skin="modern"] .skin-choice__card::after {
+  background: var(--m-accent);
+}
+
+html[data-skin="modern"] .skin-choice__name {
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .skin-choice__note {
+  color: var(--m-text-3);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0;
+}
+
+html[data-skin="modern"] .skin-choice__suppress {
+  color: var(--m-text-2);
+  font-family: var(--font-ui);
+  font-size: 11px;
+}
+
+html[data-skin="modern"] .skin-choice__suppress input {
+  accent-color: var(--m-accent);
+}
+
+/* ---------- K5：新手导览（六步，现代样式） ---------- */
+
+html[data-skin="modern"] .tour {
+  font-family: var(--font-ui);
+}
+
+html[data-skin="modern"] .tour__shade {
+  transition: background 0.2s var(--m-ease);
+}
+
+html[data-skin="modern"] .tour--centered .tour__shade {
+  background: rgba(22, 24, 31, 0.38);
+}
+
+html[data-skin="modern"] .tour__spot {
+  border-radius: 13px;
+  box-shadow:
+    0 0 0 9999px rgba(22, 24, 31, 0.38),
+    0 0 0 2px var(--m-accent),
+    0 0 0 7px rgba(82, 111, 212, 0.16);
+  transition:
+    left 0.22s var(--m-ease),
+    top 0.22s var(--m-ease),
+    width 0.22s var(--m-ease),
+    height 0.22s var(--m-ease);
+}
+
+html[data-skin="modern"] .tour__card {
+  width: min(360px, calc(100vw - 28px));
+  padding: 20px;
+  border: 1px solid var(--m-line-strong);
+  border-radius: 16px;
+  color: var(--m-text);
+  background-color: var(--m-surface-solid);
+  background-image: none;
+  box-shadow: var(--m-shadow);
+  transform: none;
+}
+
+html[data-skin="modern"] .tour__kicker {
+  color: var(--m-accent);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+}
+
+html[data-skin="modern"] .tour__title {
+  margin: 10px 0 8px;
+  color: var(--m-text);
+  font-family: var(--font-ui);
+  font-size: 18px;
+  font-weight: 620;
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+}
+
+html[data-skin="modern"] .tour__body {
+  color: var(--m-text-2);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+html[data-skin="modern"] .tour__body b {
+  color: var(--m-text);
+  font-weight: 600;
+}
+
+html[data-skin="modern"] .tour__acts {
+  gap: 6px;
+  margin-top: 18px;
+}
+
+html[data-skin="modern"] .tour__dots {
+  gap: 4px;
+}
+
+html[data-skin="modern"] .tour__dot {
+  width: 4px;
+  height: 4px;
+  background: var(--m-line-strong);
+}
+
+html[data-skin="modern"] .tour__dot.is-active {
+  background: var(--m-accent);
+}
+
+html[data-skin="modern"] .tour__btn {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--m-line);
+  border-radius: var(--m-radius-btn);
+  color: var(--m-text-2);
+  background: var(--m-surface-2);
+  font-family: var(--font-ui);
+  font-size: 11px;
+}
+
+html[data-skin="modern"] .tour__btn:hover {
+  border-color: var(--m-line-strong);
+  color: var(--m-text);
+  background: var(--m-surface-3);
+}
+
+html[data-skin="modern"] .tour__btn--primary {
+  border-color: transparent;
+  color: var(--m-surface-solid);
+  background: var(--m-text);
+}
+
+html[data-skin="modern"] .tour__btn--ghost {
+  border-color: transparent;
+  color: var(--m-text-3);
+  background: transparent;
+}
+
+html[data-skin="modern"] .tour__btn--ghost:hover {
+  color: var(--m-text);
+  background: var(--m-surface-2);
+}
+
+html[data-skin="modern"] .tour__btn[disabled] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* 经典这条规则用的是 --clay（陶土色），现代换成强调色（03 §4 焦点令牌）。 */
+html[data-skin="modern"] .tour__btn:focus-visible {
+  outline: 2px solid var(--m-accent);
+  outline-offset: 2px;
+}
+
+/* @modern-k2-end */
 </style>
 </head>
 <body class="is-booting">
@@ -8116,6 +12080,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     </header>
 
     <main class="stage" id="stage">
+      <div class="ambient" aria-hidden="true"></div>
       <div class="desk-decor" aria-hidden="true">
         <div class="desk-decor__wash"></div>
         <div class="desk-decor__fiber"></div>
@@ -8127,6 +12092,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       <section class="desk-intro" aria-label="桌面">
         <h1 class="desk-intro__title">把今天，<br>写成一张纸。</h1>
         <p class="desk-intro__eyebrow">YOUR PAPER DESK</p>
+        <p class="desk-intro__caption">记录、整理，然后专心做眼前的事。</p>
       </section>
 
       <aside class="day-card" id="day-card" aria-label="今日纸签">
@@ -8149,12 +12115,6 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         <p class="handheld-card__quote" id="handheld-quote"></p>
         <span class="handheld-card__date" id="handheld-date">10月17日 · 星期六</span>
       </aside>
-
-      <div class="first-run" id="first-run" hidden>
-        <span class="first-run__mark" aria-hidden="true">✦</span>
-        <p>第一次使用？<br><button type="button" id="first-run-open">开始 30 秒导览</button>，或直接点底部应用坞打开应用。</p>
-        <button class="first-run__close" type="button" id="first-run-close" aria-label="关闭导览提示">×</button>
-      </div>
 
       <div class="windows-layer" id="windows-layer" role="region" aria-label="打开的窗口"></div>
       <div class="dock-wrap" id="dock-wrap">
@@ -8597,6 +12557,18 @@ html[data-theme="dark"] .priority-popover__item.is-active {
 
   appIcons.stickies = appIcons.sticky;
 
+  /* 现代皮肤的应用图标：同一套图形语言改单色线稿（stroke=currentColor），
+     与原生柔光的整体画风一致；经典仍用上面的彩色插画，一行未动。 */
+  var appIconsMono = {
+    sticky: '<svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10h34v28L38 50H15z"/><path d="M49 38H38v12"/><path d="M23 22h18M23 30h13"/></svg>',
+    notes: '<svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8h27v38H21z"/><path d="M14 17v39h27"/><path d="M27 19h15M27 27h15M27 35h10"/></svg>',
+    calendar: '<svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 16h42v36H11z"/><path d="M11 27h42M22 8v9M42 8v9"/><path d="M20 36h6M30 36h6M40 36h4M20 45h6M30 45h6"/></svg>',
+    draw: '<svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 16h36v26H9z"/><path d="M14 37c5-2 6-9 11-8s3 6 9 1"/><path d="M50 9l6 6-12 12-6-6z"/></svg>',
+    prompts: '<svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16h40v22a4 4 0 0 1-4 4H28l-10 9v-9h-2a4 4 0 0 1-4-4z"/><path d="M21 26h22M21 34h13"/></svg>',
+    settings: '<svg viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="9.5"/><circle cx="32" cy="32" r="3.4"/><path d="M32 7.5v7.4M32 49.1v7.4M7.5 32h7.4M49.1 32h7.4M14.9 14.9l5.2 5.2M43.9 43.9l5.2 5.2M49.1 14.9l-5.2 5.2M20.1 43.9l-5.2 5.2"/></svg>',
+  };
+  appIconsMono.stickies = appIconsMono.sticky;
+
   /* ---------------- UI icons ---------------- */
 
   function wrapSvg(inner, extra) {
@@ -8661,7 +12633,18 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     return wrapSvg(inner);
   }
 
+  /* 皮肤的唯一判定口径（页面其它段都调它，别再各写一份）：读偏好，不看 DOM。 */
+  function modernSkinActive() {
+    try {
+      var prefs = P.data && P.data.getPrefs ? P.data.getPrefs() : null;
+      return !!(prefs && prefs.skin === 'modern');
+    } catch (err) {
+      return false;
+    }
+  }
+
   function appIcon(id) {
+    if (modernSkinActive() && appIconsMono[id]) return appIconsMono[id];
     return appIcons[id] || appIcons.notes;
   }
 
@@ -8672,9 +12655,10 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     return holder;
   }
 
-  P.icons = { small: strokeIcons, apps: appIcons };
+  P.icons = { small: strokeIcons, apps: appIcons, mono: appIconsMono };
   P.icon = icon;
   P.appIcon = appIcon;
+  P.isModernSkin = modernSkinActive;
   P.iconNode = iconNode;
 
   /* ---------------- drawing helpers ---------------- */
@@ -9087,6 +13071,98 @@ html[data-theme="dark"] .priority-popover__item.is-active {
 
   var STICKY_COLORS = ['butter', 'peach', 'sage', 'sky', 'rose'];
 
+  /* ---------------- skin model（纯函数，启动与门禁共用同一份） ----------------
+     这一块不碰 DOM、不碰 P、不依赖 window：smoke 的源码级测试把标记之间的内容切出来，
+     在 Node 里跑的就是这里这份实现，所以不存在「测试测的是另一份逻辑」。
+     版本比较按交接 05 §4：major/minor/patch 数值比较；核心相同 release 高于 prerelease；
+     prerelease 按点分段，数字段数值比较、非数字段字典序，数字段低于非数字段；
+     公共前缀相同则段多者更高。非法或空历史值一律当「从没提示过」，绝不让启动失败。 */
+  /* @skin-model-begin */
+  var SKIN_IDS = ['classic', 'modern'];
+  var SKIN_DEFAULT = 'classic';
+  var SKIN_PROMPT_VERSION_MAX = 64;
+
+  function normalizeSkin(value) {
+    return SKIN_IDS.indexOf(value) !== -1 ? value : SKIN_DEFAULT;
+  }
+
+  function parseVersion(value) {
+    if (typeof value !== 'string') return null;
+    var text = value.trim();
+    if (!text || text.length > SKIN_PROMPT_VERSION_MAX) return null;
+    var match = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/.exec(text);
+    if (!match) return null;
+    var core = [Number(match[1]), Number(match[2]), Number(match[3])];
+    if (!isFinite(core[0]) || !isFinite(core[1]) || !isFinite(core[2])) return null;
+    var pre = null;
+    if (match[4] !== undefined) {
+      pre = match[4].split('.');
+      for (var i = 0; i < pre.length; i += 1) {
+        if (!/^[0-9A-Za-z-]+$/.test(pre[i])) return null;
+      }
+    }
+    return { core: core, pre: pre };
+  }
+
+  function compareVersionParts(a, b) {
+    var aNumeric = /^\d+$/.test(a);
+    var bNumeric = /^\d+$/.test(b);
+    if (aNumeric && bNumeric) {
+      var aNumber = Number(a);
+      var bNumber = Number(b);
+      if (aNumber === bNumber) return 0;
+      return aNumber < bNumber ? -1 : 1;
+    }
+    /* 数字段低于非数字段（semver：数字标识符永远比字母标识符小）。 */
+    if (aNumeric !== bNumeric) return aNumeric ? -1 : 1;
+    if (a === b) return 0;
+    return a < b ? -1 : 1;
+  }
+
+  function compareVersions(a, b) {
+    var left = parseVersion(a);
+    var right = parseVersion(b);
+    if (!left || !right) return null;
+    for (var i = 0; i < 3; i += 1) {
+      if (left.core[i] === right.core[i]) continue;
+      return left.core[i] < right.core[i] ? -1 : 1;
+    }
+    if (!left.pre && !right.pre) return 0;
+    if (!left.pre) return 1;
+    if (!right.pre) return -1;
+    var length = Math.max(left.pre.length, right.pre.length);
+    for (var j = 0; j < length; j += 1) {
+      if (left.pre[j] === undefined) return -1;
+      if (right.pre[j] === undefined) return 1;
+      var part = compareVersionParts(left.pre[j], right.pre[j]);
+      if (part !== 0) return part;
+    }
+    return 0;
+  }
+
+  function normalizePromptVersion(value) {
+    if (typeof value !== 'string') return '';
+    var text = value.trim();
+    if (!text || text.length > SKIN_PROMPT_VERSION_MAX) return '';
+    return parseVersion(text) ? text : '';
+  }
+
+  /* 皮肤选择页是否要在这次启动出现（02 §3/§4）。firstRun 优先级最高：
+     只有「存储里没有任何既有工作区且没有读取错误」才会传 firstRun=true。 */
+  function decideSkinPrompt(input) {
+    var source = input || {};
+    if (source.firstRun === true) return { show: true, reason: 'first-run' };
+    if (source.suppressed === true) return { show: false, reason: 'suppressed' };
+    var seen = normalizePromptVersion(source.seenVersion);
+    if (!seen) return { show: true, reason: 'never' };
+    var current = normalizePromptVersion(source.version);
+    if (!current) return { show: false, reason: 'invalid-version' };
+    return compareVersions(current, seen) > 0
+      ? { show: true, reason: 'upgrade' }
+      : { show: false, reason: 'same-or-older' };
+  }
+  /* @skin-model-end */
+
   function createEmptyState() {
     var now = Date.now();
     return {
@@ -9099,14 +13175,20 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         handFont: 'kai',
         /* 界面语言：system 跟随 DSH，zh / en 固定。只影响界面，不改 schema。 */
         lang: 'system',
+        /* 界面皮肤：classic 纸屿经典（沿用既有视觉）/ modern 原生柔光。 */
+        skin: 'classic',
         welcomeDismissed: false,
+        /* 只在确认皮肤选择页时写入；true = 以后升级都不再主动弹选择页。 */
+        skinPromptSuppressed: false,
         dockOrder: []
       },
       meta: {
         createdAt: now,
         updatedAt: now,
         seededAt: 0,
-        welcomeDocId: ''
+        welcomeDocId: '',
+        /* 用户最后完成／关闭皮肤选择页时的产品版本；空 = 从没提示过。 */
+        skinPromptVersion: ''
       },
       nodes: [],
       stickies: [],
@@ -9477,6 +13559,48 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         if (az !== bz) return az - bz;
         return a.createdAt - b.createdAt;
       });
+  }
+
+  /* 现代读取入口：modern 的便签顺序 = 数组顺序（用户排的），不是 z 叠放顺序。
+     过滤废纸篓、保留数组顺序、不排序；经典继续用 listStickies()。
+     （05 §5：现代不能直接吃 listStickies() 的 z 排序。） */
+  function listActiveStickies() {
+    return state.stickies.filter(function (s) { return !(Number(s.trashedAt) > 0); });
+  }
+
+  /* 公开排序动作：只调整活动便签在数组里的先后，不动 z / x / y，不碰废纸篓。
+     校验：ids 恰好等于当前非废纸篓 id 全集、无重复、全是字符串，否则不做任何写入。
+     废纸篓条目留在原槽位，彼此相对顺序不变（05 §5）。 */
+  function reorderStickies(ids) {
+    if (!Array.isArray(ids)) return null;
+    var byId = {};
+    state.stickies.forEach(function (s) { byId[s.id] = s; });
+    var activeIds = [];
+    state.stickies.forEach(function (s) {
+      if (!(Number(s.trashedAt) > 0)) activeIds.push(s.id);
+    });
+    var wanted = [];
+    for (var i = 0; i < ids.length; i += 1) {
+      var id = ids[i];
+      if (typeof id !== 'string' || !id || !byId[id]) return null;
+      if (wanted.indexOf(id) !== -1) return null;
+      if (Number(byId[id].trashedAt) > 0) return null;
+      wanted.push(id);
+    }
+    if (wanted.length !== activeIds.length) return null;
+    var changed = wanted.some(function (id, index) { return activeIds[index] !== id; });
+    if (!changed) {
+      return listActiveStickies().map(function (s) { return U.clone(s); });
+    }
+    var cursor = 0;
+    state.stickies = state.stickies.map(function (item) {
+      if (Number(item.trashedAt) > 0) return item;
+      var picked = byId[wanted[cursor]];
+      cursor += 1;
+      return picked;
+    });
+    commit('stickies', { action: 'reorder' });
+    return listActiveStickies().map(function (s) { return U.clone(s); });
   }
 
   /* 把一张便签提到最上面。已经是最上面时不动，避免无谓写盘。 */
@@ -10021,6 +14145,14 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       state.prefs.welcomeDismissed = !!changes.welcomeDismissed;
       changed = true;
     }
+    if (Object.prototype.hasOwnProperty.call(changes, 'skin') && SKIN_IDS.indexOf(changes.skin) !== -1 && state.prefs.skin !== changes.skin) {
+      state.prefs.skin = changes.skin;
+      changed = true;
+    }
+    if (Object.prototype.hasOwnProperty.call(changes, 'skinPromptSuppressed') && state.prefs.skinPromptSuppressed !== !!changes.skinPromptSuppressed) {
+      state.prefs.skinPromptSuppressed = !!changes.skinPromptSuppressed;
+      changed = true;
+    }
     if (changed) {
       state.meta.updatedAt = Date.now();
       emit('prefs', { prefs: U.clone(state.prefs) });
@@ -10031,6 +14163,27 @@ html[data-theme="dark"] .priority-popover__item.is-active {
 
   function getMeta() {
     return U.clone(state.meta);
+  }
+
+  /* 皮肤选择页状态（只读）：启动时据此判断要不要弹选择页。 */
+  function getSkinState() {
+    return {
+      skin: normalizeSkin(state.prefs.skin),
+      suppressed: !!state.prefs.skinPromptSuppressed,
+      seenVersion: state.meta.skinPromptVersion
+    };
+  }
+
+  /* 提示版本的唯一写入点（交接 05 §3）：确认、X、Escape、backdrop 与程序性关闭
+     都经由它记录；永久关闭提醒只由「确认」那条路径通过 setPrefs 写入。 */
+  function markSkinPromptSeen(version) {
+    var next = normalizePromptVersion(version);
+    if (!next) return getMeta();
+    if (state.meta.skinPromptVersion === next) return getMeta();
+    state.meta.skinPromptVersion = next;
+    state.meta.updatedAt = Date.now();
+    touch();
+    return getMeta();
   }
 
   function hydrationSnapshot() {
@@ -10053,6 +14206,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       if (['kai', 'xing', 'serif'].indexOf(incoming.prefs.handFont) !== -1) next.prefs.handFont = incoming.prefs.handFont;
       if (['system', 'zh', 'en'].indexOf(incoming.prefs.lang) !== -1) next.prefs.lang = incoming.prefs.lang;
       next.prefs.welcomeDismissed = !!incoming.prefs.welcomeDismissed;
+      if (SKIN_IDS.indexOf(incoming.prefs.skin) !== -1) next.prefs.skin = incoming.prefs.skin;
+      if (typeof incoming.prefs.skinPromptSuppressed === 'boolean') next.prefs.skinPromptSuppressed = incoming.prefs.skinPromptSuppressed;
     }
     if (incoming.meta && typeof incoming.meta === 'object') {
       next.meta.createdAt = Number(incoming.meta.createdAt) || Date.now();
@@ -10061,6 +14216,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       next.meta.welcomeDocId = typeof incoming.meta.welcomeDocId === 'string' ? incoming.meta.welcomeDocId : '';
       if (incoming.meta.sampleClearedAt) next.meta.sampleClearedAt = Number(incoming.meta.sampleClearedAt) || 0;
       next.meta.promptsSeededAt = Number(incoming.meta.promptsSeededAt) || 0;
+      /* 提示版本非法/超长/为空一律回空串：按「从没提示过」处理，绝不让启动失败。 */
+      next.meta.skinPromptVersion = normalizePromptVersion(incoming.meta.skinPromptVersion);
     }
     next.nodes = Array.isArray(incoming.nodes) ? incoming.nodes : [];
     next.stickies = Array.isArray(incoming.stickies) ? incoming.stickies : [];
@@ -10491,7 +14648,9 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         theme: 'system',
         handFont: 'kai',
         lang: 'system',
+        skin: 'classic',
         welcomeDismissed: false,
+        skinPromptSuppressed: false,
         dockOrder: []
       },
       meta: {
@@ -10499,7 +14658,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         updatedAt: now,
         seededAt: now,
         welcomeDocId: welcome.id,
-        promptsSeededAt: now
+        promptsSeededAt: now,
+        skinPromptVersion: ''
       },
       nodes: nodes,
       stickies: stickies,
@@ -10531,6 +14691,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     getExampleCounts: getExampleCounts,
     clearExamples: clearExamples,
     listStickies: listStickies,
+    listActiveStickies: listActiveStickies,
+    reorderStickies: reorderStickies,
     listTrashedStickies: listTrashedStickies,
     createSticky: createSticky,
     updateSticky: updateSticky,
@@ -10559,11 +14721,24 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     getPrefs: getPrefs,
     setPrefs: setPrefs,
     getMeta: getMeta,
+    getSkinState: getSkinState,
+    markSkinPromptSeen: markSkinPromptSeen,
     createSeed: createSeed,
     hydrate: hydrate,
     snapshotData: snapshotData,
     hydrationSnapshot: hydrationSnapshot,
     stickyColors: STICKY_COLORS.slice()
+  };
+
+  /* 皮肤模型只读出口：外壳（启动、设置、选择页）读同一份纯函数，不另写第二套判断。 */
+  P.skinModel = {
+    ids: SKIN_IDS.slice(),
+    fallback: SKIN_DEFAULT,
+    normalize: normalizeSkin,
+    normalizePromptVersion: normalizePromptVersion,
+    parseVersion: parseVersion,
+    compare: compareVersions,
+    decide: decideSkinPrompt
   };
 })();
 
@@ -10680,7 +14855,9 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       theme: 'system',
       handFont: 'kai',
       lang: 'system',
+      skin: 'classic',
       welcomeDismissed: false,
+      skinPromptSuppressed: false,
       dockOrder: []
     };
     if (!raw || typeof raw !== 'object') return prefs;
@@ -10694,7 +14871,11 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     if (['system', 'light', 'dark'].indexOf(raw.theme) !== -1) prefs.theme = raw.theme;
     if (['kai', 'xing', 'serif'].indexOf(raw.handFont) !== -1) prefs.handFont = raw.handFont;
     if (['system', 'zh', 'en'].indexOf(raw.lang) !== -1) prefs.lang = raw.lang;
+    /* 皮肤与提示偏好：白名单，非法值回默认（老工作区没有这两个字段就是经典 + 未关闭提醒）。
+       皮肤白名单与版本解析的事实源在模型层，storage 只借用 P.skinModel，不另存一份。 */
+    prefs.skin = P.skinModel.normalize(raw.skin);
     prefs.welcomeDismissed = !!raw.welcomeDismissed;
+    if (typeof raw.skinPromptSuppressed === 'boolean') prefs.skinPromptSuppressed = raw.skinPromptSuppressed;
     return prefs;
   }
 
@@ -10934,7 +15115,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       createdAt: now,
       updatedAt: now,
       seededAt: 0,
-      welcomeDocId: ''
+      welcomeDocId: '',
+      skinPromptVersion: ''
     };
     if (raw.meta && typeof raw.meta === 'object') {
       meta.createdAt = numberOr(raw.meta.createdAt, now);
@@ -10945,6 +15127,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       }
       if (raw.meta.sampleClearedAt) meta.sampleClearedAt = numberOr(raw.meta.sampleClearedAt, 0);
       if (raw.meta.promptsSeededAt) meta.promptsSeededAt = numberOr(raw.meta.promptsSeededAt, 0);
+      /* 提示版本：非空时必须是合法版本且 ≤64 字符，否则丢掉（按从没提示过处理）。 */
+      if (raw.meta.skinPromptVersion) meta.skinPromptVersion = P.skinModel.normalizePromptVersion(raw.meta.skinPromptVersion);
     }
 
     var prompts = sanitizePrompts(raw.prompts, now);
@@ -11913,6 +16097,10 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       '<span class="window__app-icon" aria-hidden="true">' + P.appIcon(app.id) + '</span>' +
       '<span class="window__heading"><span class="window__app-name">' + U.escapeHTML(app.english || app.name) + '</span>' +
       '<span class="window__title" id="win-title-' + id + '">' + U.escapeHTML(app.name) + '</span></span>' +
+      '<span class="window__controls">' +
+      '<button class="win-control win-control--minimize" type="button" data-win-action="minimize" aria-label="收好窗口" title="收好窗口">' + P.icon('minus') + '</button>' +
+      '<button class="win-control win-control--close" type="button" data-win-action="close" aria-label="关闭窗口" title="关闭窗口">' + P.icon('close') + '</button>' +
+      '</span>' +
       '</header>' +
       '<div class="window__body"></div>' +
       '<div class="win-resize win-resize--n" data-resize="n" aria-hidden="true"></div>' +
@@ -11942,6 +16130,15 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     win.el.querySelectorAll('.win-resize').forEach(function (handle) {
       handle.addEventListener('pointerdown', function (event) {
         beginResize(event, win, handle.getAttribute('data-resize'));
+      });
+    });
+    /* 标题栏控制按钮：DOM 两套皮肤共用，经典由 CSS 隐藏；行为只走既有窗口管理器。 */
+    win.el.querySelectorAll('[data-win-action]').forEach(function (button) {
+      button.addEventListener('click', function (event) {
+        event.stopPropagation();
+        var action = button.getAttribute('data-win-action');
+        if (action === 'minimize') P.wm.minimize(win.id);
+        else if (action === 'close') P.wm.close(win.id);
       });
     });
   }
@@ -12251,6 +16448,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     var existing = wins.find(function (w) { return !w.closing && w.appId === appId; });
     if (existing && app.singleton !== false && !opts.forceNew) {
       if (existing.minimized) restoreWindow(existing.id, { silent: true });
+      /* 同一个应用重开时也收敛一次：久未打开的窗口可能带着上一个大视口的 bounds 回来。 */
+      settleWindowLayout();
       focusWindow(existing.id, { skipSave: !!opts.restoring });
       if (params && Object.keys(params).length && winMap.get(existing.id)) {
         updateParams(existing.id, params);
@@ -12279,6 +16478,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       win.z = opts.z || win.z;
       win.el.style.zIndex = String(win.z);
     }
+    settleWindowLayout();
     notify('open');
     return publicWindow(win);
   }
@@ -12435,6 +16635,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       } catch (err) { /* ignore */ }
     }
     focusWindow(id, { skipSave: !!opts.silent });
+    settleWindowLayout();
     scheduleLayoutSave();
     notify('restore');
   }
@@ -12580,7 +16781,31 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       updateFocusStatus();
     }
     restoring = false;
+    settleWindowLayout();
     notify('restore-desktop');
+  }
+
+  /* 视口变小后把窗口收进工作区：只夹越界的部分，不把小窗口放大。
+     复用 workArea() + clampBounds() + applyBounds() 这一条既有路径（AC-19 / 03 §7）。
+     夹完把 preferredBounds 也写成同一组值：否则下一次 refreshLayout 会按旧首选尺寸复辟。 */
+  function fitWindowIntoArea(win) {
+    if (!win || win.closing || win.minimized || win.maximized) return false;
+    var area = workArea();
+    var current = win.bounds;
+    var clamped = clampBounds(current, area);
+    var w = Math.min(clamped.w, current.w);
+    var h = Math.min(clamped.h, current.h);
+    var next = {
+      x: Math.max(area.x, Math.min(clamped.x, area.x + area.w - w)),
+      y: Math.max(area.y, Math.min(clamped.y, area.y + area.h - h)),
+      w: w,
+      h: h
+    };
+    if (next.x === current.x && next.y === current.y && next.w === current.w && next.h === current.h) return false;
+    applyBounds(win, next);
+    /* 不写 preferredBounds：serializeDesktop() 存的是 preferredBounds || bounds，
+       把窄视口的夹取结果写进去 = 把夹后的尺寸持久化成经典的新默认值（跨会话泄漏）。 */
+    return true;
   }
 
   function refreshLayout() {
@@ -12607,11 +16832,64 @@ html[data-theme="dark"] .priority-popover__item.is-active {
   }
 
   var resizeFrame = null;
+  var settleTimer = null;
+  /* 取证计数：只被 _internals.dumpLayout() 读出，不参与任何业务判断。
+     lastResizeArea 记的是 resize 事件抵达那一刻的 workArea，用来判断
+     「事件到达时布局视口是否已经跟上」。 */
+  var layoutProbe = { resizes: 0, settles: 0, clamps: 0, lastResizeArea: null, lastSettleArea: null };
+
+  /* 单一收敛函数：refreshLayout（含最大化）+ fitWindowIntoArea（只夹越界、幂等），
+     反复到「连续两轮无变化」为止（最多 3 轮）；两套皮肤共用，没有任何皮肤分叉。 */
+  function settleWindowLayout() {
+    var changed = false;
+    var previous = null;
+    layoutProbe.settles += 1;
+    layoutProbe.lastSettleArea = workArea();
+    for (var pass = 0; pass < 3; pass += 1) {
+      refreshLayout();
+      var fitted = false;
+      wins.forEach(function (w) { if (fitWindowIntoArea(w)) { fitted = true; layoutProbe.clamps += 1; } });
+      if (fitted) changed = true;
+      var snapshot = wins.map(function (w) {
+        return w.id + ':' + w.bounds.x + ',' + w.bounds.y + ',' + w.bounds.w + ',' + w.bounds.h;
+      }).join('|');
+      if (snapshot === previous) break;
+      previous = snapshot;
+    }
+    if (changed) scheduleLayoutSave();
+    return changed;
+  }
+
+  /* resize 后夹到稳定：第一帧的布局视口可能还没跟上（读到旧 stage 宽 → 算出的 area
+     仍是旧值 → 夹取空转，之后再没有 resize 事件），所以在 0 / 60 / 200ms 各再收敛一次。
+     settleWindowLayout 幂等且只在越界时写盘，多跑几次不会抖。 */
+  function scheduleWindowSettle() {
+    if (settleTimer) { clearTimeout(settleTimer); settleTimer = null; }
+    settleWindowLayout();
+    var step = 0;
+    var again = function () {
+      settleWindowLayout();
+      step += 1;
+      if (step < 3) {
+        settleTimer = setTimeout(again, step === 1 ? 60 : 140);
+      } else {
+        settleTimer = null;
+        if (resizeFrame) resizeFrame = null;
+      }
+    };
+    settleTimer = setTimeout(again, 0);
+  }
+
+  /* 视口变化：几何收敛**同步**做，不押在 rAF 上——headless / 后台标签页里 rAF 可能
+     不跑，一旦某一帧的 rAF 没跑，resizeFrame 就一直挂住、之后所有 resize 都被丢掉。
+     rAF 只留给自己会拦截点击的 inert / aria 状态。 */
   function onViewportResize() {
+    layoutProbe.resizes += 1;
+    layoutProbe.lastResizeArea = workArea();
+    scheduleWindowSettle();
     if (resizeFrame) return;
     resizeFrame = requestAnimationFrame(function () {
       resizeFrame = null;
-      refreshLayout();
       if (isSheet()) {
         wins.forEach(function (w) {
           if (!w.closing) {
@@ -12643,6 +16921,11 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         ro.observe(stage);
       }
       window.addEventListener('resize', onViewportResize);
+      /* 隐藏标签页里渲染步进会停，隐藏期间发生的视口变化可能一次事件都没有；
+         切回可见时补一次幂等收敛（不新增第二条收敛路径）。 */
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') scheduleWindowSettle();
+      });
     }
     window.addEventListener('keydown', function (event) {
       if ((event.ctrlKey || event.metaKey) && event.altKey && (event.key === 'ArrowRight' || event.key === ']' || event.key === 'Tab')) {
@@ -12662,6 +16945,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
 
   P.wm = Object.assign(P.wm, {
     setup: setup,
+    settleLayout: settleWindowLayout,
     open: open,
     close: function (id) { closeWindow(id); },
     focus: function (id) { focusWindow(id); },
@@ -12681,7 +16965,35 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     getWindow: function (id) { return publicWindow(winMap.get(id)); },
     getWorkArea: workArea,
     debug: function () { return { metrics: Object.assign({}, metrics), windows: wins.length, focused: focusedId, restoring: restoring }; },
-    _internals: { workArea: workArea, clampBounds: clampBounds }
+    _internals: {
+      workArea: workArea,
+      clampBounds: clampBounds,
+      dumpLayout: function () {
+        return {
+          innerW: window.innerWidth,
+          stageW: stageEl() ? stageEl().clientWidth : null,
+          sheet: isSheet(),
+          area: workArea(),
+          probe: {
+            resizes: layoutProbe.resizes,
+            settles: layoutProbe.settles,
+            clamps: layoutProbe.clamps,
+            lastResizeArea: layoutProbe.lastResizeArea,
+            lastSettleArea: layoutProbe.lastSettleArea,
+            resizeFrame: resizeFrame !== null,
+            settlePending: settleTimer !== null
+          },
+          wins: wins.map(function (w) {
+            return {
+              id: w.id, app: w.appId, minimized: !!w.minimized, closing: !!w.closing,
+              maximized: !!w.maximized, bounds: U.clone(w.bounds),
+              preferredBounds: w.preferredBounds ? U.clone(w.preferredBounds) : null,
+              restoreBounds: w.restoreBounds ? U.clone(w.restoreBounds) : null
+            };
+          })
+        };
+      }
+    }
   });
 })();
 
@@ -12698,7 +17010,6 @@ html[data-theme="dark"] .priority-popover__item.is-active {
   var clockTimer = null;
   var switchHud = null;
   var switchTimer = null;
-  var firstRunTipBound = false;
   var lastPointerType = 'mouse';
 
   var refs = {};
@@ -12727,9 +17038,10 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     refs.handheldQuote = document.getElementById('handheld-quote');
     refs.dayTasks = document.getElementById('day-tasks');
     refs.dayOpen = document.getElementById('day-open');
-    refs.firstRun = document.getElementById('first-run');
-    refs.firstRunOpen = document.getElementById('first-run-open');
-    refs.firstRunClose = document.getElementById('first-run-close');
+    /* 桌面日期行沿用同一份 DOM：modern 用它显示日期，经典保持原有英文小标。
+       若不是 modern，就把启动时读到的原文写回去，不另建第二套渲染路径。 */
+    refs.deskIntroDate = document.querySelector('.desk-intro__eyebrow');
+    if (refs.deskIntroDate) refs.deskIntroDateDefault = refs.deskIntroDate.textContent;
   }
 
   /* ---------------- appearance ---------------- */
@@ -12847,6 +17159,12 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     if (refs.os) refs.os.classList.toggle('no-grid', !prefs.showGrid);
     document.documentElement.setAttribute('data-texture', prefs.paperTexture === false ? 'flat' : 'paper');
     applyTheme();
+    /* 皮肤与主题正交：切皮肤不改配色偏好，切配色也不丢皮肤。 */
+    applySkin(prefs.skin);
+    /* 切皮肤后桌面日期行立即换成对应写法：不刷新，也不等下一个时钟刻度。 */
+    updateClock();
+    /* 皮肤/主题会改今日卡可见性 → 可用空间变了：走同一条收敛路径。 */
+    if (P.wm && typeof P.wm.settleLayout === 'function') P.wm.settleLayout();
     watchTheme();
     watchHostTheme();
     return prefs;
@@ -12866,6 +17184,12 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     if (refs.dayWeek) refs.dayWeek.textContent = U.weekdayName(now);
     if (refs.dayYear) refs.dayYear.textContent = String(now.getFullYear());
     if (refs.handheldDate) refs.handheldDate.textContent = U.formatMonthDay(now) + ' · ' + U.weekdayName(now);
+    /* 桌面日期行：modern 用运行时拼接（星期 + 月日），经典回到启动时读到的原小标。 */
+    if (refs.deskIntroDate) {
+      refs.deskIntroDate.textContent = currentSkin() === 'modern'
+        ? U.weekdayName(now) + ' / ' + U.formatMonthDay(now)
+        : (refs.deskIntroDateDefault || '');
+    }
     paintSeal(now);
     updateDayTasks();
   }
@@ -13222,6 +17546,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         activateDockApp(app.id);
       });
       button.addEventListener('keydown', function (event) {
+        /* 同类缺陷：Ctrl/Cmd + Alt + ←/→ 属于窗口循环，不能让应用坞再排一次序。 */
+        if (event.ctrlKey || event.metaKey) return;
         if (!event.altKey || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return;
         event.preventDefault();
         var ids = dockAppsInOrder().map(function (item) { return item.id; });
@@ -13299,6 +17625,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         focusEl.textContent = '';
       }
     }
+    if (refs.stage) refs.stage.classList.toggle('has-windows', visible.length > 0);
     if (refs.dock) {
       refs.dock.querySelectorAll('[data-dock-app]').forEach(function (button) {
         var appId = button.getAttribute('data-dock-app');
@@ -13357,7 +17684,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     if (!refs.stage) return;
     refs.stage.addEventListener('pointerdown', function (event) {
       if (event.button !== 0 && event.pointerType === 'mouse') return;
-      if (event.target.closest('.window, .dock-wrap, .day-card, .first-run, .paper-dialog')) return;
+      if (event.target.closest('.window, .dock-wrap, .day-card, .paper-dialog')) return;
       if (document.querySelector('.paper-dialog[open]')) return;
       var visible = P.wm.getWindows().filter(function (win) { return !win.minimized; });
       if (!visible.length) return;
@@ -13398,29 +17725,250 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     clockTimer = setInterval(updateClock, 15000);
   }
 
-  /* ---------------- first-run note ---------------- */
+  /* ---------------- skin prompt：首次选择 / 升级提醒 ----------------
+     02 §3/§4 的冻结行为：新安装先选皮肤再进既有导览；每次升级后首次打开弹一次；
+     同版本、降级、永久关闭都不弹。确认、X、Escape、backdrop 与程序性关闭都走
+     finishSkinChoice 这唯一一条关闭路径；只有「确认」应用选择并写入永久关闭开关。
+     视觉（两张真实预览卡）由 K5 换成 A⁺ 卡片，这里只保证行为可用、语义正确。 */
 
-  function setupFirstRun() {
-    if (!refs.firstRun) return;
-    var prefs = P.data.getPrefs();
-    var meta = P.data.getMeta();
-    var welcome = meta.welcomeDocId ? P.data.getNode(meta.welcomeDocId) : null;
-    var show = !prefs.welcomeDismissed && !!welcome;
-    refs.firstRun.hidden = !show;
-    if (firstRunTipBound) return;
-    firstRunTipBound = true;
-    function dismiss() {
-      P.data.setPrefs({ welcomeDismissed: true });
-      refs.firstRun.hidden = true;
-    }
-    if (refs.firstRunOpen) {
-      refs.firstRunOpen.addEventListener('click', function () {
-        if (P.tour) P.tour.start();
+  var skinChoiceOpen = false;
+  var skinChoiceAfterClose = null;
+
+  function skinChoiceCopy() {
+    return {
+      kicker: '纸屿',
+      title: '选择你的工作方式',
+      description: '首次使用或版本升级后，都可以在这里切换。',
+      groupLabel: '界面皮肤',
+      classicName: '纸屿经典',
+      classicNote: '温暖、纸纹与手写质感',
+      modernName: '原生柔光',
+      modernNote: '原生、清晰与一点柔光',
+      classicPreview: '纸屿经典界面预览',
+      modernPreview: '原生柔光界面预览',
+      suppress: '下次不再提醒我',
+      close: '关闭',
+      confirm: '进入纸屿'
+    };
+  }
+
+  function currentSkin() {
+    return P.skinModel.normalize(P.data.getPrefs().skin);
+  }
+
+  var skinSwitchTimer = null;
+
+  /* 皮肤切换的 250ms 过渡只在真正换皮肤的那一拍挂类（裁定 #4）。
+     常驻过渡会把主题切换、尺寸探针与同步取色全部拖慢。 */
+  function markSkinSwitch() {
+    var root = document.documentElement;
+    root.classList.add('is-skin-switching');
+    if (skinSwitchTimer) clearTimeout(skinSwitchTimer);
+    skinSwitchTimer = setTimeout(function () {
+      skinSwitchTimer = null;
+      root.classList.remove('is-skin-switching');
+    }, 280);
+  }
+
+  /* 应用图标是 innerHTML 注入的，换皮肤要重画一次（坞 + 已开窗口的标题图标）。 */
+  function refreshAppIconSet() {
+    if (refs.dock) buildDock();
+    Array.prototype.forEach.call(document.querySelectorAll('.window[data-app]'), function (el) {
+      var box = el.querySelector('.window__app-icon');
+      if (!box) return;
+      var app = P.apps.get(el.getAttribute('data-app'));
+      if (app) box.innerHTML = P.appIcon(app.id);
+    });
+  }
+
+  var lastAppliedSkin = '';
+  function applySkin(value) {
+    var skin = P.skinModel.normalize(value);
+    var root = document.documentElement;
+    if (root.getAttribute('data-skin') !== skin) markSkinSwitch();
+    root.setAttribute('data-skin', skin);
+    /* 首次落值只记录：那时坞还没建，启动路径自己会 buildDock()。 */
+    if (lastAppliedSkin && lastAppliedSkin !== skin) refreshAppIconSet();
+    lastAppliedSkin = skin;
+    return skin;
+  }
+
+  /* 唯一关闭函数：确认、X、Escape、backdrop、程序性关闭都落在这里。
+     只有确认会应用皮肤并写永久关闭开关；任何关闭路径都会记录本次版本（只读时不写盘）。 */
+  function finishSkinChoice(selection) {
+    skinChoiceOpen = false;
+    var confirmed = !!(selection && selection.confirmed);
+    if (confirmed) {
+      P.data.setPrefs({
+        skin: P.skinModel.normalize(selection.skin),
+        skinPromptSuppressed: !!selection.suppressed
       });
+      applyPrefs();
     }
-    if (refs.firstRunClose) {
-      refs.firstRunClose.addEventListener('click', dismiss);
+    /* 只读工作区不得为记录提示状态而写盘（02 §4 / 05 §6）：展示与临时切换照常。 */
+    if (!P.storage.blocked) P.data.markSkinPromptSeen(P.version);
+    var after = skinChoiceAfterClose;
+    skinChoiceAfterClose = null;
+    if (typeof after === 'function') after();
+  }
+
+  /* 02 §3 / 裁定 #5：选择页要两张真实的小型界面预览，不接受灰色示意块。
+     做法是同一套设计语言的真实 DOM 缩小版（顶栏 / 窗口 / 今日卡 / 应用坞），
+     两套皮肤各一份调色板（CSS 变量在 .skin-choice__preview 上按 data 切换）。
+     预览只画结构，aria-hidden 由外层 role=img + aria-label 承担语义。 */
+  function skinPreview(id, label) {
+    var box = U.el('span', 'skin-choice__preview');
+    box.setAttribute('data-preview-skin', id);
+    box.setAttribute('role', 'img');
+    box.setAttribute('aria-label', label);
+
+    var bar = U.el('span', 'pv__bar');
+    bar.appendChild(U.el('span', 'pv__mark'));
+    bar.appendChild(U.el('span', 'pv__crumb'));
+    bar.appendChild(U.el('span', 'pv__save'));
+    bar.appendChild(U.el('span', 'pv__gear'));
+    box.appendChild(bar);
+
+    var desk = U.el('span', 'pv__desk');
+    var win = U.el('span', 'pv__win');
+    var winBar = U.el('span', 'pv__winbar');
+    winBar.appendChild(U.el('span', 'pv__winicon'));
+    winBar.appendChild(U.el('span', 'pv__wintitle', id === 'modern' ? '纸页' : '便签'));
+    winBar.appendChild(U.el('span', 'pv__winctl'));
+    win.appendChild(winBar);
+    var winBody = U.el('span', 'pv__winbody');
+    winBody.appendChild(U.el('span', 'pv__line pv__line--lead'));
+    winBody.appendChild(U.el('span', 'pv__line'));
+    winBody.appendChild(U.el('span', 'pv__line pv__line--short'));
+    win.appendChild(winBody);
+    desk.appendChild(win);
+
+    var card = U.el('span', 'pv__card');
+    card.appendChild(U.el('span', 'pv__num', '3'));
+    card.appendChild(U.el('span', 'pv__line pv__line--tiny'));
+    card.appendChild(U.el('span', 'pv__line pv__line--tiny'));
+    desk.appendChild(card);
+    box.appendChild(desk);
+
+    var dock = U.el('span', 'pv__dock');
+    for (var i = 0; i < 5; i += 1) dock.appendChild(U.el('span', 'pv__dockdot'));
+    box.appendChild(dock);
+    return box;
+  }
+
+  function openSkinChooser(reason) {
+    if (skinChoiceOpen) return;
+    skinChoiceOpen = true;
+    var copy = skinChoiceCopy();
+    var current = currentSkin();
+    /* 升级时默认突出用户当前皮肤，不自动切现代；首次可预选原生柔光。 */
+    var picked = reason === 'first-run' ? 'modern' : current;
+    var suppressInput = null;
+
+    P.ui.dialog({
+      kicker: copy.kicker,
+      title: copy.title,
+      description: copy.description,
+      wide: true,
+      width: 560,
+      render: function (body, dialog) {
+        var list = U.el('div', 'skin-choice');
+        list.setAttribute('role', 'radiogroup');
+        list.setAttribute('aria-label', copy.groupLabel);
+        var cards = [];
+        function sync() {
+          cards.forEach(function (node) {
+            var on = node.getAttribute('data-skin-option') === picked;
+            node.classList.toggle('is-selected', on);
+            var field = node.querySelector('input');
+            if (field) field.checked = on;
+          });
+        }
+        P.skinModel.ids.forEach(function (id) {
+          var card = U.el('label', 'skin-choice__card');
+          card.setAttribute('data-skin-option', id);
+          if (id === picked) card.classList.add('is-selected');
+          var input = document.createElement('input');
+          input.type = 'radio';
+          input.name = 'skin-choice';
+          input.value = id;
+          input.checked = id === picked;
+          input.addEventListener('change', function () {
+            picked = id;
+            sync();
+          });
+          var text = U.el('span', 'skin-choice__text');
+          text.appendChild(U.el('strong', 'skin-choice__name', id === 'modern' ? copy.modernName : copy.classicName));
+          text.appendChild(U.el('span', 'skin-choice__note', id === 'modern' ? copy.modernNote : copy.classicNote));
+          card.appendChild(input);
+          card.appendChild(skinPreview(id, id === 'modern' ? copy.modernPreview : copy.classicPreview));
+          card.appendChild(text);
+          cards.push(card);
+          list.appendChild(card);
+        });
+        body.appendChild(list);
+        var foot = U.el('label', 'skin-choice__suppress');
+        suppressInput = document.createElement('input');
+        suppressInput.type = 'checkbox';
+        /* 手动打开时如实显示永久关闭状态；取消勾选并确认即恢复以后升级提醒。 */
+        suppressInput.checked = !!P.data.getSkinState().suppressed;
+        foot.appendChild(suppressInput);
+        foot.appendChild(U.el('span', null, copy.suppress));
+        body.appendChild(foot);
+
+        /* 右上角 X 与「关闭」按钮同一条路：点 X 就是点那个 ghost 按钮，
+           于是仍然经过 openDialog 的 getValue → finishSkinChoice，不存在第二个关闭路径。 */
+        var closeButton = U.el('button', 'dialog-x');
+        closeButton.type = 'button';
+        closeButton.setAttribute('aria-label', copy.close);
+        closeButton.innerHTML = P.icon('close');
+        closeButton.addEventListener('click', function () {
+          var ghost = dialog.querySelector('.dialog-actions .paper-btn--ghost');
+          if (ghost) ghost.click();
+        });
+        dialog.appendChild(closeButton);
+      },
+      actions: [
+        { label: copy.close, kind: 'ghost', value: 'dismiss' },
+        { label: copy.confirm, kind: 'primary', value: 'confirm' }
+      ],
+      /* 初始焦点给「当前选中」那张卡，而不是 DOM 里第一张：
+         焦点框与选中环必须落在同一张卡上，否则读起来像两张都选中了。 */
+      initialFocus: function (dialogEl) {
+        var checked = dialogEl.querySelector('.skin-choice__card.is-selected input');
+        if (checked) return checked;
+        return dialogEl.querySelector('.skin-choice__card input');
+      },
+      cancelValue: 'dismiss',
+      getValue: function (value) {
+        if (value !== 'confirm') return { confirmed: false };
+        return { confirmed: true, skin: picked, suppressed: !!(suppressInput && suppressInput.checked) };
+      },
+      onClose: finishSkinChoice
+    });
+  }
+
+  /* 启动时定夺要不要弹选择页。返回 decision（弹出或不弹），null = 这次不谈。 */
+  function openSkinPromptIfNeeded(firstRun, loadReadable) {
+    if (!loadReadable) return null;
+    var skinState = P.data.getSkinState();
+    var decision = P.skinModel.decide({
+      version: P.version,
+      seenVersion: skinState.seenVersion,
+      suppressed: skinState.suppressed,
+      firstRun: firstRun === true
+    });
+    if (!decision.show) return null;
+    if (firstRun === true) {
+      /* 首次：选择页关掉之后才接既有导览，两个模态层不重叠。 */
+      skinChoiceAfterClose = function () {
+        setTimeout(function () {
+          if (P.tour && typeof P.tour.startOnce === 'function') P.tour.startOnce();
+        }, 320);
+      };
     }
+    setTimeout(function () { openSkinChooser(decision.reason); }, 420);
+    return decision;
   }
 
   /* ---------------- command palette ---------------- */
@@ -13812,13 +18360,18 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         if (window.console) console.warn('PaperOS workspace rejected, running read-only', result.error);
       }
     }
+    /* firstRun 只在「存储确认没有任何既有工作区、且没有读取/校验错误」时为 true（05 §4）：
+       损坏、较新、读取失败都不得进入种子首次导览或首次皮肤选择路径。 */
+    var loadReadable = false;
     if (validated) {
       P.data.hydrate(validated.snapshot);
       loaded = validated.snapshot;
+      loadReadable = true;
     } else {
       var seed = P.data.createSeed();
       P.data.hydrate(seed);
-      firstRun = true;
+      loadReadable = !raw && !loadWarning;
+      firstRun = loadReadable;
     }
     /* 废纸篓的 7 天清理要在启动时跑一次，否则不打开废纸篓就永远不清理。 */
     P.data.pruneTrash();
@@ -13839,7 +18392,6 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       var savedAt = loaded ? loaded.meta.updatedAt : null;
       P.storage.begin(savedAt);
       if (loaded && loaded.desktop) P.wm.restoreDesktop(loaded.desktop);
-      setupFirstRun();
       if (firstRun || recoveredJournal) {
         P.storage.touch();
         try {
@@ -13852,9 +18404,12 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       syncChrome();
       updateSaveStatus(P.storage.getDataStatus());
       finishBoot();
-      setTimeout(function () {
-        if (P.tour && typeof P.tour.startOnce === 'function') P.tour.startOnce();
-      }, 1100);
+      /* 皮肤选择页先出现；它没关掉之前不许启动导览（首次），升级与手动打开也不重播导览。 */
+      if (!openSkinPromptIfNeeded(firstRun, loadReadable)) {
+        setTimeout(function () {
+          if (P.tour && typeof P.tour.startOnce === 'function') P.tour.startOnce();
+        }, 1100);
+      }
       if (recoveredJournal) {
         setTimeout(function () {
           P.ui.toast('上次还没来得及收好的纸页，已经替你恢复了。', { kind: 'info' });
@@ -13936,7 +18491,9 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     applyPrefs: applyPrefs,
     openSettings: openSettings,
     exportWorkspace: exportWorkspace,
-    manualSave: manualSave
+    manualSave: manualSave,
+    /* 设置 → 外观 →「界面皮肤」那一行的唯一入口（02 §2）。 */
+    openSkinChooser: openSkinChooser
   };
 
   P.start = start;
@@ -13959,6 +18516,28 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     { id: 'sky', hex: '#cfdde2' },
     { id: 'rose', hex: '#ebd0cb' }
   ];
+
+  function isModernSkin() {
+    return document.documentElement.getAttribute('data-skin') === 'modern';
+  }
+
+  /* 顺序来源：modern 用数组顺序（listActiveStickies），经典用 z 叠放（listStickies）。
+     05 §5：现代不许直接吃 listStickies() 的 z 排序。 */
+  function boardItems() {
+    return isModernSkin() ? P.data.listActiveStickies() : P.data.listStickies();
+  }
+
+  /* 落位播报：沿用页面既有的 #dock-live 通道与既有模板，不新开第二条 live region。 */
+  function announceStickyMove(id, ids) {
+    var live = document.getElementById('dock-live');
+    if (!live) return;
+    var app = P.apps.get('stickies');
+    live.textContent = F('{name} 已移到第 {pos} 位，共 {total} 位', {
+      name: app ? app.name : '便签',
+      pos: ids.indexOf(id) + 1,
+      total: ids.length
+    });
+  }
 
   P.registerApp({
     id: 'stickies',
@@ -14065,10 +18644,11 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       }
 
       function rebuildBoard() {
-        var items = P.data.listStickies();
+        var items = boardItems();
         if (countEl) countEl.textContent = String(items.length);
         if (emptyBox) emptyBox.hidden = items.length !== 0;
         var current = new Set();
+        var desired = [];
         items.forEach(function (sticky) {
           current.add(sticky.id);
           var card = cards.get(sticky.id);
@@ -14079,8 +18659,9 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           } else {
             updateCard(card, sticky);
           }
-          /* 叠放顺序 = 数据里的 z；最后碰过的那张一定在最上面。 */
-          card.el.style.zIndex = String(10 + Math.round(Number(sticky.z) || 0));
+          desired.push(card.el);
+          /* 经典：叠放顺序 = 数据里的 z；现代是栅格，z 只留给拖动中的卡片。 */
+          if (!isModernSkin()) card.el.style.zIndex = String(10 + Math.round(Number(sticky.z) || 0));
         });
         cards.forEach(function (card, id) {
           if (!current.has(id)) {
@@ -14088,7 +18669,22 @@ html[data-theme="dark"] .priority-popover__item.is-active {
             cards.delete(id);
           }
         });
+        syncCardOrder(desired);
         updateBoardSize();
+      }
+
+      /* 只在顺序真的变了时才搬 DOM：每次击键都会 rebuild，别让输入变成 DOM 重排。 */
+      function syncCardOrder(desired) {
+        if (!inner) return;
+        var actual = [];
+        for (var i = 0; i < inner.children.length; i += 1) {
+          var node = inner.children[i];
+          if (node.classList && node.classList.contains('sticky')) actual.push(node);
+        }
+        if (actual.length === desired.length && actual.every(function (node, index) { return node === desired[index]; })) return;
+        var frag = document.createDocumentFragment();
+        desired.forEach(function (node) { frag.appendChild(node); });
+        inner.appendChild(frag);
       }
 
       function createCard(sticky) {
@@ -14113,8 +18709,11 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         card.sample = el.querySelector('.sample-tag');
         card.swatches = el.querySelector('.sticky__swatches');
         card.text.value = sticky.text || '';
-        el.style.left = Math.round(sticky.x) + 'px';
-        el.style.top = Math.round(sticky.y) + 'px';
+        /* 现代是栅格：位置由 CSS 决定，不写自由坐标（写了会让 relative 卡片偏离格子）。 */
+        if (!isModernSkin()) {
+          el.style.left = Math.round(sticky.x) + 'px';
+          el.style.top = Math.round(sticky.y) + 'px';
+        }
 
         COLORS.forEach(function (color) {
           var swatch = document.createElement('button');
@@ -14140,16 +18739,33 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         });
 
         var head = el.querySelector('.sticky__head');
-        /* 整张纸都能拖着走：只放过正文输入区、滚动条、色块和删除按钮。 */
+        /* 经典：整张纸都能拖着走（只放过正文输入区、滚动条、色块和删除按钮）。
+           modern：改成「拖动选位」的排序手势，并且只从标题栏/把手起手，
+           这样触屏上卡片正文仍然可以纵向滚动（touch-action 在 CSS 里分开）。 */
         el.addEventListener('pointerdown', function (event) {
           if (event.target.closest('.sticky__text, .sticky__swatches, .sticky__del')) return;
+          if (isModernSkin()) {
+            beginReorder(event, card);
+            return;
+          }
           beginDrag(event, card);
         });
         el.addEventListener('pointerdown', function () {
-          P.data.raiseSticky(sticky.id);
+          if (!isModernSkin()) P.data.raiseSticky(sticky.id);
           viewTarget = sticky.id;
           scheduleViewSave();
         }, true);
+        /* 键盘排序：卡片自己聚焦时 Alt + ←/→ 移动，落盘与播报和拖动同一条路径。
+           Ctrl/Cmd + Alt + ←/→ 是窗口循环（04 §1），这里必须先让开，
+           否则一次按键会同时重排便签又切窗口。 */
+        el.addEventListener('keydown', function (event) {
+          if (!isModernSkin()) return;
+          if (event.target !== el) return;
+          if (event.ctrlKey || event.metaKey) return;
+          if (!event.altKey || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return;
+          event.preventDefault();
+          moveStickyByKeyboard(card.id, event.key === 'ArrowLeft' ? -1 : 1);
+        });
         head.addEventListener('dblclick', function (event) {
           if (event.target.closest('button')) return;
           card.text.focus();
@@ -14171,8 +18787,22 @@ html[data-theme="dark"] .priority-popover__item.is-active {
       function updateCard(card, sticky) {
         if (!card || !card.el) return;
         card.el.setAttribute('data-color', sticky.color);
+        /* modern：卡片本身可聚焦（键盘排序入口）；经典保持不可聚焦，tab 顺序不变。 */
+        if (isModernSkin()) {
+          if (card.el.getAttribute('tabindex') !== '0') card.el.tabIndex = 0;
+          card.el.setAttribute('role', 'group');
+          card.el.setAttribute('aria-label', sticky.text ? String(sticky.text).slice(0, 40) : '空白便签');
+        } else if (card.el.getAttribute('tabindex') !== null) {
+          card.el.removeAttribute('tabindex');
+          card.el.removeAttribute('role');
+          card.el.removeAttribute('aria-label');
+        }
         if (card.text !== document.activeElement) card.text.value = sticky.text || '';
-        if (!card.dragging) {
+        if (isModernSkin() && !card.dragging && card.el.style.left) {
+          card.el.style.left = '';
+          card.el.style.top = '';
+        }
+        if (!card.dragging && !isModernSkin()) {
           card.el.style.left = Math.round(sticky.x) + 'px';
           card.el.style.top = Math.round(sticky.y) + 'px';
         }
@@ -14188,6 +18818,12 @@ html[data-theme="dark"] .priority-popover__item.is-active {
 
       function updateBoardSize() {
         if (!inner) return;
+        /* modern 是栅格：内层尺寸由 CSS 决定，别再按自由坐标算画布大小。 */
+        if (isModernSkin()) {
+          inner.style.width = '';
+          inner.style.height = '';
+          return;
+        }
         if (board.clientWidth < 560) {
           inner.style.width = '';
           inner.style.height = '';
@@ -14264,6 +18900,125 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           }
           updateBoardSize();
         }
+      }
+
+      /* ---------- modern：拖动选位排序 ---------- */
+
+      /* 落位：先算目标插入位，再走公开的 reorderStickies（校验全集、只调数组顺序、不改 z）。 */
+      function applyReorder(dragId, targetId, side) {
+        var ids = boardItems().map(function (s) { return s.id; });
+        var before = ids.slice();
+        var from = ids.indexOf(dragId);
+        if (from === -1) return false;
+        ids.splice(from, 1);
+        var to = ids.indexOf(targetId);
+        if (to === -1) return false;
+        if (side === 'after') to += 1;
+        if (to < 0) to = 0;
+        if (to > ids.length) to = ids.length;
+        ids.splice(to, 0, dragId);
+        if (ids.every(function (id, index) { return id === before[index]; })) return false;
+        var written = P.data.reorderStickies(ids);
+        if (!written) return false;
+        rebuildBoard();
+        announceStickyMove(dragId, ids);
+        return true;
+      }
+
+      /* 指针排序：起手在标题栏/把手；移动时给目标卡画 before/after 插入线；
+         松手才落盘；pointercancel 只清状态、不写数据（回到拖动前的顺序）。 */
+      function beginReorder(event, card) {
+        if (!isModernSkin()) return;
+        if (event.button !== 0 && event.pointerType === 'mouse') return;
+        /* 起手就在把手上，正文不该被拖选：整段排序手势期间关掉选区，
+           松手/cancel 时还原（见 finish）。只作用于现代便签排序。 */
+        document.documentElement.classList.add('is-sticky-ordering');
+        var startX = event.clientX;
+        var startY = event.clientY;
+        var started = false;
+        var target = null;
+
+        function clearMarks() {
+          if (!inner) return;
+          inner.querySelectorAll('.is-drop-before, .is-drop-after').forEach(function (node) {
+            node.classList.remove('is-drop-before', 'is-drop-after');
+          });
+        }
+
+        function setTarget(next) {
+          if (target && next && target.id === next.id && target.side === next.side) return;
+          clearMarks();
+          target = next;
+          if (!target) return;
+          var host = cards.get(target.id);
+          if (host && host.el) host.el.classList.add(target.side === 'before' ? 'is-drop-before' : 'is-drop-after');
+        }
+
+        function onMove(ev) {
+          var dx = ev.clientX - startX;
+          var dy = ev.clientY - startY;
+          if (!started) {
+            if (Math.abs(dx) + Math.abs(dy) < 8) return;
+            started = true;
+            card.el.classList.add('is-dragging');
+            card.el.setAttribute('aria-grabbed', 'true');
+            /* 拖起的卡片跟手之后正好压在指针下面；不摘掉它的命中，下面的
+               elementFromPoint 永远命中自己，插入线不会出现、松手也不排序。 */
+            card.el.style.pointerEvents = 'none';
+          }
+          /* 拖动中的卡片跟着指针走（相对自己的格子偏移），松手清零回到栅格。 */
+          card.el.style.left = Math.round(dx) + 'px';
+          card.el.style.top = Math.round(dy) + 'px';
+          var hit = document.elementFromPoint(ev.clientX, ev.clientY);
+          var host = hit && hit.closest ? hit.closest('.sticky') : null;
+          if (!host || host === card.el) { setTarget(null); return; }
+          var rect = host.getBoundingClientRect();
+          var offsetX = ev.clientX - (rect.left + rect.width / 2);
+          var offsetY = ev.clientY - (rect.top + rect.height / 2);
+          var before = Math.abs(offsetX) > Math.abs(offsetY) ? offsetX < 0 : offsetY < 0;
+          setTarget({ id: host.getAttribute('data-id'), side: before ? 'before' : 'after' });
+          ev.preventDefault();
+        }
+
+        function finish(commit) {
+          offMove();
+          offUp();
+          offCancel();
+          document.documentElement.classList.remove('is-sticky-ordering');
+          card.el.classList.remove('is-dragging');
+          card.el.removeAttribute('aria-grabbed');
+          card.el.style.left = '';
+          card.el.style.top = '';
+          card.el.style.pointerEvents = '';
+          var picked = target;
+          setTarget(null);
+          if (!started || !commit || !picked) return;
+          applyReorder(card.id, picked.id, picked.side);
+        }
+
+        var offMove = ctx.on(document, 'pointermove', onMove, { passive: false });
+        var offUp = ctx.on(document, 'pointerup', function () { finish(true); });
+        var offCancel = ctx.on(document, 'pointercancel', function () { finish(false); });
+      }
+
+      /* 键盘排序：和拖动走同一个 reorderStickies，落盘 + 播报 + 焦点留在原卡。 */
+      function moveStickyByKeyboard(id, delta) {
+        var ids = boardItems().map(function (s) { return s.id; });
+        var at = ids.indexOf(id);
+        if (at === -1) return false;
+        var next = at + delta;
+        if (next < 0 || next >= ids.length) return false;
+        ids.splice(at, 1);
+        ids.splice(next, 0, id);
+        var written = P.data.reorderStickies(ids);
+        if (!written) return false;
+        rebuildBoard();
+        var card = cards.get(id);
+        if (card && card.el) {
+          try { card.el.focus({ preventScroll: true }); } catch (err) { card.el.focus(); }
+        }
+        announceStickyMove(id, ids);
+        return true;
       }
 
       function newSticky() {
@@ -17030,8 +21785,14 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         });
       }
 
+      /* 皮肤显示名：值只有两个语义 id，名字来自冻结命名（02 §1）。 */
+      function skinLabel(id) {
+        return id === 'modern' ? '原生柔光' : '纸屿经典';
+      }
+
       function updateToneButtons() {
         var prefs = P.data.getPrefs();
+        if (refs.skinNow) refs.skinNow.textContent = skinLabel(P.skinModel.normalize(prefs.skin));
         if (refs.textureToggle) {
           refs.textureToggle.setAttribute('aria-pressed', prefs.paperTexture === false ? 'false' : 'true');
         }
@@ -17247,6 +22008,13 @@ html[data-theme="dark"] .priority-popover__item.is-active {
 
       function buildAppearance() {
         return '<h2 class="settings-section__title">外观</h2>' +
+          /* 02 §2 / 裁定 #1：界面皮肤是「一行 + 选择按钮」，点开与首次、升级完全相同的那张
+             双卡选择页（openSkinChooser 是唯一入口），不另设一个没有预览的下拉框。
+             这一行只读显示当前皮肤，值一律由 P.skinModel 归一后写入。 */
+          '<div class="setting-row setting-row--skin"><div class="setting-row__copy"><span class="setting-row__label">界面皮肤</span>' +
+          '</div>' +
+          '<div class="setting-row__control"><span class="skin-now" data-skin-now></span>' +
+          '<button class="paper-btn paper-btn--tiny" type="button" data-skin-choose>选择</button></div></div>' +
           /* 这一行的文案在 F() 里：它们是页面新增的静态字（语言 / 界面语言 / 中文 / 说明），
              走 en.templates.json（页面 owner）而不是 en.json（由页面抽取生成），
              构建按 F('…') 跳过静态替换，所以这些字不会在英文页里被二次翻译。 */
@@ -17260,12 +22028,14 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           '<div class="select-wrap"><select data-theme-select aria-label="配色方案">' +
           '<option value="system">跟随 DSH</option><option value="light">浅色</option><option value="dark">深色</option>' +
           '</select></div></div>' +
-          '<div class="setting-row"><div class="setting-row__copy"><span class="setting-row__label">便签字形</span>' +
+          /* 04 §7：纸纹与便签字形是经典专属。现代不显示这两个无效果开关，
+             但 DOM 与取值都留着（aria-pressed / prefs 不动），切回经典立刻恢复。 */
+          '<div class="setting-row" data-classic-only><div class="setting-row__copy"><span class="setting-row__label">便签字形</span>' +
           '</div>' +
           '<div class="select-wrap"><select data-hand-select aria-label="便签字形">' +
           '<option value="kai">霞鹜文楷（内置）</option><option value="xing">系统行楷</option><option value="serif">纸张宋体</option>' +
           '</select></div></div>' +
-          '<div class="setting-row"><div class="setting-row__copy"><span class="setting-row__label">纸纹</span>' +
+          '<div class="setting-row" data-classic-only><div class="setting-row__copy"><span class="setting-row__label">纸纹</span>' +
           '</div>' +
           '<button class="toggle" type="button" data-texture-toggle aria-pressed="true" aria-label="显示纸张纹理"></button></div>' +
           '<div class="setting-row"><div class="setting-row__copy"><span class="setting-row__label">应用坞顺序</span>' +
@@ -17339,6 +22109,9 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           '<span class="settings-version">v' + P.version + '</span></div>' +
           '<div class="settings-layout">' +
           '<nav class="settings-nav" role="tablist" aria-label="设置分区" data-nav>' +
+          /* Demo 的左栏品牌块：现代用它接替被收起的 settings-head，版本仍来自 P.version。
+             role=presentation 让它不打断 tablist 的语义。 */
+          '<div class="settings-nav-brand" role="presentation"><strong>设置</strong><small>v' + P.version + '</small></div>' +
           '<button type="button" role="tab" data-section="commands" aria-selected="true">命令与应用</button>' +
           '<button type="button" role="tab" data-section="appearance" aria-selected="false" tabindex="-1">外观</button>' +
           '<button type="button" role="tab" data-section="workspace" aria-selected="false" tabindex="-1">数据与备份</button>' +
@@ -17357,6 +22130,8 @@ html[data-theme="dark"] .priority-popover__item.is-active {
         refs.content = root.querySelector('[data-content]');
         refs.commandInput = root.querySelector('[data-command-input]');
         refs.commandResults = root.querySelector('[data-command-results]');
+        refs.skinNow = root.querySelector('[data-skin-now]');
+        refs.skinChoose = root.querySelector('[data-skin-choose]');
         refs.textureToggle = root.querySelector('[data-texture-toggle]');
         refs.gridToggle = root.querySelector('[data-grid-toggle]');
         refs.motionSelect = root.querySelector('[data-motion-select]');
@@ -17394,6 +22169,13 @@ html[data-theme="dark"] .priority-popover__item.is-active {
           });
         });
         bindCommands();
+        if (refs.skinChoose) {
+          refs.skinChoose.addEventListener('click', function () {
+            /* 唯一入口：K1 的 openSkinChooser。确认与关闭仍走它自己的 finishSkinChoice，
+               这里既不复制卡片也不复制关闭逻辑。 */
+            if (P.shell && typeof P.shell.openSkinChooser === 'function') P.shell.openSkinChooser('manual');
+          });
+        }
         var dockReset = root.querySelector('[data-dock-reset]');
         if (dockReset) {
           dockReset.addEventListener('click', function () {
@@ -17517,8 +22299,6 @@ html[data-theme="dark"] .priority-popover__item.is-active {
   }
   function dismissWelcome() {
     P.data.setPrefs({ welcomeDismissed: true });
-    var cardEl = document.getElementById('first-run');
-    if (cardEl) cardEl.hidden = true;
   }
   function openStickies() {
     P.wm.open('stickies');
@@ -17541,7 +22321,15 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     },
     {
       title: '窗口怎么操作',
-      body: F('拖<b>标题栏</b>移动窗口，拖右下角缩放。没有缩小/放大/关闭按钮：点底部应用坞图标可最小化或恢复，房子按钮一次收好全部窗口，按 Esc 关闭当前窗口。', {}),
+      /* 两套皮肤的标题栏不一样：经典没有收起/关闭按钮，现代有（K2）。
+         同一句导览不能两边都说错，所以按当前皮肤取对应那半句。 */
+      body: function () {
+        var head = F('拖<b>标题栏</b>移动窗口，拖右下角缩放。', {});
+        if (document.documentElement.getAttribute('data-skin') === 'modern') {
+          return head + F('标题栏右边的按钮可以收起或关闭窗口；也可以点底部应用坞图标最小化或恢复，房子按钮一次收好全部窗口，按 Esc 关闭当前窗口。', {});
+        }
+        return head + F('没有缩小/放大/关闭按钮：点底部应用坞图标可最小化或恢复，房子按钮一次收好全部窗口，按 Esc 关闭当前窗口。', {});
+      },
       target: function () { var win = findWindow(); return win ? win.querySelector('.window__titlebar') : null; },
       placement: 'bottom',
       before: function () { openStickies(); }
@@ -17670,7 +22458,7 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     var step = steps[index];
     kickerEl.textContent = '新手导览 · ' + (index + 1) + ' / ' + steps.length;
     titleEl.textContent = step.title;
-    bodyEl.innerHTML = step.body;
+    bodyEl.innerHTML = typeof step.body === 'function' ? step.body() : step.body;
     dots();
     prevBtn.disabled = index === 0;
     nextBtn.textContent = index === steps.length - 1 ? '开始使用' : '下一步';
@@ -17746,14 +22534,28 @@ html[data-theme="dark"] .priority-popover__item.is-active {
   function snapshot() {
     try { return P.storage.capture ? P.storage.capture() : P.data.snapshotData(); } catch (err) { return null; }
   }
+  /* 只读工作区（损坏 / 来自更新版本 / 读取失败）在页面侧就不许发 save：
+     光靠 storage.blocked 不够，因为 pagehide 与 flush-now 仍会把快照交给宿主。 */
+  function isReadOnly() {
+    return !!(P.storage && P.storage.blocked);
+  }
   function postReady() {
     if (readyPosted) return;
     readyPosted = true;
-    send('ready', { snapshot: window.__SCHEDULE_HOST_SNAPSHOT__ || snapshot() });
+    lastReadOnly = isReadOnly();
+    send('ready', { snapshot: window.__SCHEDULE_HOST_SNAPSHOT__ || snapshot(), readOnly: isReadOnly() });
   }
   function postSave() {
+    if (isReadOnly()) return;
     var snap = snapshot();
     if (snap) send('save', { snapshot: snap });
+  }
+  var lastReadOnly = null;
+  function postStatus() {
+    var next = isReadOnly();
+    if (next === lastReadOnly) return;
+    lastReadOnly = next;
+    send('status', { readOnly: next });
   }
   window.__SCHEDULE_RESTART__ = function (payload) { send('restart', payload || {}); };
   /* 宿主拆 iframe 之前会要一份"现在就存"的快照（flush-now）。
@@ -17772,13 +22574,15 @@ html[data-theme="dark"] .priority-popover__item.is-active {
     }
     if (data.type !== 'dsh-plugin-control-your-schedule:flush-now') return;
     try {
-      if (P.storage && typeof P.storage.flushNow === 'function') P.storage.flushNow();
+      if (P.storage && typeof P.storage.flushNow === 'function' && !isReadOnly()) P.storage.flushNow();
     } catch (err) { /* best effort */ }
     var snap = snapshot();
-    if (snap) send('snapshot', { snapshot: snap });
+    if (snap) send('snapshot', { snapshot: snap, readOnly: isReadOnly() });
   });
   P.storage.subscribeData(function (status) {
     if (status.phase === 'saved') postSave();
+    /* 只读状态在运行中变化（例如恢复会话后校验失败）也必须同步给外壳。 */
+    postStatus();
   });
   window.addEventListener('pagehide', postSave);
   document.addEventListener('visibilitychange', function () {

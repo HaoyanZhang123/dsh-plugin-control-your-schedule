@@ -78,6 +78,21 @@ window.__ModuleLoader__.load({
       return hostPrefersDark() ? 'dark' : 'light';
     }
 
+    /* First-frame skin. The page draws the classic desk until boot finishes, so
+       the skin has to be on <html> before the srcdoc lands: otherwise a modern
+       workspace flashes the paper desk for a frame. Whitelist only, like
+       prefs.lang and prefs.theme; a missing or unknown value means classic. */
+    function firstFrameSkin(snapshot) {
+      return resolveSkin(snapshot);
+    }
+
+    /* One whitelist for every shell surface: the first frame and the composer
+       entry's own chrome read the same resolver, so they can never disagree. */
+    function resolveSkin(snapshot) {
+      var prefs = snapshot && snapshot.prefs;
+      return prefs && prefs.skin === 'modern' ? 'modern' : 'classic';
+    }
+
     /* macOS puts the window traffic lights above the panel: DSH publishes the
        reserved height as --dsh-frame-top-clearance on html[data-platform=darwin].
        The frame is inset:0 now, so the value travels into the page as
@@ -105,11 +120,11 @@ window.__ModuleLoader__.load({
       return JSON.stringify(value).replace(/</g, '\\u003c');
     }
 
-    function firstFramePage(page, theme, clearance) {
+    function firstFramePage(page, theme, clearance, skin) {
       return page.replace(/<html\b([^>]*)>/i, function (match, attrs) {
-        var next = String(attrs).replace(/\sdata-theme="[^"]*"/i, '').replace(/\sstyle="[^"]*"/i, '');
+        var next = String(attrs).replace(/\sdata-theme="[^"]*"/i, '').replace(/\sdata-skin="[^"]*"/i, '').replace(/\sstyle="[^"]*"/i, '');
         var style = clearance ? ' style="--cys-top-clearance:' + clearance + '"' : '';
-        return '<html' + next + ' data-theme="' + theme + '"' + style + '>';
+        return '<html' + next + ' data-theme="' + theme + '" data-skin="' + skin + '"' + style + '>';
       });
     }
 
@@ -121,7 +136,7 @@ window.__ModuleLoader__.load({
         + ';window.__SCHEDULE_HOST_SNAPSHOT__=' + (snapshot ? escapeInline(snapshot) : 'null')
         + ';window.__SCHEDULE_LANG__=' + escapeInline(lang)
         + ';</' + 'script>';
-      var page = firstFramePage(basePage(lang), firstFrameTheme(snapshot), hostTopClearance());
+      var page = firstFramePage(basePage(lang), firstFrameTheme(snapshot), hostTopClearance(), firstFrameSkin(snapshot));
       return page.replace('<script>', boot + '<script>');
     }
     /* @shell-theme-end */
@@ -223,6 +238,29 @@ window.__ModuleLoader__.load({
     function publishSnapshot(snapshot) {
       latestSnapshot = snapshot || null;
       refreshUiLang();
+      refreshUiSkin();
+    }
+
+    /* The desk's skin also drives the composer entry's chrome. Same pattern as
+       uiLang: one resolver, one listener list, no second source of truth. */
+    var uiSkin = 'classic';
+    var uiSkinListeners = [];
+
+    function onUiSkin(listener) {
+      uiSkinListeners.push(listener);
+      return function () {
+        var index = uiSkinListeners.indexOf(listener);
+        if (index !== -1) uiSkinListeners.splice(index, 1);
+      };
+    }
+
+    function refreshUiSkin() {
+      var next = resolveSkin(latestSnapshot);
+      if (next === uiSkin) return;
+      uiSkin = next;
+      uiSkinListeners.slice().forEach(function (listener) {
+        try { listener(next); } catch (err) { /* one listener must not starve the rest */ }
+      });
     }
 
     function publishHostLang(next) {
@@ -278,6 +316,15 @@ window.__ModuleLoader__.load({
       '.cys-prompt-pop__link{border:0;background:transparent;color:var(--dsw-alias-state-business-primary,#2b6cb0);font:inherit;font-size:12px;line-height:18px;cursor:pointer;padding:2px 4px;border-radius:var(--dsw-radius-sm,4px);}',
       '.cys-prompt-pop__link:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(0,0,0,.05));}',
       '.cys-prompt-pop__hint{padding:14px 12px;color:var(--dsw-alias-label-tertiary);font-size:12.5px;line-height:19px;text-align:center;}',
+      // Modern skin (0.6.0): the composer chip and its popup follow the desk's
+      // native-soft language. Host tokens only — the shell still paints no plugin
+      // colour, and classic keeps every value above untouched.
+      '.cys-prompt-root[data-cys-skin="modern"] .cys-prompt-btn{height:28px;padding:0 9px;border-radius:10px;color:var(--dsw-alias-label-secondary,inherit);background:var(--dsw-alias-bg-layer-2,transparent);}',
+      '.cys-prompt-root[data-cys-skin="modern"] .cys-prompt-btn:hover,.cys-prompt-root[data-cys-skin="modern"] .cys-prompt-btn[aria-expanded="true"]{background:var(--dsw-alias-interactive-bg-hover,transparent);color:var(--dsw-alias-label-primary,inherit);}',
+      '.cys-prompt-root[data-cys-skin="modern"] .cys-prompt-pop{width:340px;border-radius:14px;}',
+      '.cys-prompt-root[data-cys-skin="modern"] .cys-prompt-pop__head{padding:10px 13px;}',
+      '.cys-prompt-root[data-cys-skin="modern"] .cys-prompt-pop__item{border-radius:8px;padding:8px 10px;}',
+      '.cys-prompt-root[data-cys-skin="modern"] .cys-prompt-pop__foot{padding:8px 12px;}',
     ].join('');
 
     function ensureStyle() {
@@ -430,11 +477,18 @@ window.__ModuleLoader__.load({
       var listRef = React.useRef(null);
       var returnFocusRef = React.useRef(null);
       var [, setLangTick] = React.useState(0);
+      var [, setSkinTick] = React.useState(0);
 
       /* A host language switch does not remount this component, and the template
          function is live, so one render pass is all the translated text needs. */
       React.useEffect(function () {
         return onUiLang(function () { setLangTick(function (value) { return value + 1; }); });
+      }, []);
+
+      /* A skin switch inside the desk arrives as an ordinary snapshot save. The
+         chip re-renders from the same resolver the first frame used. */
+      React.useEffect(function () {
+        return onUiSkin(function () { setSkinTick(function (value) { return value + 1; }); });
       }, []);
 
       /* The composer popup always asks for a fresh copy (the desk page may have
@@ -622,7 +676,7 @@ window.__ModuleLoader__.load({
             onClick: function () { close(); openDesk('prompts'); },
           }, textFor(uiLang, 'prompt.manage')))) : null;
 
-      return React.createElement('span', { className: 'cys-prompt-root', ref: rootRef },
+      return React.createElement('span', { className: 'cys-prompt-root', ref: rootRef, 'data-cys-skin': uiSkin },
         React.createElement('button', {
           type: 'button',
           className: 'cys-prompt-btn',
@@ -676,6 +730,9 @@ window.__ModuleLoader__.load({
           disposed: false,
           hostMode: false,
           hadSnapshot: false,
+          /* 页面在 ready / status 里告诉我们工作区是否只读（损坏、来自更新版本、
+             读取失败都会进只读）。只读时外壳一次写入都不许发 —— 05 §6 的硬边界。 */
+          readOnly: false,
           iframe: null,
           timer: 0,
           pending: null,
@@ -738,6 +795,11 @@ window.__ModuleLoader__.load({
             clearTimeout(bridge.timer);
             bridge.timer = 0;
           }
+          /* 只读工作区：连排队的快照也不许落盘，更不能重试。 */
+          if (bridge.readOnly) {
+            bridge.pending = null;
+            return;
+          }
           var snapshot = bridge.pending;
           if (!snapshot) return;
           bridge.pending = null;
@@ -763,6 +825,11 @@ window.__ModuleLoader__.load({
           /* Whatever the page last told us is the newest state any surface can
              render from, the composer entry included. */
           publishSnapshot(snapshot);
+          /* 只读：最多更新当前展示快照，不排 POST、不设 pending。 */
+          if (bridge.readOnly) {
+            bridge.pending = null;
+            return;
+          }
           if (!bridge.hostMode) return;
           bridge.pending = snapshot;
           if (bridge.timer) return;
@@ -795,7 +862,11 @@ window.__ModuleLoader__.load({
           var cleared = !!(payload && payload.cleared);
           var snapshot = cleared ? null : (payload && payload.snapshot ? payload.snapshot : null);
           if (bridge.hostMode) {
-            if (cleared) {
+            if (bridge.readOnly) {
+              /* 只读工作区：restart 只换展示，不 DELETE 也不 POST。 */
+              bridge.pending = null;
+              bridge.lastBody = '';
+            } else if (cleared) {
               bridge.pending = null;
               bridge.lastBody = '';
               hostFetch('DELETE').then(function (response) {
@@ -820,11 +891,18 @@ window.__ModuleLoader__.load({
           if (!data || typeof data.type !== 'string' || data.type.indexOf(PREFIX) !== 0) return;
           var kind = data.type.slice(PREFIX.length);
           if (kind === 'ready') {
+            bridge.readOnly = data.readOnly === true;
             setPhase('ready');
             if (data.snapshot) publishSnapshot(data.snapshot);
             if (bridge.hostMode && !bridge.hadSnapshot && data.snapshot) queueSave(data.snapshot);
             /* A deep link may have been requested before this frame existed. */
             if (pendingApp) deliverPendingApp();
+            return;
+          }
+          if (kind === 'status') {
+            /* 只读状态在运行中变化：外壳必须跟着变，不能只在启动时读一次。 */
+            bridge.readOnly = data.readOnly === true;
+            if (bridge.readOnly) bridge.pending = null;
             return;
           }
           if (kind === 'save') {
@@ -833,6 +911,7 @@ window.__ModuleLoader__.load({
           }
           if (kind === 'snapshot') {
             /* 页面在卸载前主动推来的一份最新快照（同步路径）。 */
+            if (data.readOnly === true) bridge.readOnly = true;
             if (bridge.finalSnapshotResolver) {
               bridge.finalSnapshotResolver(true);
               bridge.finalSnapshotResolver = null;

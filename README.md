@@ -1,222 +1,215 @@
-# 纸屿 · dsh-plugin-control-your-schedule
+<p align="center">
+  <img src="assets/banner-modern.webp" alt="Paper Isle: a paper desk and a native soft-light desk, side by side" width="100%">
+</p>
 
-<img width="1800" height="600" alt="纸屿：把零散的今天，整理成一张纸" src="assets/banner.webp">
+<h1 align="center">Paper Isle</h1>
+<p align="center">Sticky notes, paper pages, calendar tasks, drawings and a reusable prompt library on one desk inside DSH.</p>
+<p align="center"><a href="README.zh.md">中文</a></p>
 
-<p align="center">把零散的今天，整理成一张纸。<br>
-<a href="README.en.md">English</a> · <a href="#安装">安装</a> · <a href="#使用">使用</a> · <a href="#核心特性">功能</a> · <a href="#许可证">许可证</a></p>
+> panel plugin v0.6.0
 
-[![ci](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/actions/workflows/ci.yml/badge.svg)](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/actions/workflows/ci.yml)
-[![release](https://img.shields.io/github/v/release/HaoyanZhang123/dsh-plugin-control-your-schedule)](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/releases)
-[![npm](https://img.shields.io/npm/v/dsh-plugin-control-your-schedule)](https://www.npmjs.com/package/dsh-plugin-control-your-schedule)
-[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+<p align="center">
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-%E2%89%A522-339933" alt="Node.js 22 or newer"></a>
+  <a href="https://developer.mozilla.org/docs/Web/JavaScript"><img src="https://img.shields.io/badge/JavaScript-ES2022-f7df1e" alt="JavaScript ES2022"></a>
+  <a href="https://developer.mozilla.org/docs/Web/API/IndexedDB_API"><img src="https://img.shields.io/badge/IndexedDB-local%20cache-4f7cac" alt="IndexedDB local cache"></a>
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.12-3776AB" alt="Python 3.12"></a>
+</p>
 
-[![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A522-339933)](https://nodejs.org/)
-[![JavaScript](https://img.shields.io/badge/JavaScript-ES2022-f7df1e)](https://developer.mozilla.org/docs/Web/JavaScript)
-[![IndexedDB](https://img.shields.io/badge/IndexedDB-local%20cache-4f7cac)](https://developer.mozilla.org/docs/Web/API/IndexedDB_API)
-[![Python](https://img.shields.io/badge/Python-3.12-3776AB)](https://www.python.org/)
+<p align="center">
+  <a href="https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/actions/workflows/ci.yml"><img src="https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <a href="https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/releases"><img src="https://img.shields.io/github/v/release/HaoyanZhang123/dsh-plugin-control-your-schedule" alt="Latest release"></a>
+  <a href="https://www.npmjs.com/package/dsh-plugin-control-your-schedule"><img src="https://img.shields.io/npm/v/dsh-plugin-control-your-schedule" alt="npm version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
+</p>
 
-当前版本 **0.5.2** · 开发依据 DSH **0.2.1-rc.2** · Windows 实测，macOS / Linux 由 CI 构建与静态门禁覆盖 | 界面中英双语 | 语言：[English](README.en.md)
+## Overview
 
-> 面板插件 v0.5.2
+Paper Isle is a sidebar panel plugin for DeepSeek Harness. It puts a personal desk into the left panel: **sticky notes, paper pages, calendar tasks, drawings and a reusable prompt library** live in one place, windows move and resize freely, everything saves itself, and the data never leaves your machine.
 
-## 简介
+It stays quiet on purpose: no floating toasts, no empty status rows, a theme that follows DSH, and a dark mode rebuilt for paper. It is for people who want a local, offline, exportable workspace without leaving DSH.
 
-纸屿（Paper Isle）是 DeepSeek Harness 的侧栏面板插件：一张纸面风格的个人工作台，把**便签、纸页笔记、日历待办、画纸和常用提示词**放进同一个桌面。窗口可以自由移动、缩放，内容自动保存，数据只留在本机。
+## Features
 
-它刻意保持安静：不弹浮层提示，没有内容的状态行不占位，主题跟随 DSH，深色也按纸的层次重做过。适合想要一个本地、离线、可导出的轻量工作台，又不想离开 DSH 的人。
+### Two skins, one product
 
-<img width="1400" alt="纸屿：一张纸面桌面" src="assets/screenshot-home.webp">
+Since 0.6.0 there are two skins with identical features, only the look differs: **Paper Isle Classic** (`classic`, the default for existing workspaces — paper surface, handwriting, freely placed notes) and **Native Glow** (`modern` — no tape, stamp or paper grain; a very light blue-violet / teal ambience; DSH-native tokens; sticky notes become an ordered grid you can drag, or reorder with `Alt + ←/→`).
 
-## 核心特性
+Switch in Settings → Appearance → "Desk look". It applies instantly without a page reload; windows, unsaved edits, search terms, the selected calendar day and the current drawing page all survive. A fresh install asks once, each upgrade asks once more, and "Don't remind me again" stops it for good.
 
-下面 8 张截图对应六个应用与深浅两档界面，均按当前版本实机渲染。
+<img width="1400" alt="The skin chooser on a fresh install: each card carries a real preview of the desk" src="assets/screenshot-modern-skin-choice.webp">
 
-### 便签
+### Sticky notes
 
-- 短句速记，自动保存；**整张纸都能拖着走**（正文、滚动条、色块、删除键除外），最后碰过的那张永远在最上面。
-- 正文默认使用内置**霞鹜文楷**手写体，可在设置里换成系统行楷或纸张宋体。
-- **废纸篓**：删掉的便签不弹「撤销」提示，而是进便签窗口顶部的废纸篓，**留 7 天**，随时放回去；空便签直接丢弃。
+- Short thoughts, saved automatically; **the whole sheet can be dragged** (except the body text, scrollbar, colour swatches and delete button), and the one you touched last stays on top.
+- The body uses the bundled **LXGW WenKai** handwriting face; you can switch to a system face or a paper serif in Settings.
+- **The trash keeps notes for 7 days** instead of showing an undo toast — deleted notes land in the trash at the top of the sticky window and can be put back at any time. Empty notes are dropped immediately.
 
-<img width="1400" alt="便签：整张纸可拖动，废纸篓保留 7 天" src="assets/screenshot-stickies.webp">
+<img width="1400" alt="Native Glow sticky grid: a drag in progress shows an insert line" src="assets/screenshot-modern-stickies-drag.webp">
 
-### 纸页笔记
+### Paper pages
 
-- 长文写作，左侧列表搜索/切换，自动保存。
-- 新纸页的标题像正文一样是 placeholder，不写字不会留下一行「未命名纸页」。
-- **可以置顶**：编辑器工具栏「置顶 / 取消置顶」（带 `aria-pressed`），置顶页排在最前，其余仍按新建时间倒序；列表行有置顶徽标，刷新、导出导入、旧快照迁移后都保留。
+- Long-form writing with a searchable page list on the left and auto-save.
+- A new page's title is a placeholder, not a line of literal "Untitled page".
+- **Pinning**: the editor toolbar has Pin / Unpin with `aria-pressed`; pinned pages sort first, the rest stay newest-first. Pinning survives reload, export/import and migration.
 
-<img width="1400" alt="纸页笔记：无面包屑，工具栏可置顶" src="assets/screenshot-notes.webp">
+<img width="1400" alt="Paper pages: list, editor and the pin action in the toolbar" src="assets/screenshot-modern-notes.webp">
 
-### 日历与待办
+### Calendar and tasks
 
-- 每件事有**四档紧急程度**（重要且紧急 / 重要但不紧急 / 紧急但不重要 / 不紧急也不重要），**在待办行右侧就地切换**：点色点弹出四档选择（选中即生效），点旁边的胶囊在「今日 / 每天」之间切换，都不用进详情。
-- **日历圆点**：未完成的点在上、按档位着色；完成的点沉到格子底部并变灰，位置固定不换位。
-- **持久待办**：选「每天」后，从锚定日起每天出现一条当前实例，今天打卡后第二天自动长出一条未完成的新实例；日历上只留真正打过卡的日子（灰点），未来不铺。勾完当天会出现「这件事算结束了」，收起后不再长新实例、随时可恢复，并显示「打卡 N 天」。
+- Every task has **four urgency levels** (urgent and important / important / urgent / none), switched **in place** on the task row without opening a detail dialog.
+- **Calendar dots**: unfinished dots sit under the day number and take the level colour; finished dots sink to the bottom of the cell and turn neutral.
+- **Persistent tasks**: a "daily" task reappears once a day from its anchor date; checking in today grows a new unfinished instance tomorrow, while the calendar only shows days you actually checked in. Future dates are never pre-filled. Finishing the run shows "this one is done", stops new instances and can be restored at any time.
 
-<img width="1400" alt="日历与待办：周一至周日表头、四档色点" src="assets/screenshot-calendar.webp">
+<img width="1400" alt="Calendar: Monday-first month grid with four-colour urgency dots and the task list" src="assets/screenshot-modern-calendar.webp">
 
-### 提示词库与对话入口
+### Prompt library and composer entry
 
-- **提示词库**：应用坞第 5 个应用，内置 5 条示例提示词（含「深层」「沟通原则」）。左列表搜索、置顶优先；右编辑器写标题与多行正文，自动保存。正文上限 20000 字，最多 300 条。新建/复制一条/置顶/删除，删除有确认。
-- **对话里随取随用**：每个对话输入框工具行左侧有一个「提示词」小按钮，点开上方弹出列表，`↑↓` 选择、`Enter` 填入、`Esc` 关闭。**只填进草稿**：草稿为空时整段填入，非空时插到光标处（单步可撤销），输入框正在发送会提示稍后再试。不写系统提示词、不自动发送。点「在便签里管理 ↗」会切到纸屿并打开提示词窗口。
+- **Library**: the fifth dock app, seeded with five sample prompts. Search and pin from the list, edit title and multi-line body on the right, auto-saved. Body limit 20,000 characters, up to 300 prompts. New / duplicate / pin / delete, with confirmation on delete.
+- **Use it while chatting**: every composer has a small "Prompts" button on the left of its tool row. It opens a list above the input; `↑↓` selects, `Enter` fills, `Esc` closes. **It only fills the draft**: an empty draft receives the whole prompt, a non-empty one gets an insert at the caret (single-step undo); a sending composer asks you to try again in a moment. It never writes the system prompt and never sends by itself.
 
-<img width="1400" alt="提示词库：动作按钮靠右，无标题行" src="assets/screenshot-prompts.webp">
+<img width="1400" alt="Prompt library with search, pinned rows and the editor" src="assets/screenshot-modern-prompts.webp">
 
-### 画纸
+### Drawing paper
 
-- 手写/绘画，支持撤销、橡皮、导出 PNG；画纸簿可左右翻页，也能整张删掉。
+- Freehand drawing with undo/redo, eraser, brush colours and four tip sizes, clear page, delete whole page and export to PNG; the booklet flips left/right and remembers the current page.
 
-<img width="1400" alt="画纸：示例画与工具栏" src="assets/screenshot-draw.webp">
+<img width="1400" alt="Drawing paper with booklet, tools and canvas" src="assets/screenshot-modern-draw.webp">
 
-### 桌面、窗口与应用坞
+### Desk, windows and dock
 
-- **今日纸签**：宽面板（>820px）时固定在右侧，窗口不会被遮住；窄面板下自动让位，把整幅宽度留给窗口。
-- **底部应用坞**：所有应用的唯一入口；点图标打开/收起窗口；**图标可以拖动排序**（聚焦后按 `Alt + ←/→` 也能挪，顺序会记住；设置 → 外观 →「恢复默认」还原）；最右边的房子按钮一键收好全部窗口，再点一次恢复。
-- **点桌面收好**：点击窗口外的空白桌面，也会把全部窗口收进应用坞（不销毁窗口，点图标可恢复）。
-- **命令与应用**：设置左栏第一项，`Ctrl/Cmd + K` 直达。搜索应用、纸页或动作，`↑↓` 选择、`Enter` 执行；打开别的窗口后设置会自动收起，不挡路。
-- **纯净窗口**：没有最小化/最大化/关闭三件套；拖标题栏移动，拖右下角缩放。关闭当前窗口用 `Esc`、`Ctrl/Cmd + Alt + W`，或「设置 → 命令与应用 → 关闭当前窗口」。
-- **新手导览**：首次打开自动播放 6 步导览；可在「设置 → 教程 → 新手导览」重播。
+- **Today card** on the right of a wide desk so windows never cover it; it steps aside on narrow panels.
+- **Dock**: the only entry point to the apps; click toggles a window; **icons can be dragged to reorder** (or `Alt + ←/→` when focused; the order is remembered and can be reset in Settings → Appearance). The house button gathers every window, and pressing it again restores them.
+- **Clicking empty desk** also gathers all windows into the dock (nothing is destroyed).
+- **Commands and apps**: the first item in Settings, reachable with `Ctrl/Cmd + K`; search apps, pages or actions, `↑↓` to select, `Enter` to run.
+- **Windows**: Classic has no minimise / maximise / close triple; drag the title bar to move and the bottom-right corner to resize; close with `Esc`, `Ctrl/Cmd + Alt + W` or the command list. Native Glow adds explicit minimise and close buttons in the title bar, wired to the same window manager actions.
+- **First-run tour**: six steps, replayable from Settings → Tutorial.
 
-<img width="1400" alt="命令与应用：深色下的应用坞与命令面板" src="assets/screenshot-commands-dark.webp">
+### Theme and appearance
 
-### 主题与外观
+- **Colours follow DSH**: desk, windows, popovers and insets take the host's own colours and the DSH label scale; Follow DSH (default, live) / Light / Dark. The plugin only reads the host theme signal and never writes the host DOM.
+- **Dark mode was rebuilt**: paper grain is removed in dark mode and desk, windows and popovers sit on a real brightness ladder.
+- **Paper grain can be turned off**; paper grain and the hand-written sticky font are classic-only — hidden in Native Glow, values kept, restored on switch back.
 
-- **配色跟 DSH 一致**：桌面、窗口、浮层、凹槽这些大色块直接用宿主自己的颜色，文字按 DSH 的 label 阶梯取；**跟随 DSH**（默认，宿主切深色时面板实时跟着变，不用刷新）/ 浅色 / 深色三档可选。插件只读宿主主题信号，不写宿主 DOM，和别的皮肤插件不冲突。
-- **深色是重做过的**：深色下去掉纸纹噪点，桌面比窗口暗一档、浮层再亮一档；便签纸保留自己的颜色但提亮了明度，不再糊成一片。
-- **纸纹可关**：设置 → 外观 →「纸纹」。关掉是纯色底，打开有极细的纸颗粒。
+### Data and upgrades
 
-<img width="1400" alt="深色档：日历与今日纸签" src="assets/screenshot-calendar-dark.webp">
+- **Upgrades keep your data**: the workspace carries a version and a migration ladder (v1 → v4). The host writes `workspace.v<old>.backup.json` before a version change and keeps `workspace.prev.json` before every write. A workspace that fails validation opens **read-only** with the original stashed — it is never overwritten with the sample desk.
+- **Switching away and back** restores windows and what each app was looking at (selected page, calendar day, sticky scroll, drawing page, settings section).
 
-### 数据与升级
+## Installation
 
-- **升级不丢数据**：工作区带版本号与迁移阶梯，v1 → v2 → v3 → v4 自动升级（v3 新增提示词库，只做加法；v4 只新增纸页 `pinned` 字段，迁移只改 `version` 与 `meta`，不动数据）；Host 在写盘前会把旧版本另存为 `workspace.v<旧版本>.backup.json`，并在每次写入前留一份 `workspace.prev.json`。存储里的工作区若过不了校验，会**只读打开**并另存原稿，绝不拿示例桌面覆盖。
-- **切换不丢状态**：切到 DSH 其它界面再回来，窗口、以及每个应用正在看的东西（选中的纸页、日历停在哪天、便签滚到哪、画纸开哪张、设置哪个分区）都会复原。
+The plugin is installed into DSH itself. DSH does not auto-update installed plugins: upgrading means uninstalling and reinstalling.
 
-## 安装
+### From npm (recommended)
 
-### npm（推荐，一行包名）
+DSH → Plugins → Add plugin, then enter:
 
-DSH → Plugins → Add plugin，填：
-
-```
+```text
 dsh-plugin-control-your-schedule
 ```
 
-也可以带版本：`dsh-plugin-control-your-schedule@0.5.2`。
+A version can be pinned too: `dsh-plugin-control-your-schedule@0.6.0`.
 
-### GitHub（备选，不需要 npm 时）
+### From GitHub
 
-```
+```text
 https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule
 ```
 
-### 本地开发
+### From a local checkout
 
-DSH → Plugins → Add plugin，填本目录的**绝对路径**：
+Point Add plugin at the absolute path of this directory:
 
+```text
+<your checkout>/dsh-plugin-control-your-schedule
 ```
-<仓库路径>/dsh-plugin-control-your-schedule
-```
 
-> Add plugin 对本地路径只接受绝对路径；相对路径会被拒绝。
-> 已安装的插件不支持自动更新：升级 = 卸载后重装新版。
+After installing, "便签 / Notes" appears in the left sidebar under Plugins. If it does not, refresh the page; replacing an installed package requires restarting DSH.
 
-安装后左侧栏「插件 / 自动化任务」下面会出现「便签」。如果没有出现，刷新页面；替换已安装的包需要重启 DSH。
+## Usage
 
-> npm：<https://www.npmjs.com/package/dsh-plugin-control-your-schedule>
-
-## 使用
-
-| 想做什么 | 怎么做 |
+| Goal | How |
 |---|---|
-| 打开应用 | 点底部应用坞的图标，或按 `Ctrl/Cmd + K` 搜一下 |
-| 收起 / 恢复窗口 | 再点一次应用坞图标 |
-| 一次收好全部窗口 | 点房子按钮，或点窗口外的空白桌面 |
-| 关闭当前窗口 | `Esc` / `Ctrl/Cmd + Alt + W` / 设置 → 命令与应用 →「关闭当前窗口」 |
-| 应用坞换顺序 | 直接拖动图标；或聚焦图标后按 `Alt + ←/→` |
-| 重看新手导览 | 设置 → 教程 → 新手导览 →「重新播放」 |
-| 备份数据 | 设置 → 数据与备份 →「导出工作区」 |
+| Open an app | Click a dock icon, or press `Ctrl/Cmd + K` and search |
+| Collapse / restore a window | Click the same dock icon again |
+| Gather every window | Click the house button, or click empty desk |
+| Close the focused window | `Esc` / `Ctrl/Cmd + Alt + W` / Settings → Commands |
+| Reorder the dock | Drag an icon, or focus it and press `Alt + ←/→` |
+| New page / sticky / drawing / calendar | `Ctrl/Cmd + Alt + N / B / D / C` |
+| Save now | `Ctrl/Cmd + S` |
+| Replay the tour | Settings → Tutorial |
+| Back up data | Settings → Data → Export workspace |
 
-## 配置
+State is kept per app, so switching back to DSH and returning puts you where you left off.
 
-### 数据存在哪里
+## Configuration
 
-- **DSH 数据目录（主存储）**：`$DSH_HOME/control-your-schedule/workspace.json`
-  - Windows 默认：`C:\Users\<你>\.dsh\control-your-schedule\workspace.json`
-  - 如果设置了 `DSH_HOME`，以该目录为准。
-- **浏览器缓存（备用）**：IndexedDB / localStorage，用于页面快速启动。
-- 换设备时在设置里导出 JSON，再导入即可。
+### Where the data lives
 
-### 语言、主题与动效
+- **DSH data directory (primary)**: `$DSH_HOME/control-your-schedule/workspace.json` — on Windows that defaults to `%USERPROFILE%\.dsh\control-your-schedule\workspace.json`.
+- **Browser storage (fallback)**: IndexedDB / localStorage for a fast first paint.
+- Moving machines: export the workspace as JSON in Settings and import it on the other side.
 
-- 界面语言默认跟随 DSH「设置 → 通用 → 语言」，也可以在「纸屿设置 → 外观 → 语言」里单独选中文 / English；切语言时窗口与正在看的内容都会恢复。
-- 主题三档：跟随 DSH（默认）/ 浅色 / 深色；「动效」可选跟随系统或减少动画。
-- 纸纹、便签字形、桌面网格都在「设置 → 外观」。
+### Language, theme and motion
 
-## 兼容性
+- The UI follows DSH's own language setting by default; Settings → Appearance → Language pins Chinese or English for the desk only. Switching rebuilds the desk and restores what you were looking at.
+- Theme: Follow DSH (default) / Light / Dark. Motion: follow system or reduce animations.
+- Paper grain, sticky font, desk grid and desk look live under Settings → Appearance.
 
-- 开发依据：DSH **0.2.1-rc.2**。
-- 已在 Windows 11 + DSH 0.2.1-rc.2 实测：安装、侧栏、面板、刷新/切换后数据保持、宿主落盘、导出/导入路径。
-- CI 在 **Windows / macOS / Ubuntu** 三个 runner 上执行构建、页面契约、DOM 嵌套、宿主路由与客户端语法检查。
-- **未在 macOS / Linux 真机 DSH 上实测**：数据路径使用 `DSH_HOME` 或 `~/.dsh`；没有平台专属二进制。发现问题请提 issue。
-- 英文页面与中文页面由同一份源构建，示例内容按首次创建时的语言生成；你自己写的内容不会被翻译。
+## Compatibility
 
-## 项目结构
+- Built against DSH **0.2.1-rc.2**.
+- Tested on Windows 11 with DSH 0.2.1-rc.2: install, sidebar, panel, data retention across reload and view switches, host persistence, export/import.
+- CI builds and runs the page contract, DOM nesting, host route and client syntax checks on **Windows, macOS and Ubuntu** runners.
+- **Not yet exercised on a real macOS or Linux DSH**: the data path uses `DSH_HOME` or `~/.dsh` and there are no platform-specific binaries. Please open an issue if something breaks.
+- Chinese and English pages are built from one source; sample content is generated in the language of first creation, and your own text is never translated.
 
-| 路径 | 作用 |
+## Project structure
+
+| Path | Purpose |
 |---|---|
-| `index.js` | Host 半边：`/api/control-your-schedule/workspace` 读写 DSH 数据目录 |
-| `src/client.src.js` | Client 半边：侧栏入口、主面板、iframe 桥接 |
-| `assets/paper-os.html` | 纸屿页面（唯一 UI 源） |
-| `client.js` | 构建产物，禁止手改 |
-| `tools/build_page.py` | 构建脚本 |
-| `smoke/run_all_checks.py` | 项目门禁 |
-| `smoke/readme_lint.py` | README 结构（img 前后空行 / 横幅 / 本地图片） |
-| `smoke/shell_theme_test.mjs` | 外壳主题契约（零暖色 / 首帧主题 / 让位变量） |
-| `smoke/host_lang_test.mjs` | 宿主语言解析与字典完整性 |
-| `smoke/i18n_check.py` | 英文页覆盖（CJK / 词典 / F 模板 / 脚本语法） |
-| `assets/i18n/en.json` | 英文词典（构建输入，唯一中文源在 paper-os.html） |
-| `assets/i18n/en.templates.json` | 带参/复数模板（F()） |
-| `smoke/host_route_test.mjs` | Host 持久化路由 + 升级备份 + 字体路由测试 |
-| `smoke/migrate_test.mjs` | 迁移门禁：v1 快照升 v2 后逐字段比对，含反向用例 |
-| `smoke/page_e2e.mjs` | 真机页面检查（无头浏览器，中英两页 167 项断言） |
-| `assets/fonts/` | 内置手写体子集（霞鹜文楷，OFL）与来源/许可 |
+| `index.js` | Host half: `/api/control-your-schedule/workspace` read/write plus the bundled font route |
+| `src/client.src.js` | Client half: sidebar entry, panel, iframe bridge, composer entry |
+| `assets/paper-os.html` | The desk page — the single UI source |
+| `client.js` | Build output, generated — never edit by hand |
+| `tools/build_page.py` | Build: embeds the page into the client and injects the version |
+| `smoke/run_all_checks.py` | Project gate (page contract, DOM nesting, build, migration, host route) |
+| `smoke/page_e2e.mjs` | Real-browser checks (headless Edge/Chrome), both skins and the upgrade path |
+| `smoke/k3_stickies_test.mjs` | Sticky data and pointer-drag contracts |
+| `smoke/classic_visual_regression.mjs` | Pixel comparison of the classic skin against the previous release |
+| `assets/i18n/en.json`, `en.templates.json` | English dictionary and parameterised templates (build inputs) |
+| `assets/fonts/` | Bundled handwriting subset (LXGW WenKai, OFL) with its licence |
 
-## 开发
+## Development
 
 ```bash
-# 构建 client.js（把 assets/paper-os.html 内嵌进客户端包）
+# Build client.js (embeds assets/paper-os.html into the client bundle)
 python tools/build_page.py
 
-# 校验产物是否与源码一致（CI 用）
+# Verify the bundle matches its sources (used by CI)
 python tools/build_page.py --check
 
-# 项目门禁（页面契约 + DOM 嵌套 + 构建 + 迁移 + 宿主路由持久化）
+# Project gate
 python smoke/run_all_checks.py
 
-# 连真机浏览器一起跑（需要本机有 Edge/Chrome；不加 --cdp 时该套件只算 SKIP，不算通过）
+# Add real-browser suites (needs Edge or Chrome; without it they are SKIP, not a pass)
 python smoke/run_all_checks.py --cdp
-
-# 单独跑迁移与真机页面检查
-node smoke/migrate_test.mjs
-node smoke/page_e2e.mjs
 ```
 
-### 设计取舍
+### Design notes
 
-- UI 不重写成 React：原页面用同源 iframe 隔离挂载，窗口拖拽、自动保存与键盘交互保持原样。
-- 数据双写：页面先写浏览器存储保证即时可用，再通过 `postMessage` → Host 路由落盘到 DSH 数据目录；重开时选择较新的快照。
-- 单一加载闸门：Host 快照 / IndexedDB / localStorage / 恢复日志 / 导入文件全部先过 `ingestWorkspace`（迁移阶梯 + 当前版本严格校验），不存在第二条版本比较。
-- 持久待办用「模板 + 读时投影」，不物化每日实例：跨天只重绘、零写盘，计数天然「只算一个」。
-- 主题只读不写：读宿主 `body[data-ds-dark-theme]`，并用 `MutationObserver` 跟着宿主切换实时生效；读不到再退回 `prefers-color-scheme`。
-- 颜色取宿主的真实令牌：iframe 不继承父文档的 CSS 变量，所以运行时读 `parent.document.body` 的 `--dsw-alias-*` 写回本页；只有「跟随 DSH」时才吃宿主值，手动选了浅/深色就以插件自己的为准。
-- 无第三方运行时依赖；Host 只用 Node 内置模块，构建只用 Python 标准库。字体子集化脚本额外需要 `fonttools`（仅开发期，产物已入库）。
+- The UI is not rewritten in React: the page is mounted in a same-origin iframe so dragging, auto-save and keyboard handling keep working unchanged.
+- Two writes: the page writes browser storage first for instant use, then posts the snapshot to the host route, which persists it to the DSH data directory; the newer snapshot wins on reload.
+- A single load gate: host snapshot, IndexedDB, localStorage, recovery journal and imported files all go through `ingestWorkspace` (migration ladder + strict validation of the current version).
+- Persistent tasks are a template plus a read-time projection, not materialised daily rows — crossing midnight only redraws.
+- Themes are read-only: the plugin reads the host's `data-ds-dark-theme` and follows it live with a `MutationObserver`.
+- Host colours are read at runtime from the parent document's `--dsw-alias-*` variables, because an iframe does not inherit the parent's custom properties.
+- No third-party runtime dependencies; the host uses Node built-ins and the build uses the Python standard library.
 
-## 更新与发布
+## Releases
 
-- 当前版本：**0.5.2**
+- Current version: **0.6.0**
 - [CHANGELOG.md](CHANGELOG.md) · [Releases](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/releases) · [npm](https://www.npmjs.com/package/dsh-plugin-control-your-schedule)
 
-## 许可证
+## License
 
-MIT，见 [LICENSE](LICENSE)。
+MIT, see [LICENSE](LICENSE).

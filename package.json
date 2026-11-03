@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-control-your-schedule",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "description": "Paper-style sticky notes, paper notes, calendar, drawing and a reusable prompt library inside DSH",
   "type": "module",
   "main": "index.js",
@@ -24,7 +24,7 @@
     "assets",
     "tools/build_page.py",
     "README.md",
-    "README.en.md",
+    "README.zh.md",
     "CHANGELOG.md",
     "LICENSE",
     "!**/__pycache__",
