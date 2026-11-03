@@ -6,12 +6,17 @@ GitHub renders a standalone <img> line as a raw HTML block (CommonMark type 7),
 and that block runs until the next blank line. A feature line such as
 "- **feature**" placed right after a screenshot is therefore emitted as literal
 text and the list never renders. Both READMEs must surround every standalone
-<img> line with blank lines. The banner / local-image contract already enforced
-by run_all_checks.py is carried here too, so wiring this tool into the gate
-loses no coverage.
+<img> line with blank lines. A <p align="center"> wrapper around a cover or a
+badge row is one HTML block, so its neighbours are accepted as well.
+
+The bilingual layout is part of the contract: `README.md` is the English main
+file, `README.zh.md` is the Chinese file, and each links to the other. The cover
+must be the first visible body element and come before the title. The banner /
+local-image contract already enforced by run_all_checks.py is carried here too,
+so wiring this tool into the gate loses no coverage.
 
 Usage (run from anywhere):
-    python smoke/readme_lint.py                       # lint README.md and README.en.md
+    python smoke/readme_lint.py                       # lint README.md and README.zh.md
     python smoke/readme_lint.py --self-test           # fixtures: good PASS, bad FAIL + line
     python smoke/readme_lint.py --plugin-dir <dir>    # point at a copy (fixtures / CI)
 Exit code: 0 only when every check passes, 1 when anything is reported.
@@ -36,7 +41,8 @@ for _stream in (sys.stdout, sys.stderr):
 
 ROOT = Path(__file__).resolve().parent.parent
 PLUGIN = ROOT / "plugin" if (ROOT / "plugin" / "package.json").is_file() else ROOT
-README_NAMES = ("README.md", "README.en.md")
+README_NAMES = ("README.md", "README.zh.md")
+LANG_LINKS = {"README.md": "README.zh.md", "README.zh.md": "README.md"}
 REMOTE_PREFIXES = ("http://", "https://")
 IMAGE_RE = re.compile(r'<img[^>]*src="([^"]+)"')
 
@@ -64,29 +70,43 @@ def lint_readme(path: Path, plugin_dir: Path = PLUGIN) -> tuple[list[str], str]:
     for index, _tag in standalone_img_lines(lines):
         standalone += 1
         line_no = index + 1
-        if index > 0 and not is_blank(lines[index - 1]):
+        prev = lines[index - 1].strip() if index > 0 else ""
+        nxt = lines[index + 1].strip() if index + 1 < len(lines) else ""
+        if index > 0 and not is_blank(lines[index - 1]) and not prev.startswith("<p"):
             problems.append(
                 "%s L%d: standalone <img> must be preceded by a blank line (found %r)"
-                % (name, line_no, lines[index - 1].strip()[:60]))
-        if index + 1 < len(lines) and not is_blank(lines[index + 1]):
+                % (name, line_no, prev[:60]))
+        if index + 1 < len(lines) and not is_blank(lines[index + 1]) and nxt != "</p>":
             problems.append(
                 "%s L%d: standalone <img> must be followed by a blank line (found %r)"
-                % (name, line_no, lines[index + 1].strip()[:60]))
+                % (name, line_no, nxt[:60]))
 
-    # the banner must live directly under the title, not just "somewhere above ##"
+    # 封面：第一个可见主体，且必须出现在项目名（h1）之前。
     h1 = next((i for i, line in enumerate(lines) if line.startswith("# ")), None)
-    banner_zone = lines[h1 + 1:h1 + 5] if h1 is not None else []
-    if not any("<img" in line for line in banner_zone):
-        problems.append("%s: no <img> within 4 lines after the title" % name)
+    non_empty = [i for i, line in enumerate(lines) if line.strip()]
+    head = non_empty[:6]
+    cover = [i for i in head if "<img" in lines[i]]
+    if h1 is None:
+        problems.append("%s: no '# ' title line" % name)
+    elif not cover:
+        problems.append("%s: no cover <img> among the first 6 non-empty lines" % name)
+    elif cover[0] > h1:
+        problems.append("%s: cover <img> (L%d) must come before the title (L%d)"
+                        % (name, cover[0] + 1, h1 + 1))
 
-    # every local image must exist next to the README
+    # 双语互链：英文主文件指向中文文件，中文文件指向英文主文件。
+    wanted = LANG_LINKS.get(name)
+    if wanted and wanted not in text:
+        problems.append("%s: missing link to %s" % (name, wanted))
+
+    # 本地图片必须真的存在
     sources = IMAGE_RE.findall(text)
     local = [src for src in sources if not src.startswith(REMOTE_PREFIXES)]
     missing = [src for src in local if not (plugin_dir / src).is_file()]
     if missing:
         problems.append("%s: missing image files: %s" % (name, ", ".join(missing)))
 
-    stats = "%d standalone <img> framed by blank lines; banner under title; %d images (%d local, %d remote)" % (
+    stats = "%d standalone <img> framed by blank lines; cover before title; %d images (%d local, %d remote)" % (
         standalone, len(sources), len(local), len(sources) - len(local))
     return problems, stats
 
@@ -118,7 +138,7 @@ def run(plugin_dir: Path = PLUGIN) -> int:
     if total:
         print("readme_lint.py: FAIL（%d 项）" % total)
         return 1
-    print("readme_lint.py: PASS（%d 份 README · 独立 <img> 空行 + 顶部横幅 + 本地图片存在）"
+    print("readme_lint.py: PASS（%d 份 README · 独立 <img> 空行 + 封面在标题前 + 双语互链 + 本地图片存在）"
           % len(reports))
     return 0
 
@@ -126,13 +146,15 @@ def run(plugin_dir: Path = PLUGIN) -> int:
 # ------------------------------------------------------------------ self-test
 def _fixture(*, bad_before: bool = False, bad_after: bool = False,
              drop_banner: bool = False) -> tuple[str, int]:
-    """A README whose only screenshot is framed correctly unless asked otherwise."""
-    lines = ["# demo", ""]
+    """A bilingual README whose only screenshot is framed correctly unless asked otherwise."""
+    lines = []
     if not drop_banner:
-        lines += ['<img width="2172" alt="banner" src="assets/banner.webp">', ""]
+        lines += ['<img width="2172" alt="cover" src="assets/banner.webp">', ""]
     else:
-        # push the screenshot out of the 4-line banner zone so the banner check really fires
-        lines += ["Some intro paragraph.", ""]
+        # 缺封面：先用 6 行正文把封面窗口占满，任何 <img> 都不在头部 → 封面契约必须真的红
+        lines += ["Some intro paragraph.", "", "Second line of prose.", "",
+                  "Third line of prose.", "", "Fourth line of prose.", ""]
+    lines += ["# demo", "", "", "<p align=\"center\"><a href=\"README.zh.md\">中文</a></p>", ""]
     lines += ["- **one**: text"]
     if not bad_before:
         lines.append("")
@@ -153,7 +175,8 @@ def _write_fixture(root: Path, *, assets: bool = True, crlf: bool = False,
             (root / "assets" / asset).write_bytes(b"fixture")
     payload = text.replace("\n", "\r\n") if crlf else text
     for name in README_NAMES:
-        (root / name).write_bytes(payload.encode("utf-8"))
+        body = payload if name == "README.md" else payload.replace("README.zh.md", "README.md")
+        (root / name).write_bytes(body.encode("utf-8"))
     return shot_line
 
 
@@ -175,7 +198,7 @@ def self_test() -> int:
             code, output = _exit_code(root)
             return code, output, shot_line
 
-    # 正向 1：好样例（截图前后都有空行）→ 必须绿
+    # 正向 1：好样例（封面在标题前、截图前后有空行、双语互链）→ 必须绿
     code, output, _line = probe()
     if code != 0:
         fails.append("正向 1：好样例应 PASS，实际 exit=%s\n%s" % (code, output))
@@ -199,24 +222,34 @@ def self_test() -> int:
     code, output, _line = probe(assets=False)
     if code != 1 or "missing image files" not in output or "assets/shot.webp" not in output:
         fails.append("反向 3：缺本地图片必须红并点名 assets/shot.webp，实际 exit=%s\n%s" % (code, output))
-    # 反向 4：标题下没有横幅 → 必须红并点名横幅契约
+    # 反向 4：没有封面 → 必须红并点名封面契约
     code, output, _line = probe(drop_banner=True)
-    if code != 1 or "no <img> within 4 lines after the title" not in output:
-        fails.append("反向 4：缺顶部横幅必须红，实际 exit=%s\n%s" % (code, output))
+    if code != 1 or "no cover <img> among the first 6 non-empty lines" not in output:
+        fails.append("反向 4：缺封面必须红，实际 exit=%s\n%s" % (code, output))
+    # 反向 5：缺双语互链 → 必须红并点名缺失的链接
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        _write_fixture(root)
+        broken = (root / "README.zh.md").read_text(encoding="utf-8").replace(
+            "README.md", "README.missing.md")
+        (root / "README.zh.md").write_text(broken, encoding="utf-8")
+        code, output = _exit_code(root)
+        if code != 1 or "missing link to README.md" not in output:
+            fails.append("反向 5：缺双语互链必须红并点名，实际 exit=%s\n%s" % (code, output))
 
     if fails:
         print("readme_lint.py --self-test: FAIL")
         for item in fails:
             print("  - " + item)
         return 1
-    print("readme_lint.py --self-test: PASS（正向 2 + 反向 4；夹具真写盘，坏样例真红并点名行号，"
+    print("readme_lint.py --self-test: PASS（正向 2 + 反向 5；夹具真写盘，坏样例真红并点名行号，"
           "临时目录自动清理不留产物）")
     return 0
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="README 结构门禁：独立 <img> 前后空行 + 顶部横幅 + 本地图片存在")
+        description="README 结构门禁：独立 <img> 前后空行 + 封面在标题前 + 双语互链 + 本地图片存在")
     parser.add_argument("--self-test", action="store_true",
                         help="离线自检：好样例 PASS，坏样例 FAIL 并点名行号")
     parser.add_argument("--plugin-dir", type=Path, default=None,

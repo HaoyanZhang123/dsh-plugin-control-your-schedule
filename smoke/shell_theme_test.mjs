@@ -582,16 +582,16 @@ const mutations = [
   {
     id: 'embed ignores the theme',
     mutate: (src) => src.replace(
-      'firstFramePage(basePage(lang), firstFrameTheme(snapshot), hostTopClearance())',
-      "firstFramePage(basePage(lang), 'light', hostTopClearance())"
+      'firstFramePage(basePage(lang), firstFrameTheme(snapshot), hostTopClearance(), firstFrameSkin(snapshot))',
+      "firstFramePage(basePage(lang), 'light', hostTopClearance(), firstFrameSkin(snapshot))"
     ),
     expect: ['first frame theme: snapshot prefs win, the host decides otherwise'],
   },
   {
     id: 'embed ignores the clearance',
     mutate: (src) => src.replace(
-      'firstFramePage(basePage(lang), firstFrameTheme(snapshot), hostTopClearance())',
-      "firstFramePage(basePage(lang), firstFrameTheme(snapshot), '')"
+      'firstFramePage(basePage(lang), firstFrameTheme(snapshot), hostTopClearance(), firstFrameSkin(snapshot))',
+      "firstFramePage(basePage(lang), firstFrameTheme(snapshot), '', firstFrameSkin(snapshot))"
     ),
     expect: ['darwin clearance reaches the page as --cys-top-clearance'],
   },

@@ -10,11 +10,13 @@ Exit code 0 only when every check passes.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import shutil
 import subprocess
 import sys
+from html.parser import HTMLParser
 from pathlib import Path
 
 # Windows CI runners default stdout to cp1252, while every message here is Chinese:
@@ -29,6 +31,18 @@ ROOT = Path(__file__).resolve().parent.parent
 PLUGIN = ROOT / "plugin" if (ROOT / "plugin" / "package.json").is_file() else ROOT
 PAGE = PLUGIN / "assets" / "paper-os.html"
 CLIENT = PLUGIN / "client.js"
+
+
+def build_sha16() -> str:
+    """The build this gate judges. Browser suites get it via --expect-build so a
+    mid-run rebuild turns into an explicit FAIL instead of a misleading verdict."""
+    try:
+        return hashlib.sha256(CLIENT.read_bytes()).hexdigest()[:16]
+    except OSError:
+        return ""
+
+
+GATE_BUILD = build_sha16()
 PKG = PLUGIN / "package.json"
 NODE = shutil.which("node") or shutil.which("node.exe") or ""
 
@@ -45,7 +59,12 @@ BASE_REMOVED = {
     "file cabinet app id": "id: 'files'",
     "old double-click copy": "双击纸页开始",
     "old left-entry copy": "打开左边一张纸",
-    "window control buttons": "data-win-action",
+    # 这里原本还有一项 "window control buttons": "data-win-action"：历史上经典桌面
+    # 不该有窗口控制按钮，所以用全文子串否定。K2 按 04 §1 把标题栏「收好/关闭」补回来
+    # （DOM 契约在 task-6 第 2 步落成 K7_EXPECTED 的三条正向 needle），01 §5 的裁决是
+    # "不改名躲避，改门禁适用范围"：从此按**皮肤作用域**验证——经典侧由
+    # html:not([data-skin="modern"]) .window__controls { display: none; } 隐藏，
+    # 由 page_e2e 的 computed-display 与真机行为断言守，不再用全文子串否定。
     "dock caption": "点击图标打开应用",
     "desk focus placeholder": "选择底部应用开始",
     "desk intro caption": "从底部应用坞打开应用",
@@ -160,12 +179,69 @@ K7_EXPECTED = {
     "tour save sentence": "内容会自动保存。设置 → 数据与备份可以导出备份，也能重新播放这份导览。",
     # D-05：无选中态整条 bar 隐藏，探针造不出空库；用源码级断言固化这个分支。
     "prompt bar hides when nothing is selected": "if (refs.bar) refs.bar.hidden = true;",
+    # K2（task-6 第 2 步）：窗口标题栏的收起/关闭入口。DOM 两套皮肤共用，经典由
+    # html:not([data-skin="modern"]) 作用域隐藏（AC-05 不回归）；真机可见性/行为由
+    # page_e2e 的 classic/modern computed-display 与 minimize/close 等价性断言守。
+    # 这里只认 Lead 冻结的字面量，rows 不再用"全文不许出现 data-win-action"的否定判定。
+    "window controls container": 'class="window__controls"',
+    "window minimize control": 'data-win-action="minimize"',
+    "window close control": 'data-win-action="close"',
+    "window controls hidden in classic": 'html:not([data-skin="modern"]) .window__controls {',
 }
 
 REMOVED = dict(BASE_REMOVED)
 REMOVED.update(K7_REMOVED)
 EXPECTED = dict(BASE_EXPECTED)
 EXPECTED.update(K7_EXPECTED)
+
+
+# --- Structural regression guard: these blocks must live inside #stage. ------
+# A stray closing tag once moved the window layer to page top, hiding every
+# titlebar. K1 (交接 02 §3) removed the old first-run prompt card, so #first-run
+# is not a node any more: it is deliberately dropped from this list instead of
+# being renamed to another selector to keep a check alive.
+STAGE_CONTAINER = "stage"
+STAGE_BLOCKS = ["windows-layer", "day-card", "dock-wrap"]
+
+
+class _StageNest(HTMLParser):
+    """Records the ancestor id chain of the guarded blocks."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.stack = []
+        self.parents = {}
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        ident = attrs.get("id")
+        if ident == STAGE_CONTAINER or ident in STAGE_BLOCKS:
+            self.parents[ident] = list(self.stack)
+        self.stack.append((tag, ident))
+
+    def handle_endtag(self, tag):
+        for index in range(len(self.stack) - 1, -1, -1):
+            if self.stack[index][0] == tag:
+                del self.stack[index:]
+                break
+
+
+def stage_nesting_verdicts(page_text: str) -> tuple[bool, str, str]:
+    """Single judgement path for the real gate and for --self-test.
+
+    Returns (passed, name, detail); detail names the block that escaped #stage,
+    which is exactly what the reverse side of --self-test asserts on.
+    """
+    nest = _StageNest()
+    nest.feed(page_text)
+    missing = []
+    for name in STAGE_BLOCKS:
+        chain = [ident for _, ident in nest.parents.get(name, [])]
+        if STAGE_CONTAINER not in chain:
+            missing.append(name)
+    if missing:
+        return False, "DOM nesting: window layer inside #stage", "outside stage: " + ", ".join(missing)
+    return True, "DOM nesting: window layer inside #stage", "all %d key blocks inside stage" % len(STAGE_BLOCKS)
 
 
 def needle_verdicts(page_text: str) -> list[tuple[bool, str, str]]:
@@ -198,16 +274,25 @@ def bad(name: str, detail: str) -> None:
     print("FAIL | %s | %s" % (name, detail))
 
 
-def run(name: str, cmd: list[str], cwd: Path | None = None) -> int:
+def run(name: str, cmd: list[str], cwd: Path | None = None, timeout: int = 180) -> int:
     try:
         proc = subprocess.run(cmd, cwd=str(cwd or ROOT), capture_output=True, text=True,
-                              encoding="utf-8", errors="replace", timeout=180)
+                              encoding="utf-8", errors="replace", timeout=timeout)
     except Exception as error:  # noqa: BLE001
         bad(name, "runner error: %r" % (error,))
         return -1
     out = (proc.stdout or "") + (proc.stderr or "")
+    # 子套件自报的 RUN-FINGERPRINT（build sha16 / skin / counts）随门禁日志一起留档：
+    # 只看最后一行无法证明"跑的是哪个构建"。
+    fingerprint_line = ""
+    for line in out.splitlines():
+        if line.startswith("RUN-FINGERPRINT ") or line.startswith("FINGERPRINT "):
+            fingerprint_line = line.strip()
     if proc.returncode == 0:
-        ok(name, out.strip().splitlines()[-1][:160] if out.strip() else "")
+        detail = out.strip().splitlines()[-1][:160] if out.strip() else ""
+        if fingerprint_line:
+            detail = (detail + " | " + fingerprint_line)[:400]
+        ok(name, detail)
     elif proc.returncode == 3:
         # Convention across the suites: exit 3 = explicitly skipped (missing
         # token/browser/input). A skip is never a pass; it is counted and named.
@@ -269,6 +354,32 @@ def self_test(page_text: str) -> int:
         else:
             ok(target, "翻面 -> FAIL 且点名 needle")
 
+    print("== --self-test 结构守门：#stage 包含关系（正向 + 反向） ==")
+    nest_passed, nest_name, nest_detail = stage_nesting_verdicts(page_text)
+    if nest_passed:
+        ok(nest_name, nest_detail)
+    else:
+        bad(nest_name, nest_detail)
+
+    # 反向：容器不再是 #stage，或受守门的节点被挪走/改名，必须真红并点名。
+    # 只在内存里翻面，不写盘，不留可被误当证据的产物。
+    structural_mutations = [
+        ("#stage 被改名（容器不再是 #stage）",
+         page_text.replace('id="stage"', 'id="stage-renamed"'), STAGE_BLOCKS),
+        ("windows-layer 被改名（节点不在守门范围内）",
+         page_text.replace('id="windows-layer"', 'id="windows-layer-moved"'), ["windows-layer"]),
+    ]
+    for label, mutated, expected_names in structural_mutations:
+        if mutated == page_text:
+            bad(nest_name, "反向变异没有生效：%s" % label)
+            continue
+        flipped_passed, flipped_name, flipped_detail = stage_nesting_verdicts(mutated)
+        named = [item for item in expected_names if item in flipped_detail]
+        if flipped_passed or not named:
+            bad(flipped_name, "反向未变红或未点名：%s（%s）" % (label, flipped_detail))
+        else:
+            ok(flipped_name + " | 反向：" + label, "点名 " + ", ".join(named))
+
     failed = [item for item in checks if not item[0]]
     print("self-test: 反向 %d 条 K7 needle 逐条翻面完成" % new_total)
     print("checks: PASS %d / FAIL %d / SKIP 0" % (len(checks) - len(failed), len(failed)))
@@ -283,6 +394,9 @@ def main() -> int:
 
     if "--self-test" in sys.argv:
         return self_test(page)
+
+    # 这次门禁判的是哪个构建：浏览器套件会拿 --expect-build 再核一次。
+    print("GATE-BUILD sha16=%s bytes=%s" % (GATE_BUILD or "(missing)", CLIENT.stat().st_size if CLIENT.is_file() else 0))
 
     for passed, name, detail in needle_verdicts(page):
         if passed:
@@ -434,31 +548,13 @@ def main() -> int:
 
     # Structural regression guard: the window layer must live inside #stage.
     # A stray closing tag once moved it to page top, hiding every titlebar.
-    from html.parser import HTMLParser
-    class _Nest(HTMLParser):
-        def __init__(self):
-            super().__init__(convert_charrefs=True)
-            self.stack = []
-            self.parents = {}
-        def handle_starttag(self, tag, attrs):
-            attrs = dict(attrs)
-            ident = attrs.get('id')
-            if ident in ('stage', 'windows-layer', 'day-card', 'dock-wrap', 'first-run'):
-                self.parents[ident] = list(self.stack)
-            self.stack.append((tag, ident))
-        def handle_endtag(self, tag):
-            for index in range(len(self.stack) - 1, -1, -1):
-                if self.stack[index][0] == tag:
-                    del self.stack[index:]
-                    break
-    nest = _Nest(); nest.feed(page)
-    stage_parents = {name: parents for name, parents in nest.parents.items()}
-    required_inside_stage = ['windows-layer', 'day-card', 'dock-wrap', 'first-run']
-    missing = [name for name in required_inside_stage if 'stage' not in [ident for _, ident in stage_parents.get(name, [])]]
-    if missing:
-        bad('DOM nesting: window layer inside #stage', 'outside stage: ' + ', '.join(missing))
+    # The judgement itself lives at module scope so --self-test audits the very
+    # same function the real gate runs (see stage_nesting_verdicts).
+    nest_passed, nest_name, nest_detail = stage_nesting_verdicts(page)
+    if nest_passed:
+        ok(nest_name, nest_detail)
     else:
-        ok('DOM nesting: window layer inside #stage', 'all four key blocks inside stage')
+        bad(nest_name, nest_detail)
 
     # --- migration / data-safety contracts ---
     # The page must offer exactly one ingest gate and no bare schema comparisons
@@ -605,12 +701,66 @@ def main() -> int:
     else:
         bad("prompt insertion model", "node not found")
 
+    # --- skin preference / upgrade prompt model + first-frame data-skin ---
+    # Same paradigm as the composer gate: the page's @skin-model block and the
+    # shell's first-frame functions are extracted from source and run in Node,
+    # so the test exercises the production functions instead of a second copy.
+    skin_test = ROOT / "smoke" / "skin_model_test.mjs"
+    if NODE and skin_test.is_file():
+        run("skin model + first frame skin", [NODE, str(skin_test)])
+        run("skin model mutation self-test", [NODE, str(skin_test), "--self-test"])
+    elif not skin_test.is_file():
+        bad("skin model + first frame skin", "smoke/skin_model_test.mjs missing")
+    else:
+        bad("skin model + first frame skin", "node not found")
+
+    # --- page_e2e fixtures (first run + double-skin switching): their judgement is
+    # --- pure, so the reverse audit needs no browser and runs on every gate (not only
+    # --- with --cdp). The real flows themselves are covered by the --cdp path below.
+    page_e2e = ROOT / "smoke" / "page_e2e.mjs"
+    if NODE and page_e2e.is_file():
+        run("page_e2e fixture self-tests", [NODE, str(page_e2e), "--self-test"])
+    elif not page_e2e.is_file():
+        bad("page_e2e fixture self-tests", "smoke/page_e2e.mjs missing")
+    else:
+        bad("page_e2e fixture self-tests", "node not found")
+
+    # --- K3 machine acceptance: sticky ordering data-compat, keyboard reorder,
+    # --- 04 §8 boundary states. Browser only, so it lives in the --cdp group.
+    k3_test = ROOT / "smoke" / "k3_stickies_test.mjs"
+    if not k3_test.is_file():
+        bad("K3 stickies/boundaries", "smoke/k3_stickies_test.mjs missing")
+    elif "--cdp" not in sys.argv:
+        skipped.append("K3 stickies/boundaries (k3_stickies_test.mjs)")
+        print("SKIP | K3 stickies/boundaries | 原因：未加 --cdp（需要浏览器；不加不算通过）")
+    elif NODE:
+        run("K3 stickies/boundaries (classic)", [NODE, str(k3_test)], timeout=1200)
+        run("K3 stickies/boundaries (modern)", [NODE, str(k3_test), "--skin=modern"], timeout=1200)
+    else:
+        bad("K3 stickies/boundaries", "node not found")
+
+    # --- AC-05 classic visual regression vs the 0.5.2 baseline (opt-in: browser) ---
+    # 判定阈值由实测噪声定（冻结锚上 1440x960 / 787x627 实测 0.0000%，
+    # 阈值 0.01%），不是 TODO。需要浏览器，所以仍只在 --cdp 分组里跑；
+    # 没有浏览器 / 没有 git 基线时脚本自己 exit 3 → 显式 SKIP，绝不当通过。
+    visual_regression = ROOT / "smoke" / "classic_visual_regression.mjs"
+    if not visual_regression.is_file():
+        bad("classic visual regression vs 0.5.2", "smoke/classic_visual_regression.mjs missing")
+    elif "--cdp" not in sys.argv:
+        skipped.append("classic visual regression (classic_visual_regression.mjs)")
+        print("SKIP | classic visual regression | 原因：未加 --cdp（需要浏览器；不加不算通过）")
+    elif NODE:
+        run("classic visual regression vs 0.5.2",
+            [NODE, str(visual_regression), "--expect-build=" + GATE_BUILD], timeout=900)
+    else:
+        bad("classic visual regression vs 0.5.2", "node not found")
+
     # --- real browser (opt-in: needs a local browser binary) ---
     if "--cdp" not in sys.argv:
         skipped.append("real browser checks (page_e2e.mjs)")
         print("SKIP | real browser checks | 原因：未加 --cdp（需要本机浏览器；不加不算通过）")
     elif NODE:
-        run("real browser checks", [NODE, str(ROOT / "smoke" / "page_e2e.mjs")])
+        run("real browser checks", [NODE, str(page_e2e)], timeout=900)
     else:
         bad("real browser checks", "node not found")
 
