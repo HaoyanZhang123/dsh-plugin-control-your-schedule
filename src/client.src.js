@@ -9,6 +9,9 @@ window.__ModuleLoader__.load({
     'use strict';
 
     var React = require('react');
+    /* react-dom is part of the shell's frozen platform module table, so the
+       popup can be portaled out of the composer subtree (see PromptEntry). */
+    var ReactDOM = require('react-dom');
     var NS = 'dsh-plugin-control-your-schedule';
     var PANEL_ID = 'paper-os';
     var ROUTE = '/api/control-your-schedule/workspace';
@@ -319,12 +322,14 @@ window.__ModuleLoader__.load({
       // Modern skin (0.6.0): the composer chip and its popup follow the desk's
       // native-soft language. Host tokens only — the shell still paints no plugin
       // colour, and classic keeps every value above untouched.
+      // The popup is portaled to <body> (0.6.1), so its skin is read from its own
+      // data-cys-skin instead of an ancestor selector inside the composer card.
       '.cys-prompt-root[data-cys-skin="modern"] .cys-prompt-btn{height:28px;padding:0 9px;border-radius:10px;color:var(--dsw-alias-label-secondary,inherit);background:var(--dsw-alias-bg-layer-2,transparent);}',
       '.cys-prompt-root[data-cys-skin="modern"] .cys-prompt-btn:hover,.cys-prompt-root[data-cys-skin="modern"] .cys-prompt-btn[aria-expanded="true"]{background:var(--dsw-alias-interactive-bg-hover,transparent);color:var(--dsw-alias-label-primary,inherit);}',
-      '.cys-prompt-root[data-cys-skin="modern"] .cys-prompt-pop{width:340px;border-radius:14px;}',
-      '.cys-prompt-root[data-cys-skin="modern"] .cys-prompt-pop__head{padding:10px 13px;}',
-      '.cys-prompt-root[data-cys-skin="modern"] .cys-prompt-pop__item{border-radius:8px;padding:8px 10px;}',
-      '.cys-prompt-root[data-cys-skin="modern"] .cys-prompt-pop__foot{padding:8px 12px;}',
+      '.cys-prompt-pop[data-cys-skin="modern"]{width:340px;border-radius:14px;}',
+      '.cys-prompt-pop[data-cys-skin="modern"] .cys-prompt-pop__head{padding:10px 13px;}',
+      '.cys-prompt-pop[data-cys-skin="modern"] .cys-prompt-pop__item{border-radius:8px;padding:8px 10px;}',
+      '.cys-prompt-pop[data-cys-skin="modern"] .cys-prompt-pop__foot{padding:8px 12px;}',
     ].join('');
 
     function ensureStyle() {
@@ -464,6 +469,28 @@ window.__ModuleLoader__.load({
 
     var PROMPT_ICON = '<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2.6h10v7.2L9.4 13.4H3z"/><path d="M12.6 9.8H9.4v3.6"/><path d="M5.2 5.2h5.6M5.2 7.6h3.8"/></svg>';
 
+    /* @popover-box-begin */
+    /* Pure viewport math for the composer popup (0.6.1). The panel hangs above
+       its anchor when that fits, otherwise it flips below; either edge stays
+       inside the viewport with a margin. DOM- and state-free on purpose: the
+       composer seat's own `will-change: transform` (DSH 0.2.2) is what used to
+       displace every fixed-position child, so this part must be provable in
+       plain Node instead of only on a real machine. */
+    function promptPopoverBox(anchor, panel, viewport, margin) {
+      var m = margin > 0 ? margin : 8;
+      var width = panel.width > 0 ? panel.width : 320;
+      var height = panel.height > 0 ? panel.height : 320;
+      var left = anchor.left;
+      if (left + width > viewport.width - m) left = viewport.width - m - width;
+      if (left < m) left = m;
+      var above = anchor.top - height - m;
+      var top = above >= m ? above : anchor.bottom + m;
+      if (top + height > viewport.height - m) top = viewport.height - m - height;
+      if (top < m) top = m;
+      return { left: Math.round(left), top: Math.round(top) };
+    }
+    /* @popover-box-end */
+
     function PromptEntry(props) {
       var inputActions = props && props.inputActions;
       var [open, setOpen] = React.useState(false);
@@ -512,6 +539,9 @@ window.__ModuleLoader__.load({
       var close = React.useCallback(function (restoreFocus) {
         setOpen(false);
         setNotice('');
+        /* A closed popup forgets where it was: the next open measures again and
+           paints at its new anchor instead of flashing the previous position. */
+        setPos(null);
         if (restoreFocus !== false) {
           var previous = returnFocusRef.current;
           returnFocusRef.current = null;
@@ -521,34 +551,52 @@ window.__ModuleLoader__.load({
         }
       }, []);
 
+      /* Placement is viewport math on purpose: the popup is portaled to <body>
+         (0.6.1), so `position: fixed` is relative to the viewport again. DSH
+         0.2.2 gives the composer seat `will-change: transform` while a
+         conversation is active, which turns that ancestor into the containing
+         block for fixed descendants — every coordinate computed here used to be
+         added to the seat's origin, so the popup landed near the bottom edge (or
+         off-screen) and jumped whenever its measured height changed. */
       var place = React.useCallback(function () {
         var root = rootRef.current;
         if (!root) return;
         var rect = root.getBoundingClientRect();
         var panel = panelRef.current;
-        var width = 320;
+        var width = panel && panel.offsetWidth ? panel.offsetWidth : 320;
         var height = panel ? Math.min(panel.offsetHeight || 320, 340) : 320;
-        var margin = 8;
-        var left = rect.left;
-        if (left + width > window.innerWidth - margin) left = window.innerWidth - margin - width;
-        if (left < margin) left = margin;
-        var above = rect.top - height - margin;
-        var top = above >= margin ? above : Math.min(rect.bottom + margin, window.innerHeight - height - margin);
-        if (top < margin) top = margin;
-        setPos({ left: left + 'px', top: top + 'px' });
+        var box = promptPopoverBox(
+          { left: rect.left, top: rect.top, bottom: rect.bottom },
+          { width: width, height: height },
+          { width: window.innerWidth, height: window.innerHeight },
+          8);
+        setPos({ left: box.left + 'px', top: box.top + 'px' });
       }, []);
 
       var openPanel = React.useCallback(function () {
         if (open) { close(); return; }
         returnFocusRef.current = document.activeElement;
+        setPos(null);
         setOpen(true);
         setNotice('');
         refresh(true);
-        window.requestAnimationFrame(function () {
+      }, [open, close, refresh]);
+
+      /* Place once the panel is in the layout (its real height decides the flip
+         and the top edge), then again on the next frame for fonts or a scrollbar
+         that land after it. `items` re-runs it when the list arrives later. */
+      React.useLayoutEffect(function () {
+        if (!open) return undefined;
+        place();
+        var frame = window.requestAnimationFrame(function () {
           place();
-          if (listRef.current) listRef.current.focus();
+          var list = listRef.current;
+          if (list && !list.contains(document.activeElement)) {
+            try { list.focus({ preventScroll: true }); } catch (err) { /* focus is best-effort */ }
+          }
         });
-      }, [open, close, refresh, place]);
+        return function () { window.cancelAnimationFrame(frame); };
+      }, [open, place, items.length, status]);
 
       React.useEffect(function () {
         if (!open) return undefined;
@@ -566,16 +614,28 @@ window.__ModuleLoader__.load({
             close();
           }
         }
-        function onResize() { close(false); }
+        /* A scrolling transcript or a resized window moves the anchor; follow it
+           instead of dismissing the popup (0.6.1). */
+        var followFrame = 0;
+        function onViewportChange() {
+          if (followFrame) return;
+          followFrame = window.requestAnimationFrame(function () {
+            followFrame = 0;
+            place();
+          });
+        }
         document.addEventListener('pointerdown', onPointerDown, true);
         document.addEventListener('keydown', onKeyDown, true);
-        window.addEventListener('resize', onResize);
+        window.addEventListener('resize', onViewportChange);
+        window.addEventListener('scroll', onViewportChange, true);
         return function () {
           document.removeEventListener('pointerdown', onPointerDown, true);
           document.removeEventListener('keydown', onKeyDown, true);
-          window.removeEventListener('resize', onResize);
+          window.removeEventListener('resize', onViewportChange);
+          window.removeEventListener('scroll', onViewportChange, true);
+          if (followFrame) window.cancelAnimationFrame(followFrame);
         };
-      }, [open, close]);
+      }, [open, close, place]);
 
       var insert = React.useCallback(function (item) {
         if (!inputActions || !item) return;
@@ -656,11 +716,16 @@ window.__ModuleLoader__.load({
         }));
       }
 
+      /* The popup is portaled to <body>: inside the composer it would inherit the
+         host's containing block for fixed descendants (see `place`). The skin
+         travels on the panel itself, because the composer root is no longer an
+         ancestor of it. */
       var panel = open ? React.createElement('div', {
         className: 'cys-prompt-pop',
         ref: panelRef,
         role: 'dialog',
         'aria-label': textFor(uiLang, 'prompt.title'),
+        'data-cys-skin': uiSkin,
         style: pos || { visibility: 'hidden' },
         onMouseDown: function (event) { event.preventDefault(); },
       },
@@ -687,7 +752,7 @@ window.__ModuleLoader__.load({
           onMouseDown: function (event) { event.preventDefault(); },
           dangerouslySetInnerHTML: { __html: PROMPT_ICON + '<span>' + label + '</span>' },
         }),
-        panel);
+        panel ? ReactDOM.createPortal(panel, document.body) : null);
     }
 
     /* Deep link into the desk panel: select the panel, then hand the page an

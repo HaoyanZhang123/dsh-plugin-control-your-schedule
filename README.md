@@ -6,7 +6,7 @@
 <p align="center">Sticky notes, paper pages, calendar tasks, drawings and a reusable prompt library on one desk inside DSH.</p>
 <p align="center"><a href="README.zh.md">中文</a></p>
 
-> panel plugin v0.6.0
+> panel plugin v0.6.1
 
 <p align="center">
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-%E2%89%A522-339933" alt="Node.js 22 or newer"></a>
@@ -107,7 +107,7 @@ DSH → Plugins → Add plugin, then enter:
 dsh-plugin-control-your-schedule
 ```
 
-A version can be pinned too: `dsh-plugin-control-your-schedule@0.6.0`.
+A version can be pinned too: `dsh-plugin-control-your-schedule@0.6.1`.
 
 ### From GitHub
 
@@ -207,7 +207,7 @@ python smoke/run_all_checks.py --cdp
 
 ## Releases
 
-- Current version: **0.6.0**
+- Current version: **0.6.1**
 - [CHANGELOG.md](CHANGELOG.md) · [Releases](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/releases) · [npm](https://www.npmjs.com/package/dsh-plugin-control-your-schedule)
 
 ## License

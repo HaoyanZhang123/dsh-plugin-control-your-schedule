@@ -6,7 +6,7 @@
 <p align="center">便签、纸页笔记、日历待办、画纸与常用提示词，放在 DSH 里同一张桌面上。</p>
 <p align="center"><a href="README.md">English</a></p>
 
-> 面板插件 v0.6.0
+> 面板插件 v0.6.1
 
 <p align="center">
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-%E2%89%A522-339933" alt="Node.js 22 或更高"></a>
@@ -107,7 +107,7 @@ DSH → Plugins → Add plugin，填：
 dsh-plugin-control-your-schedule
 ```
 
-也可以带版本：`dsh-plugin-control-your-schedule@0.6.0`。
+也可以带版本：`dsh-plugin-control-your-schedule@0.6.1`。
 
 ### 从 GitHub
 
@@ -207,7 +207,7 @@ python smoke/run_all_checks.py --cdp
 
 ## 更新与发布
 
-- 当前版本：**0.6.0**
+- 当前版本：**0.6.1**
 - [CHANGELOG.md](CHANGELOG.md) · [Releases](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/releases) · [npm](https://www.npmjs.com/package/dsh-plugin-control-your-schedule)
 
 ## 许可证

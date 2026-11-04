@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.6.1] - 2026-11-04
+
+### 输入框「提示词」弹层在 DSH 0.2.2 上错位 / 不显示
+
+- 根因（实测定位，不是猜）：DSH 0.2.2-rc.1 给输入框容器加了
+  `[data-phase=active] .composerSeat{will-change: transform; position: sticky}`。
+  带 `will-change: transform` 的祖先会成为 `position: fixed` 后代的 containing
+  block，于是弹层的视口坐标被叠加到这个容器的原点上——弹层落到右下角、出屏
+  （看起来“点不开”），每次开合又按内容高度重算，于是“多点击几次跳得奇怪”。
+  会话阶段是 `settling / hero / active`：空会话是 hero，一旦有对话就变 active，
+  这正好解释了“第一轮没问题、第二轮开始坏”。
+- 修复：弹层改为 `ReactDOM.createPortal` 到 `document.body`（宿主自己的锚定
+  弹层也是这个做法），`position: fixed` 重新相对视口；皮肤改由弹层自己的
+  `data-cys-skin` 决定，不再依赖输入框内的祖先选择器。
+- 定位加固：挂载后按真实尺寸（含翻转与左右/上下 clamp）定位，开合各清空一次
+  旧坐标；滚动 / 窗口缩放时跟随锚点重定位，而不是直接关闭弹层。340px 高度
+  上限（D9）不变。
+- 门禁：新增 `smoke/popover_anchor_test.mjs`（纯几何 + portal 契约，含 4 条
+  变异自测），并接入 `run_all_checks.py`；真机侧用 agent-desktop 点击复核。
+
 ## [0.6.0] - 2026-11-03
 
 ### 1. 两套皮肤：纸屿经典 与 原生柔光

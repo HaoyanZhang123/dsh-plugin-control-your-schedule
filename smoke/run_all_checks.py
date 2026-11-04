@@ -701,6 +701,20 @@ def main() -> int:
     else:
         bad("prompt insertion model", "node not found")
 
+    # --- composer popup anchor (0.6.1): viewport math + the portal contract ---
+    # DSH 0.2.2 turned the composer seat into a containing block for fixed
+    # descendants (`will-change: transform` while a conversation is active), so a
+    # popup rendered inside the chip lost its viewport anchor. The gate proves the
+    # flip/clamp math on the production function and pins the portal.
+    popover_test = ROOT / "smoke" / "popover_anchor_test.mjs"
+    if NODE and popover_test.is_file():
+        run("composer popup anchor", [NODE, str(popover_test)])
+        run("composer popup anchor mutation self-test", [NODE, str(popover_test), "--self-test"])
+    elif not popover_test.is_file():
+        bad("composer popup anchor", "smoke/popover_anchor_test.mjs missing")
+    else:
+        bad("composer popup anchor", "node not found")
+
     # --- skin preference / upgrade prompt model + first-frame data-skin ---
     # Same paradigm as the composer gate: the page's @skin-model block and the
     # shell's first-frame functions are extracted from source and run in Node,
