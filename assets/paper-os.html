@@ -3555,11 +3555,12 @@ html[data-theme="dark"] .desk-notice__mark {
   transform: rotate(0.45deg) translate(1px, 2px);
 }
 
+/* 投影只属于聚焦窗口：被压住的窗口每扇再投一份，N 个窗口的阴影会在
+   桌面同一片像素上叠加成一圈灰雾——实测每多一层贴边暗约 8/255，6 窗时 -48。
+   非聚焦窗口只留内部高光，边界交给 1px 描边；这样无论开几个窗口，
+   桌面上永远只有一份浮起阴影。 */
 .window:not(.is-focused) {
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.7) inset,
-    0 22px 50px -32px rgba(57, 57, 57, 0.36),
-    0 3px 9px rgba(57, 57, 57, 0.05);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
 }
 
 .window .window__body {
@@ -8902,6 +8903,12 @@ html[data-skin="modern"] .window {
   background-image: none;
   box-shadow: var(--m-shadow);
   backdrop-filter: blur(26px);
+}
+
+/* 与经典皮同一条规则——现代皮原先每个窗口都背着 --m-shadow，
+   6 个窗口时窗口外沿暗 64/255。投影只给聚焦窗口，边界交给 --m-line 描边。 */
+html[data-skin="modern"] .window:not(.is-focused) {
+  box-shadow: none;
 }
 
 html[data-skin="modern"] .window::before,

@@ -769,6 +769,22 @@ def main() -> int:
     else:
         bad("classic visual regression vs 0.5.2", "node not found")
 
+    # --- window shadow: the halo must not grow with the window count (0.6.2) ---
+    # Every window used to paint its own large soft shadow, so N windows stacked N
+    # shadows on the same desk pixels (measured +8/255 per window at the edge).
+    # The shadow now belongs to the focused window only. Needs a browser.
+    shadow_test = ROOT / "smoke" / "window_shadow_test.mjs"
+    if not shadow_test.is_file():
+        bad("window shadow does not stack", "smoke/window_shadow_test.mjs missing")
+    elif "--cdp" not in sys.argv:
+        skipped.append("window shadow does not stack (window_shadow_test.mjs)")
+        print("SKIP | window shadow does not stack | 原因：未加 --cdp（需要浏览器；不加不算通过）")
+    elif NODE:
+        run("window shadow does not stack", [NODE, str(shadow_test)], timeout=600)
+        run("window shadow mutation self-test", [NODE, str(shadow_test), "--self-test"], timeout=900)
+    else:
+        bad("window shadow does not stack", "node not found")
+
     # --- real browser (opt-in: needs a local browser binary) ---
     if "--cdp" not in sys.argv:
         skipped.append("real browser checks (page_e2e.mjs)")
