@@ -6,7 +6,7 @@
 <p align="center">Sticky notes, paper pages, calendar tasks, drawings and a reusable prompt library on one desk inside DSH.</p>
 <p align="center"><a href="README.zh.md">中文</a></p>
 
-> panel plugin v0.6.2
+> panel plugin v0.7.0
 
 <p align="center">
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-%E2%89%A522-339933" alt="Node.js 22 or newer"></a>
@@ -51,8 +51,12 @@ Switch in Settings → Appearance → "Desk look". It applies instantly without 
 - Long-form writing with a searchable page list on the left and auto-save.
 - A new page's title is a placeholder, not a line of literal "Untitled page".
 - **Pinning**: the editor toolbar has Pin / Unpin with `aria-pressed`; pinned pages sort first, the rest stay newest-first. Pinning survives reload, export/import and migration.
+- **Pictures inline** (0.7.0): a page body is a block editor, so images can sit between any two paragraphs. Paste a screenshot with `Ctrl/Cmd + V`, drop a file onto the page, or use **Insert a picture** in the editor footer. Drag an image block to reorder it; click the eye to open it full size (`Esc` closes).
+- **How pictures are stored**: the bytes live next to the workspace under `$DSH_HOME/control-your-schedule/assets/`, and the workspace only keeps an id. Every picture is downscaled to a 2560 px long edge and re-encoded (WebP for transparency, JPEG otherwise) with a 1.5 MB target and a 4 MB hard cap; anything that cannot fit is refused with a reason instead of being silently degraded.
+- **Export stays self-contained**: exporting reads the bytes back and inlines them, so a JSON taken to another machine still has its pictures. **The workspace backups** (`workspace.prev.json`, `workspace.v*.backup.json`) only cover the text, exactly like the snapshot itself.
+- Pasting formatted text from elsewhere keeps the words and drops the formatting; nothing foreign is written into a page.
 
-<img width="1400" alt="Paper pages: list, editor and the pin action in the toolbar" src="assets/screenshot-modern-notes.webp">
+<img width="1400" alt="A paper page with two pictures inline and a line of text between them" src="assets/screenshot-pictures.webp">
 
 ### Calendar and tasks
 
@@ -73,8 +77,6 @@ Switch in Settings → Appearance → "Desk look". It applies instantly without 
 
 - Freehand drawing with undo/redo, eraser, brush colours and four tip sizes, clear page, delete whole page and export to PNG; the booklet flips left/right and remembers the current page.
 
-<img width="1400" alt="Drawing paper with booklet, tools and canvas" src="assets/screenshot-modern-draw.webp">
-
 ### Desk, windows and dock
 
 - **Today card** on the right of a wide desk so windows never cover it; it steps aside on narrow panels.
@@ -92,7 +94,7 @@ Switch in Settings → Appearance → "Desk look". It applies instantly without 
 
 ### Data and upgrades
 
-- **Upgrades keep your data**: the workspace carries a version and a migration ladder (v1 → v4). The host writes `workspace.v<old>.backup.json` before a version change and keeps `workspace.prev.json` before every write. A workspace that fails validation opens **read-only** with the original stashed — it is never overwritten with the sample desk.
+- **Upgrades keep your data**: the workspace carries a version and a migration ladder (v1 → v5). The host writes `workspace.v<old>.backup.json` before a version change and keeps `workspace.prev.json` before every write. A workspace that fails validation opens **read-only** with the original stashed — it is never overwritten with the sample desk. Note that those two backup files cover the text only: page pictures live in the asset folder beside them.
 - **Switching away and back** restores windows and what each app was looking at (selected page, calendar day, sticky scroll, drawing page, settings section).
 
 ## Installation
@@ -107,7 +109,7 @@ DSH → Plugins → Add plugin, then enter:
 dsh-plugin-control-your-schedule
 ```
 
-A version can be pinned too: `dsh-plugin-control-your-schedule@0.6.2`.
+A version can be pinned too: `dsh-plugin-control-your-schedule@0.7.0`.
 
 ### From GitHub
 
@@ -207,7 +209,7 @@ python smoke/run_all_checks.py --cdp
 
 ## Releases
 
-- Current version: **0.6.2**
+- Current version: **0.7.0**
 - [CHANGELOG.md](CHANGELOG.md) · [Releases](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/releases) · [npm](https://www.npmjs.com/package/dsh-plugin-control-your-schedule)
 
 ## License

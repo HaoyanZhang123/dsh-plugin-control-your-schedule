@@ -4853,6 +4853,7 @@ body.is-window-resizing * {
   min-height: 0;
   flex: 1 1 auto;
   padding: 3px 4px 12px;
+  overflow-y: auto;
   border: 0;
   color: #3c3c3c;
   background-color: transparent;
@@ -4864,6 +4865,260 @@ body.is-window-resizing * {
   line-height: 28px;
   outline: none;
   resize: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* contenteditable 没有 placeholder 属性可用：空文档时用伪元素画一行提示。
+   只用 :empty —— :has() 在旧版内核里会让整条规则失效，宁可少一种形态也不要悄悄不生效。 */
+.note-body:empty::before {
+  content: attr(placeholder);
+  color: var(--ink-ghost);
+  pointer-events: none;
+}
+
+.note-block--text {
+  min-height: 28px;
+  white-space: pre-wrap;
+}
+
+/* ---------- 图片块 ---------- */
+
+.note-figure {
+  position: relative;
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin: 10px 0 14px;
+  padding: 6px;
+  border: 1px solid rgba(73, 73, 73, 0.14);
+  border-radius: 3px;
+  background: #fffdf7;
+  box-shadow: 0 1px 0 rgba(73, 73, 73, 0.06);
+  cursor: grab;
+}
+
+.note-figure.is-dragging {
+  opacity: 0.55;
+  cursor: grabbing;
+}
+
+.note-figure.is-missing::after {
+  content: "这张图片没有找回来";
+  display: block;
+  padding: 22px 18px;
+  color: var(--ink-faint);
+  font-size: 13px;
+  text-align: center;
+}
+
+.note-figure__img {
+  display: block;
+  max-width: 100%;
+  max-height: 520px;
+  border-radius: 2px;
+  object-fit: contain;
+}
+
+.note-figure.is-missing .note-figure__img {
+  display: none;
+}
+
+.note-figure__grip {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  background: rgba(255, 253, 247, 0.86);
+  color: var(--ink-faint);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.note-figure:hover .note-figure__grip,
+.note-figure:focus-within .note-figure__grip {
+  opacity: 1;
+}
+
+.note-figure__grip svg {
+  width: 15px;
+  height: 15px;
+}
+
+.note-figure__tools {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.note-figure:hover .note-figure__tools,
+.note-figure:focus-within .note-figure__tools {
+  opacity: 1;
+}
+
+.note-figure__btn {
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid rgba(73, 73, 73, 0.16);
+  border-radius: 3px;
+  background: rgba(255, 253, 247, 0.94);
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.note-figure__btn:hover {
+  background: #fff;
+  color: var(--ink);
+}
+
+.note-figure__btn--danger:hover {
+  border-color: var(--clay-deep);
+  color: var(--clay-deep);
+}
+
+.note-figure__btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* ---------- 拖放与插图 ---------- */
+
+.note-drop-hint {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--clay);
+  border-radius: 3px;
+  background: rgba(252, 247, 235, 0.82);
+  color: var(--clay-deep);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.note-body.is-drop-target {
+  outline: 1px dashed var(--clay);
+  outline-offset: 2px;
+}
+
+.note-body.is-busy::after {
+  content: "正在放进去…";
+  position: sticky;
+  bottom: 0;
+  display: block;
+  padding: 4px 0;
+  color: var(--ink-faint);
+  font-size: 12.5px;
+}
+
+.note-add-image {
+  display: inline-flex;
+  margin-left: auto;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border: 1px solid rgba(73, 73, 73, 0.16);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 12.5px;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+
+.note-add-image:hover {
+  border-color: var(--clay);
+  color: var(--clay-deep);
+  background: rgba(189, 110, 80, 0.06);
+}
+
+.note-add-image__icon {
+  display: inline-flex;
+}
+
+.note-add-image__icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.note-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- 灯箱 ---------- */
+
+.note-lightbox {
+  max-width: calc(100vw - 40px);
+  max-height: calc(100vh - 40px);
+  padding: 10px;
+  border: 1px solid rgba(73, 73, 73, 0.18);
+  border-radius: 4px;
+  background: #fffdf7;
+}
+
+.note-lightbox::backdrop {
+  background: rgba(24, 22, 18, 0.62);
+}
+
+.note-lightbox__figure {
+  margin: 0;
+}
+
+.note-lightbox__img {
+  display: block;
+  max-width: calc(100vw - 68px);
+  max-height: calc(100vh - 110px);
+  object-fit: contain;
+}
+
+.note-lightbox__meta {
+  padding-top: 6px;
+  color: var(--ink-faint);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  text-align: center;
+}
+
+.note-lightbox__close {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: rgba(255, 253, 247, 0.92);
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.note-lightbox__close svg {
+  width: 16px;
+  height: 16px;
 }
 
 .note-body::placeholder {
@@ -7865,6 +8120,28 @@ html[data-theme="dark"] select {
   border-color: rgba(217, 217, 217, 0.18);
   color: var(--ink);
   background: rgba(44, 44, 44, 0.9);
+}
+
+html[data-theme="dark"] .note-figure__btn,
+html[data-theme="dark"] .note-figure__grip,
+html[data-theme="dark"] .note-lightbox__close {
+  border-color: rgba(217, 217, 217, 0.22);
+  color: var(--ink);
+  background: rgba(44, 44, 44, 0.92);
+}
+
+html[data-theme="dark"] .note-figure {
+  border-color: rgba(217, 217, 217, 0.16);
+  background: #2a2a2a;
+}
+
+html[data-theme="dark"] .note-lightbox {
+  border-color: rgba(217, 217, 217, 0.2);
+  background: #262626;
+}
+
+html[data-theme="dark"] .note-drop-hint {
+  background: rgba(38, 38, 38, 0.86);
 }
 
 html[data-theme="dark"] .sticky-board {
@@ -12150,7 +12427,10 @@ html[data-skin="modern"] .tour__btn:focus-visible {
   P.codename = '纸屿';
   /* 版本号由 tools/build_page.py 从 package.json 注入，页面里不再有第二份事实源。 */
   P.version = '__PAGE_VERSION__';
-  P.schemaVersion = 4;
+  /* v5: 纸页笔记从纯文本正文升级为「文字块 + 图片块」混排。
+     node.content 保留为 blocks 的只读投影（搜索 / 摘要 / 字数 / 导出可用），
+     图片字节不进快照，只存 assetId，见 plugin/index.js 的资产路由。 */
+  P.schemaVersion = 5;
 
   /* ---------------- 语言与带参句子 ----------------
      页面源只有中文（唯一 UI 事实源）。构建把 window.__PAPER_LANG__ 注入 <head>，
@@ -12335,6 +12615,28 @@ html[data-skin="modern"] .tour__btn:focus-visible {
       out.meta.migratedAt = Date.now();
       out.meta.updatedAt = Date.now();
       return out;
+    },
+    4: function v4ToV5(raw) {
+      /* v5 把纸页正文升级成块：blocks 是事实源，content 是它的投影。
+         老纸页没有图片，所以这里只把 content 原样包成单个文字块 ——
+         不发明图片、不改任何其它字段，升级前后的正文逐字相同。 */
+      var out = JSON.parse(JSON.stringify(raw));
+      out.version = 5;
+      var notes = Array.isArray(out.nodes) ? out.nodes : [];
+      for (var i = 0; i < notes.length; i += 1) {
+        var node = notes[i];
+        if (!node || node.type !== 'doc' || node.kind !== 'note') continue;
+        if (Array.isArray(node.blocks)) continue;
+        var text = typeof node.content === 'string' ? node.content : '';
+        node.blocks = text ? [{ type: 'text', text: text }] : [];
+        if (typeof node.content !== 'string') node.content = '';
+      }
+      out.nodes = notes;
+      if (!out.meta || typeof out.meta !== 'object') out.meta = {};
+      if (out.meta.migratedFrom === undefined) out.meta.migratedFrom = 4;
+      out.meta.migratedAt = Date.now();
+      out.meta.updatedAt = Date.now();
+      return out;
     }
   };
 
@@ -12366,6 +12668,95 @@ html[data-skin="modern"] .tour__btn:focus-visible {
     return { ok: true, snapshot: snapshot, from: version };
   };
   /* @migrate-end */
+
+  /* ============================================================
+     纸页正文的块（v5）
+     - blocks 是事实源；content 是它的单向投影，只由 noteBlocks() 产出。
+     - 纯函数、不碰 DOM，可在 Node 里用 new Function 单独跑（smoke/note_blocks_test.mjs）。
+     - 未知块类型直接丢弃：从更新版本的纸屿降级读文件时，不能把陌生结构写回。
+     ============================================================ */
+
+  /* @blocks-begin */
+
+  P.NOTE_BLOCKS_MAX = 200;
+  P.NOTE_TEXT_MAX = 200000;
+  P.NOTE_IMAGES_MAX = 30;
+  P.NOTE_ASSET_PATTERN = /^ast_[a-z0-9]{8,32}$/;
+  P.NOTE_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp'];
+  P.NOTE_IMAGE_MAX_BYTES = 4 * 1024 * 1024;
+
+  function noteAssetId(value) {
+    return typeof value === 'string' && P.NOTE_ASSET_PATTERN.test(value) ? value : '';
+  }
+
+  function noteImageMime(value) {
+    return P.NOTE_IMAGE_MIME.indexOf(value) !== -1 ? value : '';
+  }
+
+  function noteDim(value) {
+    var n = Math.round(Number(value));
+    if (!Number.isFinite(n) || n < 1) return 0;
+    return Math.min(n, 20000);
+  }
+
+  /** 白名单走查：认识的取语义，不认识的一律丢；上限按顺序截断。 */
+  function normalizeNoteBlocks(raw) {
+    if (!Array.isArray(raw)) return [];
+    var out = [];
+    var images = 0;
+    for (var i = 0; i < raw.length && out.length < P.NOTE_BLOCKS_MAX; i += 1) {
+      var block = raw[i];
+      if (!block || typeof block !== 'object') continue;
+      if (block.type === 'text') {
+        var text = typeof block.text === 'string' ? block.text : '';
+        if (text.length > P.NOTE_TEXT_MAX) text = text.slice(0, P.NOTE_TEXT_MAX);
+        if (!text) continue;
+        out.push({ type: 'text', text: text });
+        continue;
+      }
+      if (block.type === 'image') {
+        if (images >= P.NOTE_IMAGES_MAX) continue;
+        var assetId = noteAssetId(block.assetId);
+        if (!assetId) continue;
+        images += 1;
+        out.push({
+          type: 'image',
+          assetId: assetId,
+          w: noteDim(block.w),
+          h: noteDim(block.h),
+          bytes: Math.min(Math.max(Math.round(Number(block.bytes)) || 0, 0), P.NOTE_IMAGE_MAX_BYTES),
+          mime: noteImageMime(block.mime)
+        });
+        continue;
+      }
+      /* 未知类型：丢弃，绝不透传。 */
+    }
+    return out;
+  }
+
+  /** content 是 blocks 的投影：只取文字块，块之间用一个换行分隔。 */
+  function noteBlocksText(blocks) {
+    if (!Array.isArray(blocks)) return '';
+    var parts = [];
+    for (var i = 0; i < blocks.length; i += 1) {
+      var block = blocks[i];
+      if (block && block.type === 'text' && typeof block.text === 'string') parts.push(block.text);
+    }
+    return parts.join('\n\n');
+  }
+
+  /** 旧快照只有 content：包成一个文字块，内容逐字不变。 */
+  function noteBlocksFromText(content) {
+    var text = typeof content === 'string' ? content : '';
+    return text ? [{ type: 'text', text: text }] : [];
+  }
+
+  P.normalizeNoteBlocks = normalizeNoteBlocks;
+  P.noteBlocksText = noteBlocksText;
+  P.noteBlocksFromText = noteBlocksFromText;
+  P.noteAssetId = noteAssetId;
+
+  /* @blocks-end */
   P.paperColors = ['#fcf7eb', '#f4e6a9', '#efd2b9', '#d5dfc5', '#cfdde2', '#ebd0cb'];
   P.DRAW_PAPER = '#fcf7eb';
 
@@ -13354,6 +13745,11 @@ html[data-skin="modern"] .tour__btn:focus-visible {
       name: uniqueName(parentId, normalizeName(info.name, '未命名纸页')),
       parentId: parentId,
       content: typeof info.content === 'string' ? info.content : '',
+      /* v5：笔记正文的事实源是 blocks（文字块 / 图片块），content 只是它的投影。
+         这里同步铺一份单文字块，让「新建即写 content」的既有调用方不必知道块的存在。 */
+      blocks: Array.isArray(info.blocks)
+        ? P.normalizeNoteBlocks(info.blocks)
+        : P.noteBlocksFromText(typeof info.content === 'string' ? info.content : ''),
       pinned: false,
       sample: !!info.sample,
       createdAt: now,
@@ -13395,8 +13791,14 @@ html[data-skin="modern"] .tour__btn:focus-visible {
     if (Object.prototype.hasOwnProperty.call(changes, 'name')) {
       node.name = uniqueName(node.parentId, normalizeName(changes.name, node.name), node.id);
     }
-    if (node.type === 'doc' && node.kind === 'note' && Object.prototype.hasOwnProperty.call(changes, 'content')) {
+    if (node.type === 'doc' && node.kind === 'note' && Object.prototype.hasOwnProperty.call(changes, 'blocks')) {
+      node.blocks = P.normalizeNoteBlocks(changes.blocks);
+      /* content 永远从 blocks 重算：它是投影，不是可以单独写的第二个事实源。 */
+      node.content = P.noteBlocksText(node.blocks);
+    } else if (node.type === 'doc' && node.kind === 'note' && Object.prototype.hasOwnProperty.call(changes, 'content')) {
       node.content = String(changes.content === undefined || changes.content === null ? '' : changes.content);
+      /* 仍只有一处写入口径：想改正文就必须走 blocks，这里只是把纯文本调用方接进来。 */
+      node.blocks = P.noteBlocksFromText(node.content);
     }
     if (Object.prototype.hasOwnProperty.call(changes, 'pinned')) node.pinned = !!changes.pinned;
     if (node.type === 'doc' && node.kind === 'drawing') {
@@ -13500,7 +13902,13 @@ html[data-skin="modern"] .tour__btn:focus-visible {
 
   function noteExcerpt(note) {
     var content = String(note && note.content ? note.content : '').replace(/\s+/g, ' ').trim();
-    return content ? content.slice(0, 72) : '一张还没有写字的纸。';
+    if (content) return content.slice(0, 72);
+    /* 只有图片的纸页没有文字可摘：说出这件事，而不是假装它是空白纸。 */
+    var images = 0;
+    if (note && Array.isArray(note.blocks)) {
+      note.blocks.forEach(function (block) { if (block && block.type === 'image') images += 1; });
+    }
+    return images ? F('{n} 张图片', images) : '一张还没有写字的纸。';
   }
 
   function getExampleCounts() {
@@ -15025,9 +15433,17 @@ html[data-skin="modern"] .tour__btn:focus-visible {
           if (rawNode.content !== undefined && rawNode.content !== null && typeof rawNode.content !== 'string') {
             return invalid('纸页「' + name + '」的正文格式不正确。');
           }
-          var content = typeof rawNode.content === 'string' ? rawNode.content : '';
+          /* v5：blocks 是事实源。导入值里的 content 一律不信任 —— 以 blocks 重算，
+             这样手改过的 JSON 无法把搜索 / 摘要用的正文和真正的块内容拆成两套。 */
+          var rawBlocks = rawNode.blocks;
+          if (rawBlocks !== undefined && rawBlocks !== null && !Array.isArray(rawBlocks)) {
+            return invalid('纸页「' + name + '」的正文块格式不正确。');
+          }
+          var blocks = P.normalizeNoteBlocks(Array.isArray(rawBlocks) ? rawBlocks : P.noteBlocksFromText(rawNode.content));
+          var content = P.noteBlocksText(blocks);
           if (content.length > 4000000) return invalid('纸页「' + name + '」的正文过长。');
           node.content = content;
+          node.blocks = blocks;
           node.pinned = !!rawNode.pinned;
         } else {
           var strokeResult = validateStrokes(rawNode.strokes);
@@ -18162,11 +18578,176 @@ html[data-skin="modern"] .tour__btn:focus-visible {
   }
 
   function exportWorkspace() {
-    var json = P.storage.exportJSON();
-    var name = 'paper-os-workspace-' + U.dateKey() + '.json';
-    P.downloadFile(name, json, 'application/json');
-    P.ui.toast('工作区已经导出为 ' + name, { kind: 'info' });
+    /* 有图片的纸页要把字节一起带走：导出是换一台机器打开用的边界格式，
+       所以这里把盘上的资产读回来内联成 data URL。内存里只有这一次 copies，
+       运行时快照仍然只存 assetId —— 边界转换不改变存储形态。 */
+    P.exportWorkspaceBundle().then(function (bundle) {
+      var name = 'paper-os-workspace-' + U.dateKey() + '.json';
+      P.downloadFile(name, JSON.stringify(bundle.snapshot, null, 2), 'application/json');
+      if (bundle.missing.length) {
+        P.ui.toast(F('工作区已经导出，但有 {n} 张图片没能读出来，导出的文件里会缺这几张。', bundle.missing.length), { kind: 'warn' });
+      } else if (bundle.images) {
+        P.ui.toast(F('工作区已经导出为 {name}，含 {n} 张图片，共 {size}。', { name: name, n: bundle.images, size: U.bytesLabel(bundle.bytes) }), { kind: 'info' });
+      } else {
+        P.ui.toast(F('工作区已经导出为 {name}', { name: name }), { kind: 'info' });
+      }
+    }).catch(function (err) {
+      P.ui.toast(F('导出没有完成：{reason}', { reason: err && err.message ? err.message : '未知原因' }), { kind: 'error' });
+    });
   }
+
+  /* 导出时内联图片的上限：再大浏览器拼 Blob 就会卡死，所以宁可明确拒绝。 */
+  var EXPORT_WARN_BYTES = 24 * 1024 * 1024;
+  var EXPORT_MAX_BYTES = 96 * 1024 * 1024;
+
+  function noteAssetIds(snapshot) {
+    var ids = [];
+    var seen = {};
+    var nodes = snapshot && Array.isArray(snapshot.nodes) ? snapshot.nodes : [];
+    nodes.forEach(function (node) {
+      if (!node || node.kind !== 'note' || !Array.isArray(node.blocks)) return;
+      node.blocks.forEach(function (block) {
+        if (!block || block.type !== 'image') return;
+        if (!P.noteAssetId(block.assetId) || seen[block.assetId]) return;
+        seen[block.assetId] = true;
+        ids.push(block.assetId);
+      });
+    });
+    return ids;
+  }
+
+  function blobToDataUrl(blob) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { resolve(String(reader.result || '')); };
+      reader.onerror = function () { reject(reader.error || new Error('读取图片失败。')); };
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  /** 导出：快照 + 内联图片。失败的单张记进 missing，不让整次导出陪葬。 */
+  P.exportWorkspaceBundle = async function () {
+    var snapshot = P.storage.buildExport();
+    var ids = noteAssetIds(snapshot);
+    var inline = {};
+    var missing = [];
+    var bytes = 0;
+    for (var i = 0; i < ids.length; i += 1) {
+      try {
+        var response = await fetch(P.noteAssets.url(ids[i]));
+        if (!response.ok) throw new Error('status ' + response.status);
+        var blob = await response.blob();
+        var dataUrl = await blobToDataUrl(blob);
+        bytes += blob.size;
+        if (bytes > EXPORT_MAX_BYTES) throw new Error(F('导出的图片总量超过上限'));
+        inline[ids[i]] = dataUrl;
+      } catch (error) {
+        missing.push(ids[i]);
+      }
+    }
+    if (bytes > EXPORT_WARN_BYTES) {
+      var keep = await P.ui.confirm({
+        title: F('这次导出会比较大'),
+        message: F('图片一共 {size}，导出的文件也差不多这么大。要继续吗？', { size: U.bytesLabel(bytes) }),
+        confirmLabel: F('继续导出'),
+        cancelLabel: F('先不导出')
+      });
+      if (!keep) throw new Error(F('导出被取消。'));
+    }
+    snapshot.nodes.forEach(function (node) {
+      if (!node || node.kind !== 'note' || !Array.isArray(node.blocks)) return;
+      node.blocks = node.blocks.map(function (block) {
+        if (!block || block.type !== 'image') return block;
+        var dataUrl = inline[block.assetId];
+        if (!dataUrl) return block;
+        var copy = {};
+        Object.keys(block).forEach(function (key) { copy[key] = block[key]; });
+        copy.dataUrl = dataUrl;
+        return copy;
+      });
+    });
+    return { snapshot: snapshot, images: Object.keys(inline).length, missing: missing, bytes: bytes };
+  };
+
+  /**
+   * 导入：把内联图片拆回资产目录，再交给唯一的 ingest 关卡。
+   * 这样 ingestWorkspace 仍然是纯函数、只认 assetId，边界转换全在这一层。
+   */
+  /**
+   * 孤儿资产回收：资产目录里存在、但快照里没有任何图块引用的 id，删掉。
+   * - 页面启动后在后台跑一次，失败只记日志，绝不阻塞启动；
+   * - 只删 .bin 里列出来的、且不在引用集里的 id —— 不猜、不批量删目录；
+   * - 刚上传还没写进快照的图不在磁盘列举里，不会被误删（上传先落盘再回填 id 的顺序
+   *   决定了这里必须以磁盘为准、以快照为引用集，反过来会删掉正在上传的图）。
+   */
+  P.reclaimNoteAssets = async function () {
+    var snapshot = P.storage.buildExport();
+    var referenced = {};
+    noteAssetIds(snapshot).forEach(function (id) { referenced[id] = true; });
+    var response;
+    try {
+      response = await fetch('/api/control-your-schedule/assets');
+    } catch (error) {
+      return { deleted: 0, failed: 1, error: 'host unreachable' };
+    }
+    if (!response.ok) return { deleted: 0, failed: 1, error: 'status ' + response.status };
+    var listed;
+    try { listed = await response.json(); } catch (error) { return { deleted: 0, failed: 1, error: 'bad json' }; }
+    var ids = listed && Array.isArray(listed.ids) ? listed.ids : [];
+    var deleted = 0;
+    var failed = 0;
+    for (var i = 0; i < ids.length; i += 1) {
+      var id = ids[i];
+      if (referenced[id] || !P.noteAssetId(id)) continue;
+      try {
+        var removed = await fetch(P.noteAssets.url(id), { method: 'DELETE' });
+        if (removed.ok) deleted += 1;
+        else failed += 1;
+      } catch (error) {
+        failed += 1;
+      }
+    }
+    return { deleted: deleted, failed: failed, kept: Object.keys(referenced).length };
+  };
+
+  P.splitWorkspaceAssets = async function (raw) {
+    var snapshot = raw;
+    var split = 0;
+    var failed = 0;
+    var nodes = snapshot && Array.isArray(snapshot.nodes) ? snapshot.nodes : [];
+    for (var i = 0; i < nodes.length; i += 1) {
+      var node = nodes[i];
+      if (!node || node.kind !== 'note' || !Array.isArray(node.blocks)) continue;
+      var next = [];
+      for (var j = 0; j < node.blocks.length; j += 1) {
+        var block = node.blocks[j];
+        if (!block || block.type !== 'image' || typeof block.dataUrl !== 'string') {
+          next.push(block);
+          continue;
+        }
+        var match = /^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=\s]+)$/.exec(block.dataUrl);
+        if (!match) { failed += 1; continue; }
+        try {
+          var binary = atob(match[2].replace(/\s/g, ''));
+          var array = new Uint8Array(binary.length);
+          for (var k = 0; k < binary.length; k += 1) array[k] = binary.charCodeAt(k);
+          var prepared = {
+            blob: new Blob([array], { type: match[1] }),
+            mime: match[1],
+            width: Number(block.w) || 0,
+            height: Number(block.h) || 0
+          };
+          var stored = await P.noteAssets.put(prepared);
+          next.push(stored);
+          split += 1;
+        } catch (error) {
+          failed += 1;
+        }
+      }
+      node.blocks = next;
+    }
+    return { snapshot: snapshot, split: split, failed: failed };
+  };
 
   P.downloadFile = function (filename, content, mime) {
     try {
@@ -18408,6 +18989,17 @@ html[data-skin="modern"] .tour__btn:focus-visible {
         }
       }
       P.storage.requestPersistence();
+      /* 孤儿图片回收：启动后延后跑一次，失败只记日志。不阻塞铺开桌面。 */
+      setTimeout(function () {
+        if (!P.reclaimNoteAssets) return;
+        P.reclaimNoteAssets().then(function (result) {
+          if (result && result.deleted && window.console) {
+            console.info('PaperOS reclaimed ' + result.deleted + ' unused picture(s)');
+          }
+        }).catch(function (err) {
+          if (window.console) console.warn('PaperOS asset reclaim failed', err);
+        });
+      }, 4000);
       syncChrome();
       updateSaveStatus(P.storage.getDataStatus());
       finishBoot();
@@ -19609,6 +20201,526 @@ html[data-skin="modern"] .tour__btn:focus-visible {
   });
 })();
 
+/* ===== src/js/apps/note-editor.js ===== */
+/* ============================================================
+   PAPER OS — block editor for paper notes (v5)
+   - DOM 是视图，blocks 才是数据：每次改动都从 DOM 白名单走查回 blocks。
+   - 图片字节走宿主资产路由，快照里只留 assetId。
+   - 这个段不碰 P.data / P.storage，只通过 options 回调交付结果，
+     于是它可以在没有工作区的页面里独立渲染（读模型测试就靠这一点）。
+   ============================================================ */
+(function () {
+  'use strict';
+
+  var P = window.PaperOS;
+
+  /* 图片入库的处理链：解码 → 长边缩到 2560 → 选格式 → 体积兜底。
+     抽成单独函数，是为了让压缩参数只有一处事实源。 */
+  var IMAGE_MAX_EDGE = 2560;
+  var IMAGE_TARGET_BYTES = 1.5 * 1024 * 1024;
+  var IMAGE_MAX_BYTES = 4 * 1024 * 1024;
+
+  function assetUrl(id) {
+    return '/api/control-your-schedule/assets?id=' + encodeURIComponent(id);
+  }
+
+  function newAssetId() {
+    var raw = '';
+    var bytes = new Uint8Array(10);
+    if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+      window.crypto.getRandomValues(bytes);
+      for (var i = 0; i < bytes.length; i += 1) raw += bytes[i].toString(16).padStart(2, '0');
+    } else {
+      raw = Math.random().toString(16).slice(2) + Date.now().toString(16);
+    }
+    return 'ast_' + raw.slice(0, 16);
+  }
+
+  function canvasToBlob(canvas, mime, quality) {
+    return new Promise(function (resolve) {
+      if (typeof canvas.toBlob !== 'function') { resolve(null); return; }
+      canvas.toBlob(function (blob) { resolve(blob); }, mime, quality);
+    });
+  }
+
+  /** 把任意图片文件压成可入库的字节；失败时抛出带中文原因的 Error。 */
+  async function prepareImage(file) {
+    if (!file || typeof file.size !== 'number') throw new Error('这不是一张可识别的图片。');
+    if (file.size > 40 * 1024 * 1024) throw new Error('这张图太大了（超过 40 MB），先裁小一点再放进来。');
+    var bitmap;
+    try {
+      bitmap = await createImageBitmap(file);
+    } catch (error) {
+      throw new Error('这张图片打不开，可能不是浏览器认识的格式。');
+    }
+    var width = bitmap.width;
+    var height = bitmap.height;
+    var scale = Math.min(1, IMAGE_MAX_EDGE / Math.max(width, height));
+    var targetW = Math.max(1, Math.round(width * scale));
+    var targetH = Math.max(1, Math.round(height * scale));
+    var hasAlpha = /png|webp/i.test(file.type || '');
+    var mime = hasAlpha ? 'image/webp' : 'image/jpeg';
+    var quality = hasAlpha ? 0.9 : 0.86;
+    var blob = null;
+    for (var attempt = 0; attempt < 3; attempt += 1) {
+      var canvas = document.createElement('canvas');
+      canvas.width = targetW;
+      canvas.height = targetH;
+      var ctx = canvas.getContext('2d');
+      if (!ctx) break;
+      /* PNG 的透明底要留住，否则会变成黑块。 */
+      if (!hasAlpha) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, targetW, targetH);
+      }
+      ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+      blob = await canvasToBlob(canvas, mime, quality);
+      if (!blob) break;
+      if (blob.size <= IMAGE_TARGET_BYTES) break;
+      targetW = Math.max(1, Math.round(targetW * 0.8));
+      targetH = Math.max(1, Math.round(targetH * 0.8));
+    }
+    if (typeof bitmap.close === 'function') { try { bitmap.close(); } catch (error) { /* ignore */ } }
+    if (!blob) throw new Error('这张图片没能转成可以保存的格式。');
+    if (blob.size > IMAGE_MAX_BYTES) throw new Error('这张图压到最小还是太大，换一张小一点的。');
+    return { blob: blob, mime: blob.type || mime, width: targetW, height: targetH };
+  }
+
+  /** 宿主侧：把字节写进资产目录。失败时抛出可读原因。 */
+  async function uploadAsset(prepared) {
+    var id = newAssetId();
+    var response;
+    try {
+      response = await fetch(assetUrl(id), {
+        method: 'PUT',
+        headers: {
+          'content-type': prepared.mime,
+          'x-asset-width': String(prepared.width),
+          'x-asset-height': String(prepared.height)
+        },
+        body: prepared.blob
+      });
+    } catch (error) {
+      throw new Error('图片没能存进这个工作区（宿主没有响应）。');
+    }
+    if (!response.ok) {
+      var reason = '图片没能存进这个工作区。';
+      if (response.status === 413) reason = '这张图超过了单张上限。';
+      else if (response.status === 415) reason = '这个图片格式不受支持。';
+      throw new Error(reason);
+    }
+    return {
+      type: 'image',
+      assetId: id,
+      w: prepared.width,
+      h: prepared.height,
+      bytes: prepared.blob.size,
+      mime: prepared.mime
+    };
+  }
+
+  /* 资产接口的唯一入口：测试可以整体替换它，页面代码只认这两个函数。 */
+  P.noteAssets = {
+    url: assetUrl,
+    put: uploadAsset,
+    prepare: prepareImage,
+    maxBytes: IMAGE_MAX_BYTES,
+    maxEdge: IMAGE_MAX_EDGE
+  };
+
+  /**
+   * 块编辑器。options:
+   *   body      contenteditable 容器
+   *   onChange(blocks)  每次 DOM 变化后回调（已经过白名单归一）
+   *   onNotice(text, kind)  失败提示
+   *   resolveAsset(id)  可选：把 id 换成可显示的地址
+   */
+  P.createNoteEditor = function (options) {
+    var opts = options || {};
+    var body = opts.body;
+    if (!body) throw new Error('块编辑器需要一个正文容器。');
+
+    var current = [];
+    var composing = false;
+    var pending = 0;
+    var destroyed = false;
+
+    function notify(message, kind) {
+      if (typeof opts.onNotice === 'function') opts.onNotice(message, kind || 'error');
+    }
+
+    /* ---------- 渲染 ---------- */
+
+    function textNodeFor(text) {
+      var div = document.createElement('div');
+      div.className = 'note-block note-block--text';
+      div.textContent = text;
+      return div;
+    }
+
+    function imageFigure(block) {
+      var figure = document.createElement('figure');
+      figure.className = 'note-figure';
+      figure.setAttribute('data-asset', block.assetId);
+      figure.setAttribute('contenteditable', 'false');
+      figure.setAttribute('draggable', 'true');
+      if (block.w) figure.setAttribute('data-w', String(block.w));
+      if (block.h) figure.setAttribute('data-h', String(block.h));
+
+      var img = document.createElement('img');
+      img.className = 'note-figure__img';
+      img.alt = '纸页里的图片';
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.src = typeof opts.resolveAsset === 'function' ? opts.resolveAsset(block.assetId) : assetUrl(block.assetId);
+      img.addEventListener('error', function () {
+        figure.classList.add('is-missing');
+        img.removeAttribute('src');
+      });
+      figure.appendChild(img);
+
+      var handle = document.createElement('span');
+      handle.className = 'note-figure__grip';
+      handle.setAttribute('aria-hidden', 'true');
+      handle.innerHTML = P.icon('drag');
+      figure.appendChild(handle);
+
+      var tools = document.createElement('div');
+      tools.className = 'note-figure__tools';
+      var zoom = document.createElement('button');
+      zoom.type = 'button';
+      zoom.className = 'note-figure__btn';
+      zoom.setAttribute('data-testid', 'note-figure-zoom');
+      zoom.setAttribute('aria-label', '看原图');
+      zoom.title = '看原图';
+      zoom.innerHTML = P.icon('eye');
+      zoom.addEventListener('click', function (event) {
+        event.preventDefault();
+        P.noteLightbox(block, figure);
+      });
+      var remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'note-figure__btn note-figure__btn--danger';
+      remove.setAttribute('data-testid', 'note-figure-remove');
+      remove.setAttribute('aria-label', '把这张图拿掉');
+      remove.title = '把这张图拿掉';
+      remove.innerHTML = P.icon('trash');
+      remove.addEventListener('click', function (event) {
+        event.preventDefault();
+        figure.remove();
+        sync();
+      });
+      tools.appendChild(zoom);
+      tools.appendChild(remove);
+      figure.appendChild(tools);
+      return figure;
+    }
+
+    function render(blocks) {
+      current = P.normalizeNoteBlocks(blocks);
+      body.innerHTML = '';
+      current.forEach(function (block) {
+        if (block.type === 'text') body.appendChild(textNodeFor(block.text));
+        else if (block.type === 'image') body.appendChild(imageFigure(block));
+      });
+      /* 不补空文字块：留空的容器才命中 CSS 的 .note-body:empty::before 占位提示，
+         contenteditable 本身就能在空容器里接光标。 */
+    }
+
+    /* ---------- 序列化：DOM → blocks 的唯一一条路径 ---------- */
+
+    function serialize() {
+      var blocks = [];
+      var children = body.children;
+      for (var i = 0; i < children.length; i += 1) {
+        var node = children[i];
+        if (node.nodeType !== 1) continue;
+        var asset = node.getAttribute && node.getAttribute('data-asset');
+        if (asset) {
+          if (!P.noteAssetId(asset)) continue;
+          blocks.push({
+            type: 'image',
+            assetId: asset,
+            w: Number(node.getAttribute('data-w')) || 0,
+            h: Number(node.getAttribute('data-h')) || 0,
+            bytes: Number(node.getAttribute('data-bytes')) || 0,
+            mime: node.getAttribute('data-mime') || ''
+          });
+          continue;
+        }
+        /* 只认直接子节点的文字；标签、加粗、表格一律摊平成纯文字。 */
+        var text = node.textContent || '';
+        if (!text) continue;
+        blocks.push({ type: 'text', text: text });
+      }
+      /* 连续文字块合并成一个：粘贴/输入会产生很多碎片 div，它们不是语义块。 */
+      var merged = [];
+      blocks.forEach(function (block) {
+        var last = merged[merged.length - 1];
+        if (block.type === 'text' && last && last.type === 'text') last.text += '\n' + block.text;
+        else merged.push(block);
+      });
+      return P.normalizeNoteBlocks(merged);
+    }
+
+    function sync() {
+      if (destroyed) return;
+      var blocks = serialize();
+      current = blocks;
+      if (typeof opts.onChange === 'function') opts.onChange(blocks);
+    }
+
+    /* ---------- 图片入库 ---------- */
+
+    function figureFromBlock(block) {
+      var figure = imageFigure(block);
+      figure.setAttribute('data-bytes', String(block.bytes || 0));
+      figure.setAttribute('data-mime', block.mime || '');
+      return figure;
+    }
+
+    /** 把一个块放在参考节点之前；没有参考节点就追加到末尾。 */
+    function placeNode(node, before) {
+      if (before && before.parentNode === body) body.insertBefore(node, before);
+      else body.appendChild(node);
+    }
+
+    async function addFiles(files, before) {
+      var list = Array.prototype.slice.call(files || []).filter(function (file) {
+        return file && /^image\//.test(file.type || '');
+      });
+      if (!list.length) {
+        notify('只认图片文件（PNG / JPEG / WebP）。');
+        return;
+      }
+      pending += 1;
+      body.classList.add('is-busy');
+      var anchorNode = before && before.parentNode === body ? before : null;
+      for (var i = 0; i < list.length; i += 1) {
+        try {
+          var prepared = await P.noteAssets.prepare(list[i]);
+          var block = await P.noteAssets.put(prepared);
+          if (destroyed) return;
+          var figure = figureFromBlock(block);
+          placeNode(figure, anchorNode);
+          anchorNode = figure.nextSibling;
+          sync();
+        } catch (error) {
+          notify(error && error.message ? error.message : '这张图片没能放进来。');
+        }
+      }
+      pending -= 1;
+      if (pending <= 0) { pending = 0; body.classList.remove('is-busy'); }
+    }
+
+    P.noteAssetsReady = function () { return pending === 0; };
+
+    /* ---------- 输入与粘贴 ---------- */
+
+    body.addEventListener('compositionstart', function () { composing = true; });
+    body.addEventListener('compositionend', function () { composing = false; sync(); });
+
+    body.addEventListener('input', function () {
+      /* 输入法组合中的中间态不落盘，否则中文会被存成拼音碎片。 */
+      if (composing) return;
+      sync();
+    });
+
+    body.addEventListener('paste', function (event) {
+      var data = event.clipboardData;
+      if (!data) return;
+      var files = data.files && data.files.length ? data.files : null;
+      var items = data.items || [];
+      if (!files) {
+        var picked = [];
+        for (var i = 0; i < items.length; i += 1) {
+          if (items[i].kind === 'file' && /^image\//.test(items[i].type || '')) picked.push(items[i].getAsFile());
+        }
+        if (picked.length) files = picked.filter(Boolean);
+      }
+      if (files && files.length) {
+        event.preventDefault();
+        addFiles(files, caretAnchor());
+        return;
+      }
+      /* 纯文本粘贴：一律摊平，绝不把外部 HTML 塞进纸里。 */
+      var text = data.getData('text/plain');
+      if (text === null || text === undefined || text === '') return;
+      event.preventDefault();
+      insertPlainText(text);
+    });
+
+    function insertPlainText(text) {
+      var selection = window.getSelection();
+      if (!selection || !selection.rangeCount) {
+        body.appendChild(textNodeFor(text));
+        sync();
+        return;
+      }
+      var range = selection.getRangeAt(0);
+      if (!body.contains(range.commonAncestorContainer)) {
+        body.appendChild(textNodeFor(text));
+        sync();
+        return;
+      }
+      range.deleteContents();
+      var lines = String(text).replace(/\r\n?/g, '\n').split('\n');
+      var fragment = document.createDocumentFragment();
+      lines.forEach(function (line, index) {
+        if (index) fragment.appendChild(document.createElement('br'));
+        fragment.appendChild(document.createTextNode(line));
+      });
+      range.insertNode(fragment);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      sync();
+    }
+
+    /** 当前光标所在的直接子节点；用在粘贴/拖放插入图片的落点上。 */
+    function caretAnchor() {
+      var selection = window.getSelection();
+      if (!selection || !selection.rangeCount) return null;
+      var node = selection.getRangeAt(0).startContainer;
+      while (node && node.parentNode !== body) node = node.parentNode;
+      return node && node.parentNode === body ? node : null;
+    }
+
+    /* ---------- 拖放：图片文件 + 块内排序 ---------- */
+
+    var dragging = null;
+
+    body.addEventListener('dragstart', function (event) {
+      var figure = event.target && event.target.closest ? event.target.closest('.note-figure') : null;
+      if (!figure) return;
+      dragging = figure;
+      figure.classList.add('is-dragging');
+      try {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', '');
+      } catch (error) { /* ignore */ }
+    });
+
+    body.addEventListener('dragend', function () {
+      if (dragging) dragging.classList.remove('is-dragging');
+      dragging = null;
+      body.classList.remove('is-drop-target');
+    });
+
+    body.addEventListener('dragover', function (event) {
+      var transfer = event.dataTransfer;
+      var hasFiles = transfer && Array.prototype.some.call(transfer.types || [], function (type) {
+        return type === 'Files';
+      });
+      if (!hasFiles && !dragging) return;
+      event.preventDefault();
+      if (hasFiles) {
+        body.classList.add('is-drop-target');
+        if (typeof opts.onDragHint === 'function') opts.onDragHint(true);
+        return;
+      }
+      if (dragging) {
+        var over = event.target && event.target.closest ? event.target.closest('.note-figure') : null;
+        if (over && over !== dragging && over.parentNode === body) {
+          var rect = over.getBoundingClientRect();
+          var after = event.clientY > rect.top + rect.height / 2;
+          body.insertBefore(dragging, after ? over.nextSibling : over);
+        }
+      }
+    });
+
+    body.addEventListener('dragleave', function (event) {
+      if (event.target === body) {
+        body.classList.remove('is-drop-target');
+        if (typeof opts.onDragHint === 'function') opts.onDragHint(false);
+      }
+    });
+
+    body.addEventListener('drop', function (event) {
+      body.classList.remove('is-drop-target');
+      if (typeof opts.onDragHint === 'function') opts.onDragHint(false);
+      var transfer = event.dataTransfer;
+      if (!transfer) return;
+      if (transfer.files && transfer.files.length) {
+        event.preventDefault();
+        addFiles(transfer.files, null);
+        dragging = null;
+        return;
+      }
+      if (dragging) {
+        event.preventDefault();
+        dragging = null;
+        sync();
+      }
+    });
+
+    /* 编辑器失焦时也要落一次：用户点别处不会触发 input。 */
+    body.addEventListener('blur', function () { sync(); });
+
+    return {
+      render: render,
+      serialize: serialize,
+      sync: sync,
+      addFiles: addFiles,
+      focus: function () {
+        try {
+          body.focus({ preventScroll: true });
+        } catch (error) { /* ignore */ }
+      },
+      isBusy: function () { return pending > 0; },
+      destroy: function () {
+        destroyed = true;
+        body.innerHTML = '';
+      }
+    };
+  };
+
+  /* ---------- 灯箱：看原图 ---------- */
+
+  P.noteLightbox = function (block, sourceEl) {
+    var dialog = document.createElement('dialog');
+    dialog.className = 'note-lightbox';
+    dialog.setAttribute('data-testid', 'note-lightbox');
+    var figure = document.createElement('figure');
+    figure.className = 'note-lightbox__figure';
+    var img = document.createElement('img');
+    img.className = 'note-lightbox__img';
+    img.alt = '放大的图片';
+    img.src = assetUrl(block.assetId);
+    figure.appendChild(img);
+    var meta = document.createElement('figcaption');
+    meta.className = 'note-lightbox__meta';
+    var bits = [];
+    if (block.w && block.h) bits.push(block.w + ' × ' + block.h);
+    if (block.bytes) bits.push(P.util.bytesLabel(block.bytes));
+    meta.textContent = bits.join(' · ');
+    figure.appendChild(meta);
+    dialog.appendChild(figure);
+    var close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'note-lightbox__close';
+    close.setAttribute('aria-label', '关掉原图');
+    close.innerHTML = P.icon('close');
+    dialog.appendChild(close);
+    document.body.appendChild(dialog);
+    var shut = function () {
+      if (typeof dialog.close === 'function' && dialog.open) dialog.close();
+      dialog.remove();
+      if (sourceEl && sourceEl.isConnected && typeof sourceEl.focus === 'function') {
+        try { sourceEl.focus({ preventScroll: true }); } catch (error) { /* ignore */ }
+      }
+    };
+    close.addEventListener('click', shut);
+    dialog.addEventListener('cancel', function (event) { event.preventDefault(); shut(); });
+    dialog.addEventListener('click', function (event) {
+      if (event.target === dialog) shut();
+    });
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+    else dialog.setAttribute('open', '');
+    return shut;
+  };
+})();
+
 /* ===== src/js/apps/notes.js ===== */
 /* ============================================================
    PAPER OS — Paper Notes app
@@ -19634,6 +20746,8 @@ html[data-skin="modern"] .tour__btn:focus-visible {
       var composingTitle = false;
       var searchTimer = null;
       var titleCommitTimer = null;
+      /* 块编辑器实例：mount 时创建，destroy 时拆掉。 */
+      var editor = null;
 
       var TITLE_DELAY = 340;
       var SEARCH_DELAY = 70;
@@ -19752,8 +20866,10 @@ html[data-skin="modern"] .tour__btn:focus-visible {
           var shownTitle = isUntitled(doc.name) ? '' : doc.name;
           if (refs.titleInput.value !== shownTitle) refs.titleInput.value = shownTitle;
         }
-        if (refs.body && (!refs.body.matches(':focus') || opts.force) && refs.body.value !== (doc.content || '')) {
-          refs.body.value = doc.content || '';
+        /* 正文是块编辑器：光标在里面时不重绘（重绘会打断输入法并吞掉选区），
+           外部改动（另一个窗口、导入、恢复）才强制重建。 */
+        if (editor && (opts.force || !refs.body || !refs.body.contains(document.activeElement))) {
+          editor.render(doc.blocks);
         }
         if (refs.sampleTag) refs.sampleTag.hidden = !doc.sample;
         if (refs.updated) refs.updated.textContent = '修改于 ' + U.timeAgo(doc.updatedAt);
@@ -19993,8 +21109,13 @@ html[data-skin="modern"] .tour__btn:focus-visible {
           '<span data-updated>刚刚</span><span class="editor-subrow__sep" aria-hidden="true"></span>' +
           '<span data-word-count>空白纸页</span><span class="editor-subrow__sep" aria-hidden="true"></span>' +
           '<span class="save-state" data-editor-save data-state="idle">已保存</span></div>' +
-          '<div class="note-writing"><textarea class="note-body" data-testid="note-body" aria-label="纸页正文" placeholder="从这里开始写，纸会自动收好。"></textarea></div>' +
-          '<div class="editor-foot"><span data-foot-save></span></div>' +
+          '<div class="note-writing"><div class="note-body" data-testid="note-body" contenteditable="true" role="textbox" aria-multiline="true" aria-label="纸页正文" placeholder="从这里开始写，纸会自动收好。"></div>' +
+          '<div class="note-drop-hint" data-drop-hint hidden><span>松手就把图片放进这张纸</span></div></div>' +
+          '<div class="editor-foot"><span data-foot-save></span>' +
+          '<button class="note-add-image" type="button" data-testid="note-add-image" aria-label="插入图片" title="插入图片">' +
+          '<span class="note-add-image__icon" data-icon="image" aria-hidden="true"></span>' +
+          '<span data-add-image-label>插入图片</span></button>' +
+          '<input class="note-file-input" type="file" accept="image/png,image/jpeg,image/webp" multiple hidden data-testid="note-file-input"></div>' +
           '</div>' +
           '<div class="notes-missing" hidden><span class="notes-missing__mark" aria-hidden="true">缺</span>' +
           '<h3>这张纸页已经被删除</h3>' +
@@ -20024,10 +21145,45 @@ html[data-skin="modern"] .tour__btn:focus-visible {
         refs.saveNow = root.querySelector('[data-save-now]');
         refs.pinBtn = root.querySelector('[data-testid="note-pin"]');
         refs.renameBtn = root.querySelector('[data-rename]');
+        refs.addImageBtn = root.querySelector('[data-testid="note-add-image"]');
+        refs.fileInput = root.querySelector('[data-testid="note-file-input"]');
+        refs.dropHint = root.querySelector('[data-drop-hint]');
         var renameIcon = refs.renameBtn.querySelector('span');
         if (renameIcon) renameIcon.innerHTML = P.icon('pencil');
         var deleteIcon = refs.deleteBtn.querySelector('span');
         if (deleteIcon) deleteIcon.innerHTML = P.icon('trash');
+        var addImageIcon = refs.addImageBtn.querySelector('.note-add-image__icon');
+        if (addImageIcon) addImageIcon.innerHTML = P.icon('image');
+
+        /* 块编辑器：DOM 与 blocks 之间的唯一桥。图片字节走宿主资产路由。 */
+        editor = P.createNoteEditor({
+          body: refs.body,
+          onNotice: function (message, kind) {
+            P.ui.toast(message, { kind: kind || 'error' });
+          },
+          onDragHint: function (active) {
+            if (!refs.dropHint) return;
+            refs.dropHint.hidden = !active;
+            refs.body.classList.toggle('is-drop-target', !!active);
+          },
+          onChange: function (blocks) {
+            var doc = currentDoc();
+            if (!doc) return;
+            P.data.updateNode(doc.id, { blocks: blocks });
+            if (refs.wordCount) refs.wordCount.textContent = wordLabel(P.data.getNode(doc.id).content);
+            if (refs.updated) refs.updated.textContent = '修改于 刚刚';
+          }
+        });
+        refs.addImageBtn.addEventListener('click', function () {
+          refs.fileInput.value = '';
+          refs.fileInput.click();
+        });
+        refs.fileInput.addEventListener('change', function () {
+          if (refs.fileInput.files && refs.fileInput.files.length) {
+            editor.addFiles(refs.fileInput.files, null);
+            editor.focus();
+          }
+        });
 
         root.querySelector('[data-testid="new-note"]').addEventListener('click', createNote);
         root.querySelector('[data-empty-new]').addEventListener('click', createNote);
@@ -20084,15 +21240,8 @@ html[data-skin="modern"] .tour__btn:focus-visible {
           if (event.key === 'Enter') {
             event.preventDefault();
             flushTitle();
-            refs.body.focus();
+            if (editor) editor.focus();
           }
-        });
-        refs.body.addEventListener('input', function () {
-          var doc = currentDoc();
-          if (!doc) return;
-          P.data.updateNode(doc.id, { content: refs.body.value });
-          if (refs.wordCount) refs.wordCount.textContent = wordLabel(refs.body.value);
-          if (refs.updated) refs.updated.textContent = '修改于 刚刚';
         });
 
         ctx.subscribe(function (event) {
@@ -21872,8 +23021,8 @@ html[data-skin="modern"] .tour__btn:focus-visible {
 
       function handleImportFile(file) {
         if (!file) return;
-        if (file.size > 16 * 1024 * 1024) {
-          showImportError('文件太大了', '纸屿工作区最大为 16 MB。当前工作区没有任何改动。');
+        if (file.size > 128 * 1024 * 1024) {
+          showImportError('文件太大了', F('纸屿工作区最大为 {size}（含内联图片）。当前工作区没有任何改动。', { size: '128 MB' }));
           return;
         }
         var read;
@@ -21896,37 +23045,44 @@ html[data-skin="modern"] .tour__btn:focus-visible {
             showImportError('这不是一份有效的 JSON', '文件解析失败。当前工作区没有任何改动。');
             return;
           }
-          var result = P.ingestWorkspace(raw);
-          if (!result.ok) {
-            showImportError('这份工作区没有被接受', result.error + '\n\n当前工作区没有任何改动。');
-            return;
-          }
-          var summary = result.summary;
-          var message = '将用导入的文件替换现在的桌面：\n' +
-            summary.folders + ' 个文件夹 · ' + summary.notes + ' 张纸页 · ' + summary.drawings + ' 张画纸\n' +
-            summary.stickies + ' 张便签 · ' + summary.tasks + ' 条待办 · ' + summary.windows + ' 扇窗口\n\n' +
-            '当前内容会被替换。建议先导出一份备份。导入成功后会重新铺开桌面。';
-          P.ui.confirm({
-            kicker: 'PAPER OS · 导入工作区',
-            title: '换一个桌面住进来？',
-            message: message,
-            confirmLabel: '确认导入',
-            cancelLabel: '不，保留现在的',
-            danger: true
-          }).then(function (ok) {
-            if (!ok) return;
-            P.storage.replaceWith(result.snapshot).then(function () {
-              P.ui.toast('工作区已经换好，桌面正在重新铺开。', { kind: 'info' });
-              setTimeout(function () {
-                if (window.__SCHEDULE_RESTART__) window.__SCHEDULE_RESTART__({ snapshot: result.snapshot });
-                else window.location.reload();
-              }, 420);
-            }).catch(function (err) {
-              showImportError('导入写入失败', '本地存储没有接受这份工作区：' + (err && err.message ? err.message : '未知原因') + '。当前工作区没有被替换。');
+          /* 导入边界：先把内联图片拆回资产目录，再进唯一的 ingest 关卡。
+             ingestWorkspace 因此仍然只认 assetId，保持纯函数、不碰 IO。 */
+          P.splitWorkspaceAssets(raw).then(function (split) {
+            var result = P.ingestWorkspace(split.snapshot);
+            if (!result.ok) {
+              showImportError('这份工作区没有被接受', result.error + '\n\n当前工作区没有任何改动。');
+              return;
+            }
+            var summary = result.summary;
+            var message = F('将用导入的文件替换现在的桌面：') + '\n' +
+              F('{folders} 个文件夹 · {notes} 张纸页 · {drawings} 张画纸', { folders: summary.folders, notes: summary.notes, drawings: summary.drawings }) + '\n' +
+              F('{stickies} 张便签 · {tasks} 条待办 · {windows} 扇窗口', { stickies: summary.stickies, tasks: summary.tasks, windows: summary.windows }) + '\n\n' +
+              (split.split ? F('文件里带着 {n} 张图片，会一起铺进来。', { n: split.split }) + '\n\n' : '') +
+              F('当前内容会被替换。建议先导出一份备份。导入成功后会重新铺开桌面。');
+            P.ui.confirm({
+              kicker: 'PAPER OS · 导入工作区',
+              title: '换一个桌面住进来？',
+              message: message,
+              confirmLabel: '确认导入',
+              cancelLabel: '不，保留现在的',
+              danger: true
+            }).then(function (ok) {
+              if (!ok) return;
+              P.storage.replaceWith(result.snapshot).then(function () {
+                P.ui.toast('工作区已经换好，桌面正在重新铺开。', { kind: 'info' });
+                setTimeout(function () {
+                  if (window.__SCHEDULE_RESTART__) window.__SCHEDULE_RESTART__({ snapshot: result.snapshot });
+                  else window.location.reload();
+                }, 420);
+              }).catch(function (err) {
+                showImportError('导入写入失败', F('本地存储没有接受这份工作区：{reason}。当前工作区没有被替换。', { reason: err && err.message ? err.message : '未知原因' }));
+              });
             });
+          }).catch(function (err) {
+            showImportError('导入没有完成', F('{reason} 当前工作区没有任何改动。', { reason: err && err.message ? err.message : '无法处理这份工作区。' }));
           });
         }).catch(function (err) {
-          showImportError('文件没有读出来', (err && err.message ? err.message : '无法读取这个文件。') + ' 当前工作区没有任何改动。');
+          showImportError('文件没有读出来', F('{reason} 当前工作区没有任何改动。', { reason: err && err.message ? err.message : '无法读取这个文件。' }));
         });
       }
 

@@ -96,10 +96,73 @@ const fontBytes = new Uint8Array(await fontResponse.arrayBuffer());
 assert.ok(fontBytes.byteLength > 200000, 'served font looks empty');
 assert.equal(String.fromCharCode(fontBytes[0], fontBytes[1], fontBytes[2], fontBytes[3]), 'wOF2');
 
+// --- note image assets: bytes on disk, ids in the snapshot ---
+const assetRoute = ctx.__routes && ctx.__routes.find((r) => r.path === '/api/control-your-schedule/assets');
+assert.ok(assetRoute, 'asset route was not registered');
+assert.deepEqual([...assetRoute.methods].sort(), ['DELETE', 'GET', 'PUT']);
+const assetEndpoint = 'http://host/api/control-your-schedule/assets';
+
+// A 1x1 PNG: real bytes, so "served the same thing back" is testable.
+const PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64',
+);
+const assetId = 'ast_0123456789ab';
+
+response = await assetRoute.fetch(new Request(assetEndpoint + '?id=' + assetId, { method: 'GET' }));
+assert.equal(response.status, 404, 'an unknown asset must be a 404, not an empty 200');
+
+response = await assetRoute.fetch(new Request(assetEndpoint + '?id=' + assetId, {
+  method: 'PUT',
+  headers: { 'content-type': 'image/png', 'x-asset-width': '1', 'x-asset-height': '1' },
+  body: PNG,
+}));
+assert.equal(response.status, 200);
+assert.equal((await response.json()).bytes, PNG.byteLength);
+
+response = await assetRoute.fetch(new Request(assetEndpoint + '?id=' + assetId, { method: 'GET' }));
+assert.equal(response.status, 200);
+assert.equal(response.headers.get('content-type'), 'image/png');
+const served = Buffer.from(await response.arrayBuffer());
+assert.equal(served.equals(PNG), true, 'served bytes must equal the uploaded bytes');
+
+const assetDir = join(temp, 'control-your-schedule', 'assets');
+assert.ok(existsSync(join(assetDir, assetId + '.bin')), 'asset bytes were not written next to the workspace');
+assert.equal(JSON.parse(await readFile(join(assetDir, assetId + '.json'), 'utf8')).mime, 'image/png');
+// The snapshot must stay free of image bytes: the whole point of the split.
+assert.ok(JSON.stringify(JSON.parse(await readFile(join(temp, 'control-your-schedule', 'workspace.json'), 'utf8'))).length < 4000);
+
+response = await assetRoute.fetch(new Request(assetEndpoint, { method: 'GET' }));
+assert.deepEqual((await response.json()).ids, [assetId], 'the id listing must report exactly the stored asset');
+
+// --- reverse side: every rejection must name its reason ---
+for (const bad of ['../escape', 'ast_short', 'ast_0123456789ab/../../x', '']) {
+  const escaped = await assetRoute.fetch(new Request(assetEndpoint + '?id=' + encodeURIComponent(bad), { method: 'GET' }));
+  assert.equal(escaped.status, 400, 'bad id must be refused: ' + JSON.stringify(bad));
+}
+assert.equal(existsSync(join(temp, 'control-your-schedule', 'escape.bin')), false);
+
+response = await assetRoute.fetch(new Request(assetEndpoint + '?id=' + assetId, {
+  method: 'PUT', headers: { 'content-type': 'text/html' }, body: '<script>',
+}));
+assert.equal(response.status, 415, 'a non-image content type must be refused');
+
+response = await assetRoute.fetch(new Request(assetEndpoint + '?id=' + assetId, {
+  method: 'PUT', headers: { 'content-type': 'image/png' }, body: Buffer.alloc(4 * 1024 * 1024 + 1),
+}));
+assert.equal(response.status, 413, 'an oversized asset must be refused');
+
+response = await assetRoute.fetch(new Request(assetEndpoint + '?id=' + assetId, { method: 'DELETE' }));
+assert.equal(response.status, 200);
+assert.equal(existsSync(join(assetDir, assetId + '.bin')), false);
+assert.equal(existsSync(join(assetDir, assetId + '.json')), false);
+response = await assetRoute.fetch(new Request(assetEndpoint + '?id=' + assetId, { method: 'DELETE' }));
+assert.equal(response.status, 200, 'deleting a missing asset stays idempotent');
+
 response = await route.fetch(new Request(endpoint, { method: 'DELETE' }));
 assert.equal(response.status, 200);
 response = await route.fetch(new Request(endpoint, { method: 'GET' }));
 assert.equal((await response.json()).snapshot, null);
 
 await rm(temp, { recursive: true, force: true });
-console.log('PASS | host route stores, reads, clears, backs up on schema change and serves the font');
+console.log('PASS | host route stores, reads, clears, backs up on schema change, serves the font and stores note images');

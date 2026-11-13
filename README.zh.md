@@ -6,7 +6,7 @@
 <p align="center">便签、纸页笔记、日历待办、画纸与常用提示词，放在 DSH 里同一张桌面上。</p>
 <p align="center"><a href="README.md">English</a></p>
 
-> 面板插件 v0.6.2
+> 面板插件 v0.7.0
 
 <p align="center">
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-%E2%89%A522-339933" alt="Node.js 22 或更高"></a>
@@ -51,8 +51,12 @@
 - 长文写作，左侧列表搜索/切换，自动保存。
 - 新纸页的标题像正文一样是 placeholder，不写字不会留下一行「未命名纸页」。
 - **可以置顶**：编辑器工具栏「置顶 / 取消置顶」带 `aria-pressed`；置顶页排在最前，其余仍按新建时间倒序。置顶在刷新、导出导入与旧快照迁移后都保留。
+- **可以插图**（0.7.0）：正文是一个块编辑器，图片能插在任意两段文字之间。截图后 `Ctrl/Cmd + V` 直接进、把文件拖进纸页、或点页脚「插入图片」。图块可拖动排序，点眼睛开灯箱看原图（`Esc` 关闭）。
+- **图片存在哪**：字节落在 `$DSH_HOME/control-your-schedule/assets/`，工作区快照里只留一个 id。每张图入库时统一压到长边 2560，有透明通道走 WebP、否则 JPEG，目标 1.5 MB、单图硬上限 4 MB；压不进去就明确告诉你原因，不会静默糊掉。
+- **导出仍然自包含**：导出时把字节读回来内联，JSON 拷到别的机器打开图还在。**工作区备份**（`workspace.prev.json`、`workspace.v*.backup.json`）与快照本身一致，只覆盖文字。
+- 从别处粘贴带格式的文字，只留文字、丢格式；任何外部 HTML 都写不进纸页。
 
-<img width="1400" alt="纸页笔记：左侧列表、右侧编辑器与工具栏置顶" src="assets/screenshot-modern-notes.webp">
+<img width="1400" alt="一张纸页：两张图之间夹着一行文字" src="assets/screenshot-pictures.webp">
 
 ### 日历与待办
 
@@ -73,8 +77,6 @@
 
 - 手写与绘画：撤销 / 重做、橡皮、画笔颜色与四档笔尖、清空、整页删除、导出 PNG；画纸簿可左右翻页并记住当前页。
 
-<img width="1400" alt="画纸：画纸簿、工具条与画布" src="assets/screenshot-modern-draw.webp">
-
 ### 桌面、窗口与应用坞
 
 - **今日卡**在宽桌面右侧，窗口不会盖住它；窄面板下自动让位。
@@ -92,7 +94,7 @@
 
 ### 数据与升级
 
-- **升级不丢数据**：工作区带版本号与迁移阶梯（v1 → v4）。Host 在版本变化前把旧版本另存为 `workspace.v<旧版本>.backup.json`，并在每次写入前留一份 `workspace.prev.json`。存储里的工作区若过不了校验，会**只读打开**并另存原稿，绝不拿示例桌面覆盖。
+- **升级不丢数据**：工作区带版本号与迁移阶梯（v1 → v5）。Host 在版本变化前把旧版本另存为 `workspace.v<旧版本>.backup.json`，并在每次写入前留一份 `workspace.prev.json`。存储里的工作区若过不了校验，会**只读打开**并另存原稿，绝不拿示例桌面覆盖。注意这两份备份只覆盖文字：纸页里的图片在它们旁边的资产目录里。
 - **切换不丢状态**：切到 DSH 其它界面再回来，窗口以及每个应用正在看的东西（选中的纸页、日历停在哪天、便签滚到哪、画纸开哪张、设置哪个分区）都会复原。
 
 ## 安装
@@ -107,7 +109,7 @@ DSH → Plugins → Add plugin，填：
 dsh-plugin-control-your-schedule
 ```
 
-也可以带版本：`dsh-plugin-control-your-schedule@0.6.2`。
+也可以带版本：`dsh-plugin-control-your-schedule@0.7.0`。
 
 ### 从 GitHub
 
@@ -207,7 +209,7 @@ python smoke/run_all_checks.py --cdp
 
 ## 更新与发布
 
-- 当前版本：**0.6.2**
+- 当前版本：**0.7.0**
 - [CHANGELOG.md](CHANGELOG.md) · [Releases](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/releases) · [npm](https://www.npmjs.com/package/dsh-plugin-control-your-schedule)
 
 ## 许可证

@@ -57,7 +57,9 @@ import { inflateSync, deflateSync } from 'node:zlib';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '..');
-const CLIENT = join(ROOT, 'plugin', 'client.js');
+/* 两种布局：开发树 <项目>/plugin/client.js；发布仓把包根当仓库根。同 page_e2e 的写法。 */
+const CLIENT = [join(ROOT, 'plugin', 'client.js'), join(ROOT, 'client.js')]
+  .find((candidate) => existsSync(candidate)) || join(ROOT, 'plugin', 'client.js');
 /* 证据只落工作区根 output/（与 page_e2e 的 OUT 同一套写法）：
    ROOT 是项目目录 projects/<name>，往上两级才是工作区根。 */
 const DIFF_DIR = join(ROOT, '..', '..', 'output', '_probe', 'classic-diff');

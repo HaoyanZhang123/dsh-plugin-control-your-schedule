@@ -1,4 +1,5 @@
 {
+ "{folders} 个文件夹 · {notes} 张纸页 · {drawings} 张画纸": "{folders} folders · {notes} pages · {drawings} drawing sheets",
  "{name} 已移到第 {pos} 位，共 {total} 位": "{name} moved to position {pos} of {total}",
  "{n} / 20000 字": "{n} / 20000 chars",
  "{n} 个字": {
@@ -22,6 +23,10 @@
   "one": "{n} hour ago",
   "other": "{n} hours ago"
  },
+ "{n} 张图片": {
+  "one": "{n} picture",
+  "other": "{n} pictures"
+ },
  "{n} 张纸收在应用坞里": {
   "one": "{n} sheet tucked in the dock",
   "other": "{n} sheets tucked in the dock"
@@ -38,6 +43,8 @@
   "one": "{n} stroke",
   "other": "{n} strokes"
  },
+ "{reason} 当前工作区没有任何改动。": "{reason} Nothing in the current workspace was changed.",
+ "{stickies} 张便签 · {tasks} 条待办 · {windows} 扇窗口": "{stickies} sticky notes · {tasks} tasks · {windows} windows",
  "一共收走了 {n} 件示例内容。": {
   "one": "Removed {n} sample item.",
   "other": "Removed {n} sample items in all."
@@ -57,13 +64,26 @@
   "other": "{n} to-dos left for today."
  },
  "便签、纸页笔记、日历和画纸都从<b>底部应用坞</b>打开。再点一次已打开的图标，窗口会最小化。": "Sticky notes, pages, the calendar, and drawing sheets all open from the <b>bottom dock</b>. Click an open icon again and its window minimizes.",
+ "先不导出": "Not now",
  "共 {n} 件 · 完成 {m} 件": "{n} items · {m} done",
  "其中 {n} 件是每天出现的持久待办，只算 1 件": "of which {n} are daily recurring to-dos, counted once",
+ "图片一共 {size}，导出的文件也差不多这么大。要继续吗？": "The pictures total {size}, and the exported file will be about that big. Continue?",
  "在 {date} 留一件事…": "Leave something for {date}…",
+ "导出没有完成：{reason}": "Export did not finish: {reason}",
+ "导出的图片总量超过上限": "The exported pictures exceed the size limit",
+ "导出被取消。": "The export was cancelled.",
+ "将用导入的文件替换现在的桌面：": "The imported file will replace the current desk:",
+ "工作区已经导出为 {name}": "Workspace exported to {name}",
+ "工作区已经导出为 {name}，含 {n} 张图片，共 {size}。": "Workspace exported to {name} with {n} pictures, {size} in total.",
+ "工作区已经导出，但有 {n} 张图片没能读出来，导出的文件里会缺这几张。": {
+  "one": "The workspace was exported, but {n} picture could not be read and is missing from the file.",
+  "other": "The workspace was exported, but {n} pictures could not be read and are missing from the file."
+ },
  "已解决 · {date} · 打卡 {n} 天": {
   "one": "Resolved · {date} · checked in {n} day",
   "other": "Resolved · {date} · checked in {n} days"
  },
+ "当前内容会被替换。建议先导出一份备份。导入成功后会重新铺开桌面。": "The current content will be replaced. Export a backup first. The desk is re-laid once the import succeeds.",
  "打卡 {n} 天": {
   "one": "checked in {n} day",
   "other": "checked in {n} days"
@@ -73,16 +93,24 @@
  "拖<b>标题栏</b>移动窗口，拖右下角缩放。": "Drag the <b>title bar</b> to move a window and the bottom-right corner to resize.",
  "按住便签顶部左侧的<b>把手</b>再拖动；正文区域只负责输入，不会误拖。": "Hold the <b>handle</b> at the top left of a sticky to drag it; the body area is only for typing, so you will not drag it by accident.",
  "提示词删除后不能恢复。正文 {n} 字。": "Deleting a prompt cannot be undone. Body: {n} chars.",
+ "文件里带着 {n} 张图片，会一起铺进来。": {
+  "one": "The file carries {n} picture, which will be laid out too.",
+  "other": "The file carries {n} pictures, which will be laid out too."
+ },
+ "本地存储没有接受这份工作区：{reason}。当前工作区没有被替换。": "Local storage did not accept this workspace: {reason}. The current workspace was not replaced.",
  "标题栏右边的按钮可以收起或关闭窗口；也可以点底部应用坞图标最小化或恢复，房子按钮一次收好全部窗口，按 Esc 关闭当前窗口。": "The buttons on the right of the title bar tuck or close the window; you can also tap a dock icon to minimize or restore, the house button tucks all windows away at once, and Esc closes the current window.",
  "没有缩小/放大/关闭按钮：点底部应用坞图标可最小化或恢复，房子按钮一次收好全部窗口，按 Esc 关闭当前窗口。": "There is no shrink/enlarge/close button: tap a dock icon to minimize or restore, the house button tucks all windows away at once, and Esc closes the current window.",
  "用{color}画": "Draw with {color}",
  "界面语言": "Interface language",
  "笔尖{label}，{px} 像素": "Brush tip {label}, {px} px",
+ "纸屿工作区最大为 {size}（含内联图片）。当前工作区没有任何改动。": "A Paper Isle workspace can be at most {size} (including inline pictures). Nothing in the current workspace was changed.",
+ "继续导出": "Export anyway",
  "语言": "Language",
  "这件事收起来了，打卡 {n} 天。": {
   "one": "This task is tucked away; checked in {n} day.",
   "other": "This task is tucked away; checked in {n} days."
  },
+ "这次导出会比较大": "This export will be fairly large",
  "首次出现在 {date} · 已打卡 {n} 天": {
   "one": "First appeared on {date} · checked in {n} day",
   "other": "First appeared on {date} · checked in {n} days"

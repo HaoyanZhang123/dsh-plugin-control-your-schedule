@@ -31,7 +31,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '..');
-const CLIENT = join(ROOT, 'plugin', 'client.js');
+/* 两种布局都要能跑：开发树是 <项目>/plugin/client.js，发布仓把包根当仓库根。
+   与 smoke/page_e2e.mjs 同一套写法，避免"发布仓里这套门禁直接报文件不存在"。 */
+const CLIENT = [join(ROOT, 'plugin', 'client.js'), join(ROOT, 'client.js')]
+  .find((candidate) => existsSync(candidate)) || join(ROOT, 'plugin', 'client.js');
 const argOf = (name, fallback) => {
   const found = process.argv.find((one) => one.indexOf('--' + name + '=') === 0);
   return found ? found.slice(name.length + 3) : fallback;
@@ -175,10 +178,16 @@ const waitAnimationsIdle = async (limit) => {
    blocked=false）。导航前 markLeaving() 在旧文档写一个标记，新文档里该标记不存在。 */
 const markLeaving = () => ev('try { window.__NAV_TOKEN__ = "leaving"; } catch (err) {}');
 const waitReady = async () => {
-  try { await send('Page.bringToFront'); } catch (err) { /* older targets */ }
+  /* 就在循环里反复请前台，而不是只在开头请一次：headless 窗口丢前台时
+     visibilityState 会一直是 hidden，而下面的断言需要"可见"这个前置条件。
+     循环里重请 = 把丢掉的**前置条件**拿回来，不是把断言放宽：
+     真拿不回来时它照样返回 false、断言照样红。 */
   for (let i = 0; i < 80; i += 1) {
     await sleep(250);
-    if (await ev('document.visibilityState !== "visible"')) continue;
+    if (await ev('document.visibilityState !== "visible"')) {
+      try { await send('Page.bringToFront'); } catch (err) { /* older targets */ }
+      continue;
+    }
     if (await ev('typeof window.__NAV_TOKEN__ === "undefined" && !!window.__PAPER_OS_READY__')) return true;
   }
   return false;

@@ -1,4 +1,4 @@
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,7 +8,30 @@ export const inject = ['connection'];
 
 const ROUTE = '/api/control-your-schedule/workspace';
 const FONT_ROUTE = '/api/control-your-schedule/font';
+const ASSET_ROUTE = '/api/control-your-schedule/assets';
 const MAX_BYTES = 32 * 1024 * 1024;
+
+/* Note images live next to the workspace file, not inside it. A 4 MB photo is
+   5.3 MB once base64-encoded, and the snapshot is rewritten in full every
+   420 ms while typing — inlining images would make every keystroke move
+   megabytes and would blow the ~5 MB localStorage recovery journal. The
+   snapshot therefore stores only an id; the bytes live here. */
+const ASSET_ID = /^ast_[a-z0-9]{8,32}$/;
+const ASSET_MIME = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_ASSET_BYTES = 4 * 1024 * 1024;
+const ASSET_EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+
+function assetsDir() {
+  return join(dshHome(), 'control-your-schedule', 'assets');
+}
+
+/* The id is the only caller-controlled part of the path, and it reaches the
+   filesystem: validate it before any join, never after. */
+function assetPaths(id) {
+  if (typeof id !== 'string' || !ASSET_ID.test(id)) return null;
+  const dir = assetsDir();
+  return { bin: join(dir, id + '.bin'), meta: join(dir, id + '.json') };
+}
 
 /* The desk lives in a same-origin srcdoc iframe, so the bundled handwriting
    font is served from here instead of being inlined into the page bundle. */
@@ -157,6 +180,86 @@ export function apply(ctx) {
       }
     },
   }), 'control-your-schedule: bundled handwriting font');
+
+  ctx.effect(() => register({
+    path: ASSET_ROUTE,
+    methods: ['GET', 'PUT', 'DELETE'],
+    requestBody: 'buffered',
+    fetch: async (request) => {
+      try {
+        const url = new URL(request.url);
+        // `?id=` (present but empty) is a bad request, not a listing request:
+        // collapsing the two would make a malformed caller look successful.
+        const hasId = url.searchParams.has('id');
+        const id = url.searchParams.get('id');
+        if (request.method === 'GET' && !hasId) {
+          // The page needs the stored id set to reclaim orphans after a crash;
+          // it never needs the bytes for that.
+          let names = [];
+          try { names = await readdir(assetsDir()); } catch (error) { names = []; }
+          const ids = names
+            .filter((name) => name.endsWith('.bin'))
+            .map((name) => name.slice(0, -4))
+            .filter((candidate) => ASSET_ID.test(candidate));
+          return json({ ok: true, ids });
+        }
+        const paths = assetPaths(id);
+        if (!paths) return json({ ok: false, error: 'invalid asset id' }, 400);
+
+        if (request.method === 'GET') {
+          let sidecar = null;
+          try { sidecar = JSON.parse(await readFile(paths.meta, 'utf8')); } catch (error) { sidecar = null; }
+          let bytes;
+          try { bytes = await readFile(paths.bin); } catch (error) {
+            return json({ ok: false, error: 'asset not found' }, 404);
+          }
+          const mime = sidecar && ASSET_MIME.includes(sidecar.mime) ? sidecar.mime : 'application/octet-stream';
+          return new Response(bytes, {
+            status: 200,
+            headers: {
+              'content-type': mime,
+              'content-length': String(bytes.byteLength),
+              // Assets are immutable per id: a new upload gets a new id.
+              'cache-control': 'private, max-age=31536000, immutable',
+            },
+          });
+        }
+
+        if (request.method === 'DELETE') {
+          await rm(paths.bin, { force: true });
+          await rm(paths.meta, { force: true });
+          return json({ ok: true, deleted: true });
+        }
+
+        if (request.method === 'PUT') {
+          const mime = String(request.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+          if (!ASSET_MIME.includes(mime)) return json({ ok: false, error: 'unsupported image type' }, 415);
+          const buffer = Buffer.from(await request.arrayBuffer());
+          if (!buffer.byteLength) return json({ ok: false, error: 'empty asset' }, 400);
+          if (buffer.byteLength > MAX_ASSET_BYTES) return json({ ok: false, error: 'asset is too large' }, 413);
+          await mkdir(assetsDir(), { recursive: true });
+          const temp = paths.bin + '.' + process.pid + '.tmp';
+          await writeFile(temp, buffer);
+          await renameWithRetry(temp, paths.bin);
+          const width = Number(request.headers.get('x-asset-width'));
+          const height = Number(request.headers.get('x-asset-height'));
+          await writeFile(paths.meta, JSON.stringify({
+            mime,
+            bytes: buffer.byteLength,
+            w: Number.isFinite(width) ? Math.round(width) : 0,
+            h: Number.isFinite(height) ? Math.round(height) : 0,
+            createdAt: Date.now(),
+          }), 'utf8');
+          return json({ ok: true, id, bytes: buffer.byteLength, mime });
+        }
+        return json({ ok: false, error: 'method not allowed' }, 405);
+      } catch (error) {
+        const message = error && error.message ? error.message : 'asset storage failed';
+        console.warn('control-your-schedule: asset route failed:', message);
+        return json({ ok: false, error: message }, 500);
+      }
+    },
+  }), 'control-your-schedule: note image assets');
 
   ctx.effect(() => register({
     path: ROUTE,

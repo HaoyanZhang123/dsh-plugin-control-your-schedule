@@ -84,12 +84,27 @@ if (!result.ok) {
   if (snap.version === P.schemaVersion) ok('version is current', 'v' + snap.version);
   else bad('version is current', 'v' + snap.version);
 
-  // Nothing outside tasks/stickies/meta may change.
+  // Nothing outside tasks/stickies/meta may change; v5 additionally wraps each
+  // note body in one text block, so compare with that single addition removed.
+  const stripBlocks = (nodes) => nodes.map((node) => {
+    const copy = Object.assign({}, node);
+    delete copy.blocks;
+    return copy;
+  });
   const same = (label, a, b) => {
     if (JSON.stringify(a) === JSON.stringify(b)) ok(label + ' preserved');
     else bad(label + ' preserved', 'differs');
   };
-  same('nodes (pages + drawings)', snap.nodes, v1.nodes);
+  same('nodes (pages + drawings)', stripBlocks(snap.nodes), stripBlocks(v1.nodes));
+  const v1BlocksOk = snap.nodes
+    .filter((node) => node.kind === 'note')
+    .every((node) => {
+      const blocks = Array.isArray(node.blocks) ? node.blocks : [];
+      const first = blocks[0];
+      return node.content ? (blocks.length === 1 && first.type === 'text' && first.text === node.content) : blocks.length === 0;
+    });
+  if (v1BlocksOk) ok('v1 -> v5 wraps every note body verbatim');
+  else bad('v1 -> v5 wraps every note body verbatim', 'a note did not keep its body');
   same('prefs', snap.prefs, v1.prefs);
   same('desktop (window layout)', snap.desktop, v1.desktop);
 
@@ -151,7 +166,17 @@ if (!result.ok) {
     const s2 = fromV2.snapshot;
     if (s2.version === P.schemaVersion) ok('v2 migration reaches the current version', 'v' + s2.version);
     else bad('v2 migration reaches the current version', 'v' + s2.version);
-    same('v2 nodes preserved', s2.nodes, v2.nodes);
+    /* v5 会给每张纸页补一个 blocks 文字块；除此之外 nodes 的每个既有字段逐值不变。
+       这里把「预期的唯一新增」剥掉再比，比"整段不等就红"更严格：多改一个字段也会红。 */
+    same('v2 nodes preserved (minus the v5 blocks wrapper)', stripBlocks(s2.nodes), stripBlocks(v2.nodes));
+    const s2BlocksOk = s2.nodes
+      .filter((node) => node.kind === 'note')
+      .every((node) => {
+        const blocks = Array.isArray(node.blocks) ? node.blocks : [];
+        return node.content ? (blocks.length === 1 && blocks[0].type === 'text' && blocks[0].text === node.content) : blocks.length === 0;
+      });
+    if (s2BlocksOk) ok('v2 -> v5 wraps every note body verbatim');
+    else bad('v2 -> v5 wraps every note body verbatim', 'a note did not keep its body');
     same('v2 stickies preserved', s2.stickies, v2.stickies);
     same('v2 tasks preserved', s2.tasks, v2.tasks);
     same('v2 desktop preserved', s2.desktop, v2.desktop);
@@ -192,8 +217,8 @@ if (!result.ok) {
     bad('v3 migrates', JSON.stringify(fromV3));
   } else {
     const s3 = fromV3.snapshot;
-    if (s3.version === 4 && P.schemaVersion === 4) ok('v3 migration reaches v4', 'v' + s3.version);
-    else bad('v3 migration reaches v4', 'v' + s3.version + ' / schema ' + P.schemaVersion);
+    if (s3.version === 5 && P.schemaVersion === 5) ok('v3 migration reaches v5', 'v' + s3.version);
+    else bad('v3 migration reaches v5', 'v' + s3.version + ' / schema ' + P.schemaVersion);
 
     const pinnedNote = s3.nodes.filter((node) => node.id === 'doc_welcome')[0];
     const plainNote = s3.nodes.filter((node) => node.id === 'doc_nopin')[0];
@@ -202,7 +227,18 @@ if (!result.ok) {
     if (plainNote && !plainNote.pinned) ok('v3 note without pinned reads as false', 'doc_nopin.pinned=' + ('pinned' in (plainNote || {}) ? String(plainNote.pinned) : 'absent -> false'));
     else bad('v3 note without pinned reads as false', JSON.stringify(plainNote && plainNote.pinned));
 
-    same('v3 nodes preserved', s3.nodes, v3.nodes);
+    /* v5 会给每张纸页补一个 blocks 文字块；除此之外 nodes 的每个既有字段逐值不变。
+       这里把「预期的唯一新增」剥掉再比，比"整段不等就红"更严格：多改一个字段也会红。 */
+    const stripBlocks = (nodes) => nodes.map((node) => {
+      const copy = Object.assign({}, node);
+      delete copy.blocks;
+      return copy;
+    });
+    same('v3 nodes preserved (minus the v5 blocks wrapper)', stripBlocks(s3.nodes), stripBlocks(v3.nodes));
+    const blockNote = s3.nodes.filter((node) => node.id === 'doc_welcome')[0];
+    const blockText = blockNote && Array.isArray(blockNote.blocks) && blockNote.blocks.length === 1 ? blockNote.blocks[0] : null;
+    if (blockText && blockText.type === 'text' && blockText.text === blockNote.content) ok('v5 wraps the note body in one text block that matches content verbatim');
+    else bad('v5 wraps the note body in one text block that matches content verbatim', JSON.stringify(blockText && { type: blockText.type, same: blockText.text === (blockNote && blockNote.content) }));
     same('v3 stickies preserved', s3.stickies, v3.stickies);
     same('v3 tasks preserved', s3.tasks, v3.tasks);
     same('v3 prompts preserved', s3.prompts, v3.prompts);

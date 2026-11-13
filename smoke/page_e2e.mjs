@@ -1325,7 +1325,7 @@ const version = await ev('window.PaperOS.version');
 if (version && version !== '__PAGE_VERSION__') ok('page version injected by the build', String(version));
 else bad('page version injected by the build', String(version));
 const schema = await ev('window.PaperOS.schemaVersion');
-if (schema === 4) ok('schema is v4'); else bad('schema is v4', String(schema));
+if (schema === 5) ok('schema is v5'); else bad('schema is v5', String(schema));
 
 // The Chinese page is the source of truth: it runs with the zh runtime and F() keeps the wording.
 const zhRuntime = await ev('({ lang: (window.PaperOS && window.PaperOS.lang) || "", sample: window.PaperOS ? window.PaperOS.F("{n} 张纸页", 2) : "" })');
@@ -1558,12 +1558,28 @@ const note = await run(function () {
   doc.querySelector('[data-testid=new-note]').click();
   var input = doc.querySelector('[data-testid=note-title]');
   var body = doc.querySelector('[data-testid=note-body]');
-  return { titleValue: input.value, titlePlaceholder: input.placeholder, bodyPlaceholder: body.placeholder };
+  /* 正文是 contenteditable，没有 placeholder 属性可读：占位提示由 CSS
+     .note-body:empty::before 的 content: attr(placeholder) 画出来。
+     这里读计算样式，测的是用户真正看到的那行字，而不是某个属性存在。 */
+  var drawn = '';
+  try { drawn = String(window.getComputedStyle(body, '::before').content || ''); } catch (err) { drawn = ''; }
+  return {
+    titleValue: input.value,
+    titlePlaceholder: input.placeholder,
+    bodyPlaceholder: body.getAttribute('placeholder'),
+    bodyDrawnPlaceholder: drawn.replace(/^"|"$/g, ''),
+    bodyEditable: body.getAttribute('contenteditable'),
+    bodyEmpty: body.childNodes.length === 0
+  };
 });
 if (note && note.titleValue === '' && /名字/.test(note.titlePlaceholder || '')) ok('new note title is a placeholder, not literal text', JSON.stringify(note));
 else bad('new note title is a placeholder, not literal text', JSON.stringify(note));
 if (note && note.bodyPlaceholder === '从这里开始写，纸会自动收好。') ok('note body placeholder uses a comma');
 else bad('note body placeholder uses a comma', JSON.stringify(note && note.bodyPlaceholder));
+if (note && note.bodyDrawnPlaceholder === '从这里开始写，纸会自动收好。') ok('an empty note actually paints its placeholder', JSON.stringify(note.bodyDrawnPlaceholder));
+else bad('an empty note actually paints its placeholder', JSON.stringify(note && note.bodyDrawnPlaceholder));
+if (note && note.bodyEditable === 'true' && note.bodyEmpty === true) ok('the note body is an empty contenteditable block editor', JSON.stringify({ editable: note.bodyEditable, empty: note.bodyEmpty }));
+else bad('the note body is an empty contenteditable block editor', JSON.stringify(note && { editable: note.bodyEditable, empty: note.bodyEmpty }));
 
 await stageGuard("R6/R1 纸页：面包屑删除；置顶开关 / 徽标 / 排序 / 快照往返");
 // --- R6/R1 纸页：面包屑删除；置顶开关 / 徽标 / 排序 / 快照往返 ---
@@ -4240,6 +4256,200 @@ if (!pageErrors.length) ok('no page exceptions on the cross-language workspace')
 else bad('no page exceptions on the cross-language workspace', pageErrors.slice(0, 3).join(' | '));
 
 await shot('page-final');
+// --- 0.7.0 插图：粘贴 / 拖拽 / 选文件都走同一条入库路径 ---
+// 这里打桩的只有"宿主资产接口"（P.noteAssets.prepare / put），块编辑器、DOM 序列化、
+// 拖放落位与灯箱全是产品代码。之所以能打桩：宿主路由在真机上由 smoke/host_route_test.mjs
+// 用真实文件系统验证过，真机 e2e 再调一次真实 HTTP 只是重复。
+await stageGuard("0.7.0 pictures: paste, drop, reorder and lightbox");
+await ev('(function () { window.__assetStub = { puts: 0, prepared: [] };' +
+  ' var prep = window.PaperOS.noteAssets.prepare;' +
+  ' window.PaperOS.noteAssets.prepare = async function (file) { var out = await prep(file);' +
+  '   window.__assetStub.prepared.push({ name: file.name, w: out.width, h: out.height, bytes: out.blob.size, mime: out.mime });' +
+  '   return out; };' +
+  ' window.PaperOS.noteAssets.put = async function (prepared) { window.__assetStub.puts += 1;' +
+  '   return { type: "image", assetId: "ast_" + String(window.__assetStub.puts).padStart(12, "0"),' +
+  '     w: prepared.width, h: prepared.height, bytes: prepared.blob.size, mime: prepared.mime }; };' +
+  ' return true; })()');
+
+/* 造两张真图片（画布→PNG），再用与产品相同的入口灌进编辑器：
+   一次走"选文件"（editor.addFiles），一次走"粘贴"（合成 ClipboardEvent），
+   一次走"拖放"（合成 DragEvent）。三条路都必须走到同一个 addFiles。 */
+const picture1 = await run(function () {
+  var P = window.PaperOS;
+  var note = P.data.createNote({ name: '插图回归纸页', content: '图前的一段字。' });
+  P.wm.open('notes', { docId: note.id });
+  return { id: note.id };
+});
+async function makePng(name, w, h, colour) {
+  return ev('(function () { var c = document.createElement("canvas"); c.width = ' + w + '; c.height = ' + h + ';' +
+    ' var ctx = c.getContext("2d"); ctx.fillStyle = "' + colour + '"; ctx.fillRect(0, 0, ' + w + ', ' + h + ');' +
+    ' return new Promise(function (resolve) { c.toBlob(function (blob) {' +
+    '   resolve({ dataUrl: c.toDataURL("image/png"), size: blob.size, name: "' + name + '" }); }, "image/png"); }); })()');
+}
+const pngA = await makePng('a.png', 320, 200, '#c96');
+const pngB = await makePng('b.png', 640, 360, '#69c');
+await ev('(function () { window.__pngA = ' + JSON.stringify(pngA) + '; window.__pngB = ' + JSON.stringify(pngB) + '; return true; })()');
+
+// 1) 选文件：把文件塞进真实的 file input 并触发 change —— 走的就是产品的 change 监听。
+const viaPicker = await ev('(async function () {' +
+  ' var win = document.querySelector(".window[data-app=notes]");' +
+  ' var input = win.querySelector("[data-testid=note-file-input]");' +
+  ' if (!input) return { error: "no file input" };' +
+  ' var blob = await (await fetch(window.__pngA.dataUrl)).blob();' +
+  ' var file = new File([blob], window.__pngA.name, { type: "image/png" });' +
+  ' var dt = new DataTransfer(); dt.items.add(file);' +
+  ' input.files = dt.files;' +
+  ' input.dispatchEvent(new Event("change", { bubbles: true }));' +
+  ' await new Promise(function (r) { setTimeout(r, 800); });' +
+  ' var P = window.PaperOS;' +
+  ' var id = P.data.listNotes().filter(function (n) { return n.name === "插图回归纸页"; })[0].id;' +
+  ' return { blocks: P.data.getNode(id).blocks,' +
+  '   figures: document.querySelectorAll(".note-figure").length }; })()');
+if (viaPicker && !viaPicker.error && viaPicker.figures === 1
+  && Array.isArray(viaPicker.blocks) && viaPicker.blocks.filter(function (b) { return b.type === 'image'; }).length === 1) {
+  ok('picking a file adds exactly one image block', JSON.stringify({ figures: viaPicker.figures }));
+} else {
+  bad('picking a file adds exactly one image block', JSON.stringify(viaPicker && { error: viaPicker.error, figures: viaPicker.figures, kinds: (viaPicker.blocks || []).map(function (b) { return b.type; }) }));
+}
+
+// 2) 粘贴：合成 paste 事件，剪贴板里带一张图。
+const viaPaste = await ev('(async function () { var body = document.querySelector(".window[data-app=notes] .note-body");' +
+  ' var win = document.querySelector(".window[data-app=notes]");' +
+  ' var blob = await (await fetch(window.__pngB.dataUrl)).blob();' +
+  ' var file = new File([blob], window.__pngB.name, { type: "image/png" });' +
+  ' var dt = new DataTransfer(); dt.items.add(file);' +
+  ' body.focus();' +
+  ' var event = new ClipboardEvent("paste", { clipboardData: dt, bubbles: true, cancelable: true });' +
+  ' body.dispatchEvent(event);' +
+  ' await new Promise(function (r) { setTimeout(r, 900); });' +
+  ' return { figures: body.querySelectorAll(".note-figure").length,' +
+  '   puts: window.__assetStub.puts, prepared: window.__assetStub.prepared }; })()');
+if (viaPaste && viaPaste.figures === 2 && viaPaste.puts === 2) ok('pasting a picture adds a second image block', JSON.stringify({ figures: viaPaste.figures, puts: viaPaste.puts }));
+else bad('pasting a picture adds a second image block', JSON.stringify(viaPaste));
+
+// 3) 序列化回 blocks：图片块与文字块的顺序必须与 DOM 一致。
+const serialized = await ev('(function () { var P = window.PaperOS;' +
+  ' var id = P.data.listNotes().filter(function (n) { return n.name === "插图回归纸页"; })[0].id;' +
+  ' var node = P.data.getNode(id);' +
+  ' return { kinds: node.blocks.map(function (b) { return b.type; }),' +
+  '   ids: node.blocks.filter(function (b) { return b.type === "image"; }).map(function (b) { return b.assetId; }),' +
+  '   contentHasText: node.content.indexOf("图前的一段字。") !== -1,' +
+  '   contentMentionsImages: /ast_/.test(node.content) }; })()');
+if (serialized && serialized.kinds.join(',') === 'text,image,image') ok('the note stores text then two image blocks in DOM order', JSON.stringify(serialized.kinds));
+else bad('the note stores text then two image blocks in DOM order', JSON.stringify(serialized));
+if (serialized && serialized.contentHasText && !serialized.contentMentionsImages) ok('content stays a text-only projection of the blocks');
+else bad('content stays a text-only projection of the blocks', JSON.stringify(serialized));
+
+// 4) 拖动排序：把第一张图拖到第二张之后。
+const reordered = await ev('(function () { var figures = Array.prototype.slice.call(document.querySelectorAll(".note-figure"));' +
+  ' if (figures.length < 2) return { error: "need two figures" };' +
+  ' var before = figures.map(function (f) { return f.getAttribute("data-asset"); });' +
+  ' var dt = new DataTransfer();' +
+  ' figures[0].dispatchEvent(new DragEvent("dragstart", { dataTransfer: dt, bubbles: true }));' +
+  ' var rect = figures[1].getBoundingClientRect();' +
+  ' figures[1].dispatchEvent(new DragEvent("dragover", { dataTransfer: dt, bubbles: true, cancelable: true, clientY: rect.bottom - 2 }));' +
+  ' figures[1].dispatchEvent(new DragEvent("drop", { dataTransfer: dt, bubbles: true, cancelable: true }));' +
+  ' figures[0].dispatchEvent(new DragEvent("dragend", { dataTransfer: dt, bubbles: true }));' +
+  ' var after = Array.prototype.slice.call(document.querySelectorAll(".note-figure")).map(function (f) { return f.getAttribute("data-asset"); });' +
+  '   var P = window.PaperOS;' +
+  '   var id = P.data.listNotes().filter(function (n) { return n.name === "插图回归纸页"; })[0].id;' +
+  '   var stored = P.data.getNode(id).blocks.filter(function (b) { return b.type === "image"; }).map(function (b) { return b.assetId; });' +
+  '   return { before: before, after: after, stored: stored }; })()');
+if (reordered && !reordered.error && reordered.before.join(',') === reordered.after.slice().reverse().join(',')) {
+  ok('dragging one figure past another reorders the DOM');
+} else {
+  bad('dragging one figure past another reorders the DOM', JSON.stringify(reordered));
+}
+if (reordered && !reordered.error && reordered.stored.join(',') === reordered.after.join(',')) {
+  ok('the reorder is written back to the stored blocks', JSON.stringify(reordered.stored));
+} else {
+  bad('the reorder is written back to the stored blocks', JSON.stringify(reordered && reordered.stored));
+}
+
+// 5) 灯箱：点眼睛开、Esc 关。
+const lightbox = await run(function () {
+  var figure = document.querySelector('.note-figure');
+  if (!figure) return { error: 'no figure' };
+  var zoom = figure.querySelector('[data-testid="note-figure-zoom"]');
+  if (!zoom) return { error: 'no zoom button' };
+  zoom.click();
+  var dialog = document.querySelector('[data-testid="note-lightbox"]');
+  var opened = !!(dialog && (dialog.open || dialog.hasAttribute('open')));
+  if (dialog) dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
+  var closed = !document.querySelector('[data-testid="note-lightbox"]');
+  return { opened: opened, closed: closed };
+});
+if (lightbox && !lightbox.error && lightbox.opened && lightbox.closed) ok('the eye opens a lightbox and cancelling closes it', JSON.stringify(lightbox));
+else bad('the eye opens a lightbox and cancelling closes it', JSON.stringify(lightbox));
+
+// 6) 缺图：把一张图的 id 换成一个不存在的资产，必须渲染占位而不是抛错。
+const missing = await run(function () {
+  var P = window.PaperOS;
+  var id = P.data.listNotes().filter(function (n) { return n.name === '插图回归纸页'; })[0].id;
+  var blocks = P.data.getNode(id).blocks.map(function (b) {
+    if (b.type !== 'image') return b;
+    var copy = {}; Object.keys(b).forEach(function (k) { copy[k] = b[k]; });
+    copy.assetId = 'ast_ffffffffffff';
+    return copy;
+  });
+  P.data.updateNode(id, { blocks: blocks });
+  P.wm.close ? P.wm.close('notes') : null;
+  P.wm.open('notes', { docId: id });
+  return new Promise(function (resolve) {
+    setTimeout(function () {
+      resolve({ missing: document.querySelectorAll('.note-figure.is-missing').length,
+        bootError: window.__PAPER_OS_BOOT_ERROR__ || '' });
+    }, 600);
+  });
+});
+if (missing && missing.missing >= 1 && !missing.bootError) ok('a missing picture renders a placeholder instead of throwing', JSON.stringify(missing));
+else bad('a missing picture renders a placeholder instead of throwing', JSON.stringify(missing));
+
+// 7) 孤儿回收：磁盘上列出的 id 里，快照没引用的必须被 DELETE，被引用的必须留下。
+const reclaim = await ev('(async function () { var P = window.PaperOS;' +
+  ' var realFetch = window.fetch;' +
+  ' var calls = { listed: 0, deleted: [] };' +
+  ' var live = P.data.snapshotData();' +
+  ' var referenced = [];' +
+  ' live.nodes.forEach(function (n) { if (n.kind === "note" && n.blocks) n.blocks.forEach(function (b) {' +
+  '   if (b.type === "image") referenced.push(b.assetId); }); });' +
+  ' /* 挂一个假的资产接口：列出两张，其中一张没人引用。 */' +
+  ' window.fetch = async function (url, init) {' +
+  '   var target = String(url || "");' +
+  '   if (target.indexOf("/api/control-your-schedule/assets") !== 0) return realFetch.apply(window, arguments);' +
+  '   var method = (init && init.method) || "GET";' +
+  '   if (method === "GET" && target.indexOf("?id=") === -1) {' +
+  '     calls.listed += 1;' +
+  '     return new Response(JSON.stringify({ ok: true, ids: [referenced[0], "ast_ffffffffff"] }),' +
+  '       { status: 200, headers: { "content-type": "application/json" } });' +
+  '   }' +
+  '   if (method === "DELETE") { calls.deleted.push(target.split("id=")[1] || ""); return new Response("{}", { status: 200 }); }' +
+  '   return new Response("{}", { status: 404 });' +
+  ' };' +
+  ' var result = await P.reclaimNoteAssets();' +
+  ' window.fetch = realFetch;' +
+  ' return { result: result, calls: calls, referenced: referenced }; })()');
+if (reclaim && reclaim.calls.listed === 1
+  && reclaim.calls.deleted.length === 1
+  && reclaim.calls.deleted[0] === 'ast_ffffffffff') {
+  ok('orphan pictures are deleted and referenced ones are kept', JSON.stringify(reclaim.calls.deleted));
+} else {
+  bad('orphan pictures are deleted and referenced ones are kept', JSON.stringify(reclaim && { calls: reclaim.calls, result: reclaim.result }));
+}
+
+// 8) 回收失败不能拖垮页面：接口不可达时返回计数而不是抛错。
+const reclaimFails = await ev('(async function () { var P = window.PaperOS;' +
+  ' var realFetch = window.fetch;' +
+  ' window.fetch = async function () { throw new Error("offline"); };' +
+  ' var result = await P.reclaimNoteAssets();' +
+  ' window.fetch = realFetch;' +
+  ' return result; })()');
+if (reclaimFails && reclaimFails.deleted === 0 && reclaimFails.failed === 1) ok('a failed reclaim reports instead of throwing', JSON.stringify(reclaimFails));
+else bad('a failed reclaim reports instead of throwing', JSON.stringify(reclaimFails));
+
+if (!pageErrors.length) ok('no page exceptions during the picture assertions');
+else bad('no page exceptions during the picture assertions', pageErrors.slice(0, 3).join(' | '));
+
 // 工作区里不允许再出现 profile-*：这是「profile 必须放 %TEMP%」的回归守卫。
 const profileLeftovers = readdirSync(OUT).filter((name) => name.startsWith('profile-'));
 if (profileLeftovers.length) bad('no browser profile dirs accumulate under output/_probe/cys-e2e', profileLeftovers.join(', '));

@@ -36,7 +36,9 @@ import { inflateSync } from 'node:zlib';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..');
-const PAGE = join(ROOT, 'plugin', 'assets', 'paper-os.html');
+/* 两种布局：开发树 <项目>/plugin/assets/…；发布仓把包根当仓库根。 */
+const PAGE = [join(ROOT, 'plugin', 'assets', 'paper-os.html'), join(ROOT, 'assets', 'paper-os.html')]
+  .find((candidate) => existsSync(candidate)) || join(ROOT, 'plugin', 'assets', 'paper-os.html');
 const SELF_TEST = process.argv.includes('--self-test');
 
 const CANDIDATES = [

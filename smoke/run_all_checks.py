@@ -108,7 +108,14 @@ BASE_EXPECTED = {
     "settings icon is a gear": "M19.1 12a7 7 0 0 0-.1-1.2l2-1.5",
     "desktop click dismiss": "bindDesktopDismiss",
     "page version placeholder": "__PAGE_VERSION__",
-    "schema is v4": "P.schemaVersion = 4;",
+    "schema is v5": "P.schemaVersion = 5;",
+    "note block model": "/* @blocks-begin */",
+    "note blocks are validated": "function normalizeNoteBlocks(raw)",
+    "note blocks project to content": "function noteBlocksText(blocks)",
+    "note editor app segment": "/* ===== src/js/apps/note-editor.js ===== */",
+    "note image assets go through the host route": "P.noteAssets = {",
+    "note body is a block editor": 'data-testid="note-body" contenteditable="true"',
+    "note lightbox": "P.noteLightbox = function (block, sourceEl)",
     "prompt app registered": "id: 'prompts',",
     "prompt sanitizer": "function sanitizePrompts(raw, now)",
     "prompt migration step": "2: function v2ToV3(raw)",
@@ -694,6 +701,12 @@ def main() -> int:
         run("migration v1 -> v3 keeps every byte", [NODE, str(ROOT / "smoke" / "migrate_test.mjs")])
     else:
         bad("migration v1 -> v3 keeps every byte", "node not found")
+
+    # --- note block model (pure, no browser needed) ---
+    if NODE:
+        run("note block model", [NODE, str(ROOT / "smoke" / "note_blocks_test.mjs")])
+    else:
+        bad("note block model", "node not found")
 
     # --- composer insertion model (pure, no browser needed) ---
     if NODE:
