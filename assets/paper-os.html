@@ -152,6 +152,39 @@ html[data-theme="dark"] .sticky__text::placeholder {
   color: rgba(236, 228, 212, 0.36);
 }
 
+/* 清单模式在深色主题下的对比度：框线与删除线都要看得见（issue 第 7 条）。 */
+html[data-theme="dark"] .sticky__item-text {
+  color: #ece4d4;
+}
+
+html[data-theme="dark"] .sticky__item[data-done="1"] .sticky__item-text {
+  color: rgba(236, 228, 212, 0.5);
+  text-decoration-color: rgba(236, 228, 212, 0.45);
+}
+
+html[data-theme="dark"] .sticky__item-check {
+  border-color: rgba(236, 228, 212, 0.55);
+}
+
+html[data-theme="dark"] .sticky__item[data-done="1"] .sticky__item-check {
+  border-color: rgba(236, 228, 212, 0.8);
+  color: rgba(236, 228, 212, 0.95);
+  background: rgba(236, 228, 212, 0.12);
+}
+
+html[data-theme="dark"] .sticky__item-text:empty::before {
+  color: rgba(236, 228, 212, 0.32);
+}
+
+html[data-theme="dark"] .sticky__mode {
+  color: rgba(236, 228, 212, 0.6);
+}
+
+html[data-theme="dark"] .sticky__mode:hover {
+  color: rgba(236, 228, 212, 0.95);
+  background: rgba(236, 228, 212, 0.12);
+}
+
 html[data-theme="dark"] .cal-day__dot[data-priority="urgent-important"] { background: #b9756f; }
 html[data-theme="dark"] .cal-day__dot[data-priority="important"] { background: #b7a25c; }
 html[data-theme="dark"] .cal-day__dot[data-priority="none"] { background: #969696; }
@@ -4449,6 +4482,150 @@ body.is-window-resizing * {
   line-height: 1.75;
   outline: none;
   resize: none;
+}
+
+/* ---------- 清单模式 ---------- */
+
+.sticky__body {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.sticky__text[hidden],
+.sticky__list[hidden] {
+  display: none;
+}
+
+.sticky__list {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.sticky__items {
+  display: flex;
+  margin: 0;
+  padding: 2px 0;
+  flex-direction: column;
+  gap: 1px;
+  list-style: none;
+}
+
+.sticky__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 1px 0;
+}
+
+.sticky__item-check {
+  display: grid;
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  margin-top: 5px;
+  padding: 0;
+  place-items: center;
+  border: 1.4px solid rgba(58, 53, 43, 0.42);
+  border-radius: 3.5px;
+  color: transparent;
+  background: transparent;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.sticky__item-check svg {
+  width: 11px;
+  height: 11px;
+  stroke-width: 2.6;
+}
+
+.sticky__item-check:hover {
+  border-color: rgba(58, 53, 43, 0.7);
+}
+
+.sticky__item[data-done="1"] .sticky__item-check {
+  border-color: rgba(58, 53, 43, 0.72);
+  color: rgba(58, 53, 43, 0.85);
+  background: rgba(58, 53, 43, 0.1);
+}
+
+.sticky__item-text {
+  min-width: 0;
+  flex: 1 1 auto;
+  color: #3a392f;
+  font-family: var(--font-sticky);
+  font-size: 15.5px;
+  letter-spacing: 0.015em;
+  line-height: 1.6;
+  outline: none;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.sticky__item-text:empty::before {
+  color: rgba(58, 53, 43, 0.28);
+  content: "写一件事…";
+}
+
+.sticky__item-text:focus {
+  box-shadow: inset 0 -1px 0 rgba(58, 53, 43, 0.22);
+}
+
+.sticky__item[data-done="1"] .sticky__item-text {
+  color: rgba(58, 53, 43, 0.45);
+  text-decoration: line-through;
+  text-decoration-color: rgba(58, 53, 43, 0.4);
+}
+
+.sticky__progress {
+  margin-left: auto;
+  margin-right: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sticky.is-all-done {
+  opacity: 0.86;
+}
+
+/* 模式按钮：和色块同级，常显但压低存在感；hover 整张纸才提亮。 */
+.sticky__mode {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  padding: 0;
+  place-items: center;
+  border-radius: 4px;
+  color: rgba(58, 53, 43, 0.55);
+  background: transparent;
+  opacity: 0.55;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.sticky__mode svg {
+  width: 13px;
+  height: 13px;
+}
+
+.sticky__mode:hover {
+  color: rgba(58, 53, 43, 0.85);
+  background: rgba(255, 255, 255, 0.32);
+  opacity: 1;
+}
+
+.sticky__mode[aria-pressed="true"] {
+  opacity: 1;
+  color: rgba(58, 53, 43, 0.8);
+}
+
+.sticky:hover .sticky__mode,
+.sticky:focus-within .sticky__mode {
+  opacity: 1;
 }
 
 .sticky__text::placeholder {
@@ -10018,6 +10195,36 @@ html[data-skin="modern"] .sticky.is-dragging .sticky__head {
   cursor: grabbing;
 }
 
+/* 现代皮：清单条目按原生控件语言走，勾选框用圆角方框 + 主题色。 */
+html[data-skin="modern"] .sticky__item-check {
+  width: 16px;
+  height: 16px;
+  margin-top: 4px;
+  border-width: 1.5px;
+  border-radius: 5px;
+}
+
+html[data-skin="modern"] .sticky__item[data-done="1"] .sticky__item-check {
+  border-color: var(--accent, #4a6da7);
+  color: #fff;
+  background: var(--accent, #4a6da7);
+}
+
+html[data-skin="modern"] .sticky__item-text {
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+html[data-skin="modern"] .sticky__item-text:focus {
+  box-shadow: none;
+}
+
+html[data-skin="modern"] .sticky__mode {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+}
+
 html[data-skin="modern"] .sticky__drag {
   width: 18px;
   height: 18px;
@@ -12757,6 +12964,91 @@ html[data-skin="modern"] .tour__btn:focus-visible {
   P.noteAssetId = noteAssetId;
 
   /* @blocks-end */
+
+  /* ============================================================
+     便签清单模式（v5，不升版本）
+     - 文本仍是唯一事实源：清单就是 `- [ ] 事项` / `- [x] 事项` 这几行。
+     - mode 只是一个渲染开关，丢了它数据还在，退化成 Markdown 原文照样可读。
+     - 纯函数、不碰 DOM，可在 Node 里用 new Function 单独跑（smoke/sticky_list_test.mjs）。
+     ============================================================ */
+
+  /* @sticky-list-begin */
+
+  P.STICKY_TEXT_MAX = 5000;
+  P.STICKY_ITEMS_MAX = 200;
+  P.STICKY_MODES = ['text', 'list'];
+  P.STICKY_ITEM_LINE = /^(\s*)[-*]\s+\[([ xX])\]\s*(.*)$/;
+
+  function stickyMode(value) {
+    return value === 'list' ? 'list' : 'text';
+  }
+
+  /** 5000 是既有上限（textarea maxlength 与校验器同值），这里只做单点收口。 */
+  function clampStickyText(value) {
+    var text = typeof value === 'string' ? value : '';
+    return text.length > P.STICKY_TEXT_MAX ? text.slice(0, P.STICKY_TEXT_MAX) : text;
+  }
+
+  /**
+   * 文本 → 条目。每一行都是一个条目，不认识的写法当「未勾选的普通条目」，
+   * 不丢字：拆不出标记时整行原样留在 text 里。
+   * 返回 { items: [{ text, done }], loose: 是否有解析不出的行 }
+   */
+  function parseStickyList(text) {
+    var source = typeof text === 'string' ? text : '';
+    /* 整份空白 = 还没有任何条目，否则空便签一切模式就凭空多出一行。 */
+    if (!source.trim()) return { items: [], loose: false };
+    var lines = source.split('\n');
+    var items = [];
+    var loose = false;
+    for (var i = 0; i < lines.length && items.length < P.STICKY_ITEMS_MAX; i += 1) {
+      var line = lines[i];
+      var match = P.STICKY_ITEM_LINE.exec(line);
+      if (match) {
+        items.push({ text: match[3], done: match[2] !== ' ' });
+      } else if (line.trim() !== '') {
+        /* 纯 Markdown 清单之外的普通行（切模式前写下的句子）：也当条目，
+           这样「切成清单」不会把已有文字吞掉。 */
+        items.push({ text: line, done: false });
+        loose = true;
+      } else {
+        items.push({ text: '', done: false });
+      }
+    }
+    return { items: items, loose: loose };
+  }
+
+  /** 条目 → 文本。空清单写成空串，别留一行空壳。 */
+  function serializeStickyList(items) {
+    if (!Array.isArray(items)) return '';
+    var lines = [];
+    for (var i = 0; i < items.length && lines.length < P.STICKY_ITEMS_MAX; i += 1) {
+      var item = items[i] || {};
+      var body = typeof item.text === 'string' ? item.text.replace(/\n/g, ' ') : '';
+      lines.push((item.done ? '- [x] ' : '- [ ] ') + body);
+    }
+    return clampStickyText(lines.join('\n'));
+  }
+
+  /** 完成度：清单模式按条目算，文本模式没有分母（返回 null，界面不显示）。 */
+  function stickyProgress(sticky) {
+    if (!sticky || stickyMode(sticky.mode) !== 'list') return null;
+    var parsed = parseStickyList(sticky.text);
+    var done = 0;
+    for (var i = 0; i < parsed.items.length; i += 1) {
+      if (parsed.items[i].done) done += 1;
+    }
+    return { done: done, total: parsed.items.length, all: parsed.items.length > 0 && done === parsed.items.length };
+  }
+
+  P.stickyMode = stickyMode;
+  P.clampStickyText = clampStickyText;
+  P.parseStickyList = parseStickyList;
+  P.serializeStickyList = serializeStickyList;
+  P.stickyProgress = stickyProgress;
+
+  /* @sticky-list-end */
+
   P.paperColors = ['#fcf7eb', '#f4e6a9', '#efd2b9', '#d5dfc5', '#cfdde2', '#ebd0cb'];
   P.DRAW_PAPER = '#fcf7eb';
 
@@ -12993,6 +13285,8 @@ html[data-skin="modern"] .tour__btn:focus-visible {
     arrowLeft: '<path d="M20 12H4.5M10 5.5 4.5 12l5.5 6.5"/>',
     arrowUpRight: '<path d="M7 17 17 7M9 7h8v8"/>',
     check: '<path d="M4.5 12.3l4.7 4.7L19.5 6.7"/>',
+    list: '<path d="M9 6.5h11M9 12h11M9 17.5h11"/><path d="M4.2 6.5h.1M4.2 12h.1M4.2 17.5h.1"/>',
+    listCheck: '<path d="M10.5 6.5H20M10.5 12H20M10.5 17.5H20"/><path d="M3.6 6.2l1.5 1.6 2.4-2.9M3.6 14.4l1.5 1.6 2.4-2.9"/>',
     undo: '<path d="M8.5 6.5 4 11l4.5 4.5"/><path d="M4.2 11h9.1c3.3 0 5.9 2.6 5.9 5.9v1"/>',
     redo: '<path d="M15.5 6.5 20 11l-4.5 4.5"/><path d="M19.8 11h-9.1C7.4 11 4.8 13.6 4.8 16.9v1"/>',
     eraser: '<path d="M4.8 15.7 13.3 7.2l5.9 5.9-8.5 8.5H7.2z"/><path d="M10.7 9.8l5.9 5.9M4.9 21.6h14.9"/>',
@@ -14041,7 +14335,9 @@ html[data-skin="modern"] .tour__btn:focus-visible {
     var now = Date.now();
     var sticky = {
       id: U.uid('sticky'),
-      text: typeof info.text === 'string' ? info.text.slice(0, 5000) : '',
+      text: P.clampStickyText(info.text),
+      /* mode 只是渲染开关：丢了它文本还在，旧版打开就是一张普通便签。 */
+      mode: P.stickyMode(info.mode),
       color: STICKY_COLORS.indexOf(info.color) !== -1 ? info.color : 'butter',
       x: Number.isFinite(Number(info.x)) ? Math.max(0, Number(info.x)) : 26,
       y: Number.isFinite(Number(info.y)) ? Math.max(0, Number(info.y)) : 26,
@@ -14059,7 +14355,8 @@ html[data-skin="modern"] .tour__btn:focus-visible {
     var sticky = state.stickies.find(function (s) { return s.id === id; });
     if (!sticky) return null;
     var changes = patch || {};
-    if (Object.prototype.hasOwnProperty.call(changes, 'text')) sticky.text = String(changes.text === undefined ? '' : changes.text).slice(0, 5000);
+    if (Object.prototype.hasOwnProperty.call(changes, 'text')) sticky.text = P.clampStickyText(changes.text);
+    if (Object.prototype.hasOwnProperty.call(changes, 'mode')) sticky.mode = P.stickyMode(changes.mode);
     if (Object.prototype.hasOwnProperty.call(changes, 'color') && STICKY_COLORS.indexOf(changes.color) !== -1) sticky.color = changes.color;
     if (Object.prototype.hasOwnProperty.call(changes, 'x') && Number.isFinite(Number(changes.x))) sticky.x = Math.max(0, Number(changes.x));
     if (Object.prototype.hasOwnProperty.call(changes, 'y') && Number.isFinite(Number(changes.y))) sticky.y = Math.max(0, Number(changes.y));
@@ -15494,7 +15791,9 @@ html[data-skin="modern"] .tour__btn:focus-visible {
       }
       stickies.push({
         id: rawSticky.id,
-        text: typeof rawSticky.text === 'string' ? rawSticky.text.slice(0, 5000) : '',
+        text: typeof rawSticky.text === 'string' ? P.clampStickyText(rawSticky.text) : '',
+        /* 缺 mode 的旧快照一律当普通便签：这一步不需要迁移版本。 */
+        mode: P.stickyMode(rawSticky.mode),
         color: ALLOWED_STICKY_COLORS.indexOf(rawSticky.color) !== -1 ? rawSticky.color : 'butter',
         x: U.clamp(numberOr(rawSticky.x, 26), 0, 20000),
         y: U.clamp(numberOr(rawSticky.y, 26), 0, 20000),
@@ -19287,7 +19586,11 @@ html[data-skin="modern"] .tour__btn:focus-visible {
       }
 
       function createCard(sticky) {
-        var card = { id: sticky.id, el: null, text: null, date: null, sample: null, swatches: null, dragging: false };
+        var card = {
+          id: sticky.id, el: null, text: null, date: null, sample: null, swatches: null,
+          body: null, modeBtn: null, listRoot: null, progress: null,
+          list: null, mode: P.stickyMode(sticky.mode), composing: false, dragging: false
+        };
         var el = document.createElement('article');
         el.className = 'sticky';
         el.setAttribute('data-id', sticky.id);
@@ -19298,15 +19601,27 @@ html[data-skin="modern"] .tour__btn:focus-visible {
           '<header class="sticky__head">' +
           '<span class="sticky__drag" aria-hidden="true"><i></i><i></i><i></i></span>' +
           '<span class="sticky__swatches" role="group" aria-label="便签颜色"></span>' +
+          '<button class="sticky__mode" type="button" aria-pressed="false"></button>' +
           '<button class="sticky__del" type="button" aria-label="删掉这张便签" title="删掉">×</button>' +
           '</header>' +
+          '<div class="sticky__body">' +
           '<textarea class="sticky__text" maxlength="5000" aria-label="便签内容" placeholder="写一句话…"></textarea>' +
-          '<footer class="sticky__foot"><span class="sample-tag" hidden>示例</span><span class="sticky__date"></span></footer>';
+          '<div class="sticky__list" hidden>' +
+          '<ul class="sticky__items"></ul>' +
+          '</div>' +
+          '</div>' +
+          '<footer class="sticky__foot"><span class="sample-tag" hidden>示例</span>' +
+          '<span class="sticky__progress" hidden></span><span class="sticky__date"></span></footer>';
         card.el = el;
+        card.body = el.querySelector('.sticky__body');
         card.text = el.querySelector('.sticky__text');
+        card.listRoot = el.querySelector('.sticky__list');
+        card.list = el.querySelector('.sticky__items');
         card.date = el.querySelector('.sticky__date');
         card.sample = el.querySelector('.sample-tag');
         card.swatches = el.querySelector('.sticky__swatches');
+        card.progress = el.querySelector('.sticky__progress');
+        card.modeBtn = el.querySelector('.sticky__mode');
         card.text.value = sticky.text || '';
         /* 现代是栅格：位置由 CSS 决定，不写自由坐标（写了会让 relative 卡片偏离格子）。 */
         if (!isModernSkin()) {
@@ -19329,20 +19644,27 @@ html[data-skin="modern"] .tour__btn:focus-visible {
         });
 
         card.text.addEventListener('input', function () {
+          /* 落盘只写 text：清单模式下这条路径不该出现，但真出现了也不能丢字。 */
           P.data.updateSticky(sticky.id, { text: card.text.value });
           card.date.textContent = U.formatListDate(Date.now());
+        });
+        card.modeBtn.addEventListener('click', function (event) {
+          event.stopPropagation();
+          toggleStickyMode(card);
         });
         card.el.querySelector('.sticky__del').addEventListener('click', function (event) {
           event.stopPropagation();
           removeSticky(sticky.id);
         });
 
+        bindListEvents(card);
+
         var head = el.querySelector('.sticky__head');
         /* 经典：整张纸都能拖着走（只放过正文输入区、滚动条、色块和删除按钮）。
            modern：改成「拖动选位」的排序手势，并且只从标题栏/把手起手，
            这样触屏上卡片正文仍然可以纵向滚动（touch-action 在 CSS 里分开）。 */
         el.addEventListener('pointerdown', function (event) {
-          if (event.target.closest('.sticky__text, .sticky__swatches, .sticky__del')) return;
+          if (event.target.closest('.sticky__body, .sticky__swatches, .sticky__del, .sticky__mode')) return;
           if (isModernSkin()) {
             beginReorder(event, card);
             return;
@@ -19367,6 +19689,10 @@ html[data-skin="modern"] .tour__btn:focus-visible {
         });
         head.addEventListener('dblclick', function (event) {
           if (event.target.closest('button')) return;
+          if (card.mode === 'list') {
+            var first = card.list ? card.list.querySelector('.sticky__item-text') : null;
+            if (first) { first.focus(); return; }
+          }
           card.text.focus();
           card.text.select();
         });
@@ -19383,9 +19709,268 @@ html[data-skin="modern"] .tour__btn:focus-visible {
         return '奶油';
       }
 
+      /* ---------- 清单模式 ---------- */
+
+      function stickyModeOf(sticky) {
+        return P.stickyMode(sticky && sticky.mode);
+      }
+
+      function progressOf(sticky) {
+        return P.stickyProgress(sticky);
+      }
+
+      /* 只看活动便签：卡片能出现在界面上，就一定是非废纸篓的那批。
+         不顺手调 listTrashedStickies()（它会跑 pruneTrash 并可能再 commit 一次）。 */
+      function stickyOf(card) {
+        return P.data.listStickies().find(function (s) { return s.id === card.id; }) || null;
+      }
+
+      /** 切模式：只写 mode + 把正文重新序列化一次；不丢任何字符。 */
+      function toggleStickyMode(card) {
+        var sticky = stickyOf(card);
+        if (!sticky) return;
+        var next = stickyModeOf(sticky) === 'list' ? 'text' : 'list';
+        var patch = { mode: next };
+        if (next === 'list') {
+          var items = P.parseStickyList(sticky.text).items;
+          /* 空便签切成清单：直接给它一条空条目，否则卡片会是一片空白、
+             连光标都没地方落。这一条也要落盘，不然下次重建就没了。 */
+          if (!items.length) items = [{ text: '', done: false }];
+          patch.text = P.serializeStickyList(items);
+        } else {
+          /* 切回文本时保留 - [x] 标记：导出、复制、搜索都不丢勾选状态。 */
+          patch.text = P.clampStickyText(sticky.text);
+        }
+        card.mode = next;
+        P.data.updateSticky(card.id, patch);
+        /* updateCard 由 rebuildBoard 调；这里只管把焦点送到该去的地方。 */
+        if (next === 'list') {
+          focusRow(card, 0, !!sticky.text);
+        } else {
+          card.text.focus();
+        }
+      }
+
+      function rowNode(card, item, index) {
+        var row = document.createElement('li');
+        row.className = 'sticky__item';
+        row.setAttribute('data-testid', 'sticky-item-' + index);
+        row.setAttribute('data-done', item.done ? '1' : '0');
+        var box = document.createElement('button');
+        box.type = 'button';
+        box.className = 'sticky__item-check';
+        box.setAttribute('role', 'checkbox');
+        box.setAttribute('aria-checked', item.done ? 'true' : 'false');
+        box.setAttribute('aria-label', (item.done ? '标记为未完成：' : '标记为已完成：') + (item.text || '空条目'));
+        box.innerHTML = P.icon('check');
+        var text = document.createElement('div');
+        text.className = 'sticky__item-text';
+        text.setAttribute('contenteditable', 'true');
+        text.setAttribute('role', 'textbox');
+        text.setAttribute('aria-label', '条目内容');
+        text.setAttribute('data-index', String(index));
+        text.textContent = item.text;
+        row.appendChild(box);
+        row.appendChild(text);
+        return row;
+      }
+
+      /** 只重建结构不同的行；正在编辑的那一行绝不替换，否则每次击键都会跳光标。 */
+      function syncListRows(card, sticky) {
+        var parsed = P.parseStickyList(sticky.text);
+        var active = document.activeElement;
+        var activeText = active && active.classList && active.classList.contains('sticky__item-text')
+          && card.list.contains(active) ? active : null;
+        var rows = Array.prototype.slice.call(card.list.children);
+        /* 行数和数据对不上，同时用户正在某一行里打字（比如刚按 Enter 开出的空行还没落盘）：
+           这一轮先不动 DOM。重建会把正在编辑的那一行删掉，光标就丢了。
+           下一次击键会走 commitList 把 DOM 读回数据，那时两边自然对齐。 */
+        if (rows.length !== parsed.items.length && activeText) return;
+        if (rows.length !== parsed.items.length) {
+          renderListRows(card, parsed.items);
+          return;
+        }
+        parsed.items.forEach(function (item, index) {
+          var row = rows[index];
+          if (!row) return;
+          row.setAttribute('data-done', item.done ? '1' : '0');
+          var box = row.querySelector('.sticky__item-check');
+          if (box) {
+            box.setAttribute('aria-checked', item.done ? 'true' : 'false');
+            box.setAttribute('aria-label', (item.done ? '标记为未完成：' : '标记为已完成：') + (item.text || '空条目'));
+          }
+          var text = row.querySelector('.sticky__item-text');
+          if (text && text !== activeText && text.textContent !== item.text) text.textContent = item.text;
+        });
+      }
+
+      function renderListRows(card, items) {
+        card.list.textContent = '';
+        /* 清单永远至少有一行：空清单 = 一条空行。没有这一条，导入一份
+           mode:list + 空 text 的快照就会得到一片点不进去的空白。 */
+        var rows = items.length ? items : [{ text: '', done: false }];
+        rows.forEach(function (item, index) { card.list.appendChild(rowNode(card, item, index)); });
+      }
+
+      /** 把当前 DOM 里的行读回文本并落盘 —— 清单模式下只有这一条写路径。 */
+      function commitList(card) {
+        var sticky = stickyOf(card);
+        if (!sticky) return;
+        var items = [];
+        Array.prototype.forEach.call(card.list.children, function (row) {
+          var text = row.querySelector('.sticky__item-text');
+          var box = row.querySelector('.sticky__item-check');
+          items.push({
+            text: text ? text.textContent : '',
+            done: !!box && box.getAttribute('aria-checked') === 'true'
+          });
+        });
+        P.data.updateSticky(card.id, { text: P.serializeStickyList(items) });
+      }
+
+      function focusRow(card, index, toEnd) {
+        var row = card.list.children[index];
+        if (!row) return false;
+        var text = row.querySelector('.sticky__item-text');
+        if (!text) return false;
+        text.focus();
+        if (toEnd) {
+          var range = document.createRange();
+          range.selectNodeContents(text);
+          range.collapse(false);
+          var selection = window.getSelection();
+          if (selection) {
+            selection.removeAllRanges();
+            selection.addRange(range);
+          }
+        }
+        return true;
+      }
+
+      function rowIndexOf(target) {
+        var row = target.closest ? target.closest('.sticky__item') : null;
+        if (!row || !row.parentNode) return -1;
+        return Array.prototype.indexOf.call(row.parentNode.children, row);
+      }
+
+      /** 行内 Alt + ↑/↓ 换位；和卡片排序一样先让开 Ctrl/Cmd 组合键。 */
+      function moveRow(card, index, delta) {
+        var rows = card.list.children;
+        var next = index + delta;
+        if (next < 0 || next >= rows.length) return false;
+        var moving = rows[index];
+        if (delta < 0) card.list.insertBefore(moving, rows[next]);
+        else card.list.insertBefore(moving, rows[next].nextSibling);
+        commitList(card);
+        focusRow(card, next, true);
+        return true;
+      }
+
+      function bindListEvents(card) {
+        card.list.addEventListener('click', function (event) {
+          var box = event.target.closest ? event.target.closest('.sticky__item-check') : null;
+          if (!box) return;
+          event.preventDefault();
+          event.stopPropagation();
+          var row = box.closest('.sticky__item');
+          if (!row) return;
+          var nextDone = box.getAttribute('aria-checked') !== 'true';
+          box.setAttribute('aria-checked', nextDone ? 'true' : 'false');
+          row.setAttribute('data-done', nextDone ? '1' : '0');
+          commitList(card);
+        });
+
+        /* 中文输入法组合期间不落盘，和纸页块编辑器同一条规则。 */
+        card.list.addEventListener('compositionstart', function () { card.composing = true; }, true);
+        card.list.addEventListener('compositionend', function () {
+          card.composing = false;
+          commitList(card);
+        }, true);
+        card.list.addEventListener('input', function (event) {
+          if (card.composing) return;
+          if (!event.target.classList.contains('sticky__item-text')) return;
+          commitList(card);
+        });
+
+        card.list.addEventListener('keydown', function (event) {
+          var text = event.target.closest ? event.target.closest('.sticky__item-text') : null;
+          if (!text) return;
+          var index = rowIndexOf(text);
+          if (index < 0) return;
+
+          if (event.altKey && !event.ctrlKey && !event.metaKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+            event.preventDefault();
+            moveRow(card, index, event.key === 'ArrowUp' ? -1 : 1);
+            return;
+          }
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            /* 空行上回车 = 退掉这一行，光标并到上一行末尾；这是清单的「结束」手势。 */
+            if (!text.textContent.trim()) {
+              var row = text.closest('.sticky__item');
+              if (card.list.children.length > 1) {
+                if (row) row.remove();
+                commitList(card);
+                focusRow(card, Math.max(0, index - 1), true);
+              }
+              return;
+            }
+            var fresh = rowNode(card, { text: '', done: false }, index + 1);
+            var at = text.closest('.sticky__item');
+            if (at && at.parentNode) at.parentNode.insertBefore(fresh, at.nextSibling);
+            else card.list.appendChild(fresh);
+            commitList(card);
+            focusRow(card, index + 1, false);
+            return;
+          }
+          if (event.key === 'Backspace' && !text.textContent && index > 0) {
+            event.preventDefault();
+            var current = text.closest('.sticky__item');
+            if (current) current.remove();
+            commitList(card);
+            focusRow(card, index - 1, true);
+          }
+        });
+
+        /* 纯文本粘贴：整段摊成条目，Markdown 清单直接被认出来。 */
+        card.list.addEventListener('paste', function (event) {
+          var text = event.target.closest ? event.target.closest('.sticky__item-text') : null;
+          if (!text) return;
+          var data = event.clipboardData;
+          if (!data) return;
+          var plain = data.getData('text/plain');
+          if (plain === null || plain === undefined) return;
+          event.preventDefault();
+          if (plain.indexOf('\n') === -1) {
+            document.execCommand('insertText', false, plain);
+            return;
+          }
+          var index = rowIndexOf(text);
+          var row = text.closest('.sticky__item');
+          var parsed = P.parseStickyList(plain.replace(/\r\n?/g, '\n'));
+          var after = false;
+          parsed.items.forEach(function (item) {
+            var node = rowNode(card, item, card.list.children.length);
+            if (row && row.parentNode && !after) row.parentNode.insertBefore(node, row.nextSibling);
+            else card.list.appendChild(node);
+            after = true;
+          });
+          commitList(card);
+          focusRow(card, index + 1, false);
+        });
+      }
+
       function updateCard(card, sticky) {
         if (!card || !card.el) return;
         card.el.setAttribute('data-color', sticky.color);
+        card.mode = stickyModeOf(sticky);
+        card.el.setAttribute('data-mode', card.mode);
+        card.text.hidden = card.mode === 'list';
+        card.listRoot.hidden = card.mode !== 'list';
+        card.modeBtn.innerHTML = P.icon(card.mode === 'list' ? 'listCheck' : 'list');
+        card.modeBtn.setAttribute('aria-pressed', card.mode === 'list' ? 'true' : 'false');
+        card.modeBtn.setAttribute('title', card.mode === 'list' ? '切回普通便签' : '变成待办清单');
+        card.modeBtn.setAttribute('aria-label', card.mode === 'list' ? '切回普通便签' : '变成待办清单');
         /* modern：卡片本身可聚焦（键盘排序入口）；经典保持不可聚焦，tab 顺序不变。 */
         if (isModernSkin()) {
           if (card.el.getAttribute('tabindex') !== '0') card.el.tabIndex = 0;
@@ -19396,7 +19981,12 @@ html[data-skin="modern"] .tour__btn:focus-visible {
           card.el.removeAttribute('role');
           card.el.removeAttribute('aria-label');
         }
-        if (card.text !== document.activeElement) card.text.value = sticky.text || '';
+        if (card.mode !== 'list' && card.text !== document.activeElement) card.text.value = sticky.text || '';
+        if (stickyModeOf(sticky) === 'list') syncListRows(card, sticky);
+        var progress = progressOf(sticky);
+        card.progress.hidden = !progress;
+        if (progress) card.progress.textContent = F('{n}/{m}', { n: progress.done, m: progress.total });
+        card.el.classList.toggle('is-all-done', !!(progress && progress.all));
         if (isModernSkin() && !card.dragging && card.el.style.left) {
           card.el.style.left = '';
           card.el.style.top = '';

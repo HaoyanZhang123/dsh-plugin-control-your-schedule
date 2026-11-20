@@ -1,6 +1,6 @@
 {
- "{folders} 个文件夹 · {notes} 张纸页 · {drawings} 张画纸": "{folders} folders · {notes} pages · {drawings} drawing sheets",
- "{name} 已移到第 {pos} 位，共 {total} 位": "{name} moved to position {pos} of {total}",
+ "{n}/{m}": "{n}/{m}",
+ "{folders} 个文件夹 · {notes} 张纸页 · {drawings} 张画纸": "{folders} folders · {notes} pages · {drawings} drawing sheets", "{name} 已移到第 {pos} 位，共 {total} 位": "{name} moved to position {pos} of {total}",
  "{n} / 20000 字": "{n} / 20000 chars",
  "{n} 个字": {
   "one": "{n} char",

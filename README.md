@@ -6,7 +6,7 @@
 <p align="center">Sticky notes, paper pages, calendar tasks, drawings and a reusable prompt library on one desk inside DSH.</p>
 <p align="center"><a href="README.zh.md">中文</a></p>
 
-> panel plugin v0.7.0
+> panel plugin v0.8.0
 
 <p align="center">
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-%E2%89%A522-339933" alt="Node.js 22 or newer"></a>
@@ -43,6 +43,7 @@ Switch in Settings → Appearance → "Desk look". It applies instantly without 
 - Short thoughts, saved automatically; **the whole sheet can be dragged** (except the body text, scrollbar, colour swatches and delete button), and the one you touched last stays on top.
 - The body uses the bundled **LXGW WenKai** handwriting face; you can switch to a system face or a paper serif in Settings.
 - **The trash keeps notes for 7 days** instead of showing an undo toast — deleted notes land in the trash at the top of the sticky window and can be put back at any time. Empty notes are dropped immediately.
+- **Checklists** (0.8.0): the list icon in the note header turns a note into a to-do list and back. Each line gets a checkbox; ticking one strikes it through and shows `3/7` in the footer. `Enter` adds the next row, `Enter` on an empty row removes it, `Backspace` at the start of a row merges it upward, `Alt + ↑/↓` moves a row, and pasting a Markdown list splits it into rows. The note text stays the single source of truth — a checklist is stored as `- [ ] item` / `- [x] item`, so switching back to a plain note, exporting, and searching lose nothing. There is no schema bump for this: `mode` is only a rendering switch, and a workspace opened by an older build simply shows the Markdown text.
 
 <img width="1400" alt="Native Glow sticky grid: a drag in progress shows an insert line" src="assets/screenshot-modern-stickies-drag.webp">
 
@@ -109,7 +110,7 @@ DSH → Plugins → Add plugin, then enter:
 dsh-plugin-control-your-schedule
 ```
 
-A version can be pinned too: `dsh-plugin-control-your-schedule@0.7.0`.
+A version can be pinned too: `dsh-plugin-control-your-schedule@0.8.0`.
 
 ### From GitHub
 
@@ -177,6 +178,8 @@ State is kept per app, so switching back to DSH and returning puts you where you
 | `smoke/run_all_checks.py` | Project gate (page contract, DOM nesting, build, migration, host route) |
 | `smoke/page_e2e.mjs` | Real-browser checks (headless Edge/Chrome), both skins and the upgrade path |
 | `smoke/k3_stickies_test.mjs` | Sticky data and pointer-drag contracts |
+| `smoke/sticky_list_test.mjs` | Checklist parser / serialiser (round trip, caps, hostile input) |
+| `smoke/note_blocks_test.mjs` | Page block model (text + image blocks, whitelist, caps) |
 | `smoke/classic_visual_regression.mjs` | Pixel comparison of the classic skin against the previous release |
 | `assets/i18n/en.json`, `en.templates.json` | English dictionary and parameterised templates (build inputs) |
 | `assets/fonts/` | Bundled handwriting subset (LXGW WenKai, OFL) with its licence |
@@ -209,7 +212,7 @@ python smoke/run_all_checks.py --cdp
 
 ## Releases
 
-- Current version: **0.7.0**
+- Current version: **0.8.0**
 - [CHANGELOG.md](CHANGELOG.md) · [Releases](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/releases) · [npm](https://www.npmjs.com/package/dsh-plugin-control-your-schedule)
 
 ## License

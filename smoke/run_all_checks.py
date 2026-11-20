@@ -126,7 +126,10 @@ BASE_EXPECTED = {
     "recurring resolution": "function resolveTask(id)",
     "sticky trash retention": "var TRASH_DAYS = 7;",
     "sticky raise on touch": "P.data.raiseSticky(",
-    "whole-card sticky drag": "if (event.target.closest('.sticky__text, .sticky__swatches, .sticky__del')) return;",
+    "whole-card sticky drag": "if (event.target.closest('.sticky__body, .sticky__swatches, .sticky__del, .sticky__mode')) return;",
+    "sticky checklist model": "/* @sticky-list-begin */",
+    "sticky mode button": 'class="sticky__mode"',
+    "sticky mode survives validation": "mode: P.stickyMode(rawSticky.mode),",
     "theme resolution": "function resolveTheme(mode)",
     "host dark signal": "data-ds-dark-theme",
     "builtin hand font face": "font-family: \"LXGW WenKai\";",
@@ -707,6 +710,12 @@ def main() -> int:
         run("note block model", [NODE, str(ROOT / "smoke" / "note_blocks_test.mjs")])
     else:
         bad("note block model", "node not found")
+
+    # --- checklist model (pure, no browser needed) ---
+    if NODE:
+        run("sticky checklist model", [NODE, str(ROOT / "smoke" / "sticky_list_test.mjs")])
+    else:
+        bad("sticky checklist model", "node not found")
 
     # --- composer insertion model (pure, no browser needed) ---
     if NODE:

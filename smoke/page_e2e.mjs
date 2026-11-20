@@ -1547,6 +1547,86 @@ const trashUi = await run(function () {
 if (trashUi && trashUi.opened && trashUi.listed && trashUi.mentionsRetention) ok('trash dialog lists deleted notes and states retention', JSON.stringify(trashUi));
 else bad('trash dialog lists deleted notes and states retention', JSON.stringify(trashUi));
 
+await stageGuard("sticky checklist: toggle, tick, type, reorder, persist, round-trip");
+// --- sticky checklist (0.8.0, issue #3) ---
+/* 一句话：清单是渲染开关，文本是唯一事实源。这里把三件事钉住：
+   ① 切模式不改字符（除了补 - [ ] 前缀）；
+   ② 勾选/打字真的落到 text，并且重建卡片之后还在（不会被 syncListRows 抹掉）；
+   ③ 切回普通便签，勾选状态仍以 - [x] 留在文本里。 */
+const checklist = await run(function () {
+  var P = window.PaperOS;
+  var made = P.data.createSticky({ text: '写 issue 模板\n合并 PR', color: 'sky', x: 30, y: 30, mode: 'list' });
+  P.wm.open('stickies');
+  var card = document.querySelector('.sticky[data-id=' + made.id + ']');
+  if (!card) return { error: 'card not rendered' };
+  var rowsBefore = card.querySelectorAll('.sticky__item').length;
+  var modePressed = card.getAttribute('data-mode') === 'list';
+  var textareaHidden = card.querySelector('.sticky__text').hidden;
+  var box = card.querySelector('.sticky__item-check');
+  if (box) box.click();
+  var afterTick = P.data.listStickies().filter(function (s) { return s.id === made.id; })[0];
+  var firstDone = card.querySelector('.sticky__item').getAttribute('data-done');
+  var ariaChecked = card.querySelector('.sticky__item-check').getAttribute('aria-checked');
+  var progress = card.querySelector('.sticky__progress').textContent;
+  return {
+    rows: rowsBefore,
+    modePressed: modePressed,
+    textareaHidden: textareaHidden,
+    stored: afterTick ? afterTick.text : '',
+    firstDone: firstDone,
+    ariaChecked: ariaChecked,
+    progress: progress
+  };
+});
+if (checklist && checklist.rows > 0 && checklist.modePressed) ok('a checklist sticky renders rows instead of a textarea', JSON.stringify({ rows: checklist.rows, textareaHidden: checklist.textareaHidden }));
+else bad('a checklist sticky renders rows instead of a textarea', JSON.stringify(checklist));
+if (checklist && checklist.stored === '- [x] 写 issue 模板\n- [ ] 合并 PR') ok('ticking a row writes - [x] back into the note text', JSON.stringify(checklist.stored));
+else bad('ticking a row writes - [x] back into the note text', JSON.stringify(checklist && checklist.stored));
+if (checklist && checklist.ariaChecked === 'true' && checklist.firstDone === '1') ok('the ticked row reports its state to assistive tech', JSON.stringify({ aria: checklist.ariaChecked, done: checklist.firstDone }));
+else bad('the ticked row reports its state to assistive tech', JSON.stringify(checklist));
+if (checklist && checklist.progress === '1/2') ok('the note shows done / total', checklist.progress);
+else bad('the note shows done / total', JSON.stringify(checklist && checklist.progress));
+
+const checklistTyping = await run(function () {
+  var P = window.PaperOS;
+  var live = P.data.listStickies().filter(function (s) { return s.mode === 'list'; })[0];
+  var card = document.querySelector('.sticky[data-id=' + live.id + ']');
+  var text = card.querySelectorAll('.sticky__item-text')[1];
+  text.focus();
+  var range = document.createRange();
+  range.selectNodeContents(text);
+  range.collapse(false);
+  var sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  document.execCommand('insertText', false, '（补一句）');
+  var after = P.data.listStickies().filter(function (s) { return s.id === live.id; })[0];
+  return { stored: after.text, focusedRow: document.activeElement === text, id: live.id };
+});
+if (checklistTyping && /（补一句）/.test(checklistTyping.stored)) ok('typing into a row reaches the store', JSON.stringify(checklistTyping.stored));
+else bad('typing into a row reaches the store', JSON.stringify(checklistTyping && checklistTyping.stored));
+if (checklistTyping && checklistTyping.focusedRow) ok('the row keeps focus across the autosave');
+else bad('the row keeps focus across the autosave', JSON.stringify(checklistTyping && checklistTyping.focusedRow));
+
+const checklistModeBack = await run(function () {
+  var P = window.PaperOS;
+  var live = P.data.listStickies().filter(function (s) { return s.mode === 'list'; })[0];
+  var card = document.querySelector('.sticky[data-id=' + live.id + ']');
+  card.querySelector('.sticky__mode').click();
+  var back = P.data.listStickies().filter(function (s) { return s.id === live.id; })[0];
+  var again = document.querySelector('.sticky[data-id=' + live.id + ']');
+  return {
+    mode: back.mode,
+    text: back.text,
+    textareaVisible: again ? !again.querySelector('.sticky__text').hidden : false,
+    textareaValue: again ? again.querySelector('.sticky__text').value : ''
+  };
+});
+if (checklistModeBack && checklistModeBack.mode === 'text' && checklistModeBack.textareaVisible) ok('the mode button turns a checklist back into a plain note', JSON.stringify({ mode: checklistModeBack.mode }));
+else bad('the mode button turns a checklist back into a plain note', JSON.stringify(checklistModeBack));
+if (checklistModeBack && /^- \[x\] /.test(checklistModeBack.text)) ok('switching back keeps - [x] in the plain text', JSON.stringify(checklistModeBack.text));
+else bad('switching back keeps - [x] in the plain text', JSON.stringify(checklistModeBack && checklistModeBack.text));
+
 await stageGuard("notes");
 // --- notes ---
 const note = await run(function () {

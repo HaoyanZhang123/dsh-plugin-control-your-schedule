@@ -6,7 +6,7 @@
 <p align="center">便签、纸页笔记、日历待办、画纸与常用提示词，放在 DSH 里同一张桌面上。</p>
 <p align="center"><a href="README.md">English</a></p>
 
-> 面板插件 v0.7.0
+> 面板插件 v0.8.0
 
 <p align="center">
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-%E2%89%A522-339933" alt="Node.js 22 或更高"></a>
@@ -43,6 +43,7 @@
 - 短句速记，自动保存；**整张纸都能拖着走**（正文、滚动条、色块与删除键除外），最后碰过的那张永远在最上面。
 - 正文默认使用内置**霞鹜文楷**手写体，可在设置里换成系统字体或纸张宋体。
 - **废纸篓保留 7 天**：删掉的便签不弹「撤销」提示，而是进便签窗口顶部的废纸篓，随时放回去；空便签直接丢弃。
+- **待办清单**（0.8.0）：便签头部的清单图标可以把一张便签变成待办清单，再点一次切回。每行前有一个方框，勾上就划掉并在底部显示 `3/7`。`Enter` 新建下一条，空行上 `Enter` 退掉这一行，行首 `Backspace` 并到上一行，`Alt + ↑/↓` 换行，粘贴 Markdown 清单会自动拆成条目。文本始终是唯一事实源——清单就存成 `- [ ] 事项` / `- [x] 事项`，所以切回普通便签、导出、搜索都不丢信息。这一步**不升数据版本**：`mode` 只是渲染开关，旧版打开就是一段 Markdown 原文。
 
 <img width="1400" alt="原生柔光便签栅格：拖动中的插入线与被拖起的卡片" src="assets/screenshot-modern-stickies-drag.webp">
 
@@ -109,7 +110,7 @@ DSH → Plugins → Add plugin，填：
 dsh-plugin-control-your-schedule
 ```
 
-也可以带版本：`dsh-plugin-control-your-schedule@0.7.0`。
+也可以带版本：`dsh-plugin-control-your-schedule@0.8.0`。
 
 ### 从 GitHub
 
@@ -177,6 +178,7 @@ https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule
 | `smoke/run_all_checks.py` | 项目门禁（页面契约、DOM 嵌套、构建、迁移、宿主路由） |
 | `smoke/page_e2e.mjs` | 真机浏览器检查（无头 Edge/Chrome），覆盖两套皮肤与升级路径 |
 | `smoke/k3_stickies_test.mjs` | 便签数据与指针拖动契约 |
+| `smoke/sticky_list_test.mjs` | 待办清单的解析 / 序列化（往返、上限、恶意输入） |
 | `smoke/classic_visual_regression.mjs` | 经典皮肤与上一版发布的逐像素对照 |
 | `assets/i18n/` | 英文词典与带参模板（构建输入） |
 | `assets/fonts/` | 内置手写体子集（霞鹜文楷，OFL）及其许可 |
@@ -209,7 +211,7 @@ python smoke/run_all_checks.py --cdp
 
 ## 更新与发布
 
-- 当前版本：**0.7.0**
+- 当前版本：**0.8.0**
 - [CHANGELOG.md](CHANGELOG.md) · [Releases](https://github.com/HaoyanZhang123/dsh-plugin-control-your-schedule/releases) · [npm](https://www.npmjs.com/package/dsh-plugin-control-your-schedule)
 
 ## 许可证
